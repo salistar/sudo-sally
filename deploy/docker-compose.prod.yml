@@ -1,11 +1,10 @@
 name: sudoku-sally
 
 # Production stack for server 2 (gowithsally-prod, 88.198.205.229).
-# The box already runs a Caddy reverse proxy (container `gws-caddy`) on the
-# external Docker network `gowithsally_gws-net`, with automatic HTTPS.
-# We attach ONLY the landing container to that edge network so Caddy can
-# reverse_proxy sudoku.gowithsally.com → sudoku-landing:80.
-# api + mongo stay on a private internal network. No host ports are published.
+# Caddy (container `gws-caddy`) on the external network `gowithsally_gws-net`
+# fronts everything with automatic HTTPS. Public-facing containers (landing +
+# the API/UI proxies) join that edge network; data stores stay private.
+# No host ports are published — Caddy reaches containers by name.
 
 services:
   api:
@@ -19,12 +18,19 @@ services:
       MONGODB_URI: mongodb://mongo:27017/sudoku_sally
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in deploy/.env.prod}
       JWT_EXPIRE: 30d
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379   # ready for future caching
     depends_on:
       - mongo
     networks:
       - sudoku
+      - edge          # so Caddy can serve api.sudoku.gowithsally.com
     expose:
       - "3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   mongo:
     image: mongo:7.0
@@ -34,6 +40,26 @@ services:
       - sudoku_mongo_data:/data/db
     networks:
       - sudoku
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sudoku-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "--appendonly", "yes"]
+    volumes:
+      - sudoku_redis_data:/data
+    networks:
+      - sudoku
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   landing:
     build: ../landing
@@ -42,13 +68,50 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    volumes:
+      - sudoku_downloads:/usr/share/nginx/html/downloads   # self-hosted APK
     networks:
-      - sudoku          # to reach sudoku-api (proxy /api & /socket.io)
-      - edge            # so gws-caddy can reach it
-    # No host ports: Caddy (on the edge network) fronts it on 443.
+      - sudoku
+      - edge
+
+  # ── Admin UIs (own basic-auth, served over HTTPS via Caddy) ──────────────
+  mongo-ui:
+    image: mongo-express:1.0.2
+    container_name: sudoku-mongo-ui
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: ${UI_USER:?UI_USER must be set}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${UI_PASS:?UI_PASS must be set}
+    depends_on:
+      - mongo
+    networks:
+      - sudoku
+      - edge
+    expose:
+      - "8081"
+
+  redis-ui:
+    image: rediscommander/redis-commander:latest
+    container_name: sudoku-redis-ui
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:${REDIS_PASSWORD}"
+      HTTP_USER: ${UI_USER:?UI_USER must be set}
+      HTTP_PASSWORD: ${UI_PASS:?UI_PASS must be set}
+    depends_on:
+      - redis
+    networks:
+      - sudoku
+      - edge
+    expose:
+      - "8081"
 
 volumes:
   sudoku_mongo_data:
+  sudoku_redis_data:
+  sudoku_downloads:
 
 networks:
   sudoku:

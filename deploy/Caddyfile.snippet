@@ -1,18 +1,35 @@
 # ────────────────────────────────────────────────────────────────────────
-# Add this block to the box's Caddyfile (server 2 / gowithsally-prod):
+# Add these blocks to the box's Caddyfile (server 2 / gowithsally-prod):
 #   ~/apps/go-with-sally-backoffice/Caddyfile
 # then reload Caddy:
 #   docker exec gws-caddy caddy reload --config /etc/caddy/Caddyfile
 #
-# Requirements:
-#  - The sudoku-landing container must be on the `gowithsally_gws-net` network
-#    (handled by deploy/docker-compose.prod.yml).
-#  - A DNS record  sudoku.gowithsally.com → 88.198.205.229  must exist.
-#    Set it to "DNS only" (grey cloud) in Cloudflare until Caddy issues the
-#    Let's Encrypt cert (HTTP-01), then it may be switched back to Proxied.
+# DNS: each hostname needs a record → 88.198.205.229. The api/db/cache hosts
+# are 2-level subdomains (api.sudoku.gowithsally.com) which Cloudflare's
+# universal cert does NOT cover, so keep them "DNS only" (grey cloud) — Caddy
+# then issues a per-host Let's Encrypt cert and serves them directly.
+# (sudoku.gowithsally.com itself is 1-level and may be Proxied/orange.)
 # ────────────────────────────────────────────────────────────────────────
 
 sudoku.gowithsally.com {
 	encode gzip zstd
 	reverse_proxy sudoku-landing:80
+}
+
+api.sudoku.gowithsally.com {
+	encode gzip zstd
+	reverse_proxy sudoku-api:3001 {
+		header_up X-Forwarded-Proto https
+	}
+}
+
+# Admin UIs — protected by each tool's own basic auth (UI_USER / UI_PASS).
+db.sudoku.gowithsally.com {
+	encode gzip zstd
+	reverse_proxy sudoku-mongo-ui:8081
+}
+
+cache.sudoku.gowithsally.com {
+	encode gzip zstd
+	reverse_proxy sudoku-redis-ui:8081
 }
