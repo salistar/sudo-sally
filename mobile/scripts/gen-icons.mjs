@@ -134,7 +134,6 @@ function svgSplash(size = 1242) {
   </g>
   <text x="${(size/2).toFixed(1)}" y="${textY.toFixed(1)}" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="${fs.toFixed(1)}" letter-spacing="${(size*0.012).toFixed(1)}" fill="#ffffff" text-anchor="middle">SUDOKU</text>
   <text x="${(size/2).toFixed(1)}" y="${(textY + fs*0.92).toFixed(1)}" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="${fs.toFixed(1)}" letter-spacing="${(size*0.012).toFixed(1)}" fill="url(#greenS)" text-anchor="middle">SALLY</text>
-  <text x="${(size/2).toFixed(1)}" y="${(textY + fs*0.92 + subFs*1.9).toFixed(1)}" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="${subFs.toFixed(1)}" letter-spacing="${(size*0.02).toFixed(1)}" fill="#8a90b8" text-anchor="middle">PLAY  •  LEARN  •  SOLVE</text>
 </svg>`;
 }
 
