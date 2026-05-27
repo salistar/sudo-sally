@@ -4,8 +4,9 @@ FROM nginx:1.27-alpine
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/sudoku.conf
 
-# Static site
+# Static site (then drop the build-only files that slipped into the context)
 COPY . /usr/share/nginx/html
+RUN rm -f /usr/share/nginx/html/nginx.conf
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=4s --retries=3 \
