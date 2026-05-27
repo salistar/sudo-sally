@@ -1,0 +1,52 @@
+name: sudoku-sally
+
+services:
+  api:
+    build: ../backend
+    image: sudoku-sally-api:latest
+    container_name: sudoku-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      MONGODB_URI: mongodb://mongo:27017/sudoku_sally
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in deploy/.env.prod}
+      JWT_EXPIRE: 30d
+    depends_on:
+      - mongo
+    networks:
+      - sudoku
+    expose:
+      - "3001"
+
+  mongo:
+    image: mongo:7.0
+    container_name: sudoku-mongo
+    restart: unless-stopped
+    volumes:
+      - sudoku_mongo_data:/data/db
+    networks:
+      - sudoku
+
+  landing:
+    build: ../landing
+    image: sudoku-sally-landing:latest
+    container_name: sudoku-landing
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - sudoku
+    # Cloudflare Tunnel reaches the site here (no public port is opened).
+    # If cloudflared runs as a HOST service → it hits 127.0.0.1:8091.
+    # If cloudflared runs as a CONTAINER → attach it to the `sudoku_net`
+    #   network instead and point the ingress at http://sudoku-landing:80.
+    ports:
+      - "127.0.0.1:8091:80"
+
+volumes:
+  sudoku_mongo_data:
+
+networks:
+  sudoku:
+    name: sudoku_net

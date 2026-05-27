@@ -1,0 +1,701 @@
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { storage, TEST_USERS } from '../utils/storage';
+import { useLang } from '../utils/LanguageContext';
+import AppModal, { PopupData } from '../components/AppModal';
+import * as Haptics from 'expo-haptics';
+import { signInWithGoogle } from '../utils/googleAuth';
+
+const FILE_NAME = '📁 [Login.tsx]';
+
+export default function Login() {
+  console.log(`${FILE_NAME} 🚀 Component mounting...`);
+  
+  const router = useRouter();
+  const { t } = useLang();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<'email' | 'password' | null>(null);
+  const [popup, setPopup] = useState<PopupData | null>(null);
+
+  console.log(`${FILE_NAME} 📊 Initial state - email: "${email ? '***' : 'empty'}", loading: ${loading}`);
+
+  const handleGoogle = useCallback(async () => {
+    console.log(`${FILE_NAME} 🔵 handleGoogle() - Google sign-in tapped`);
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    const res = await signInWithGoogle();
+    console.log(`${FILE_NAME} 🔵 handleGoogle() - result:`, JSON.stringify(res));
+
+    if (res.ok) {
+      await storage.loginAsGuest(); // TODO: exchange Google token for a real session
+      router.replace('/home');
+      return;
+    }
+
+    switch (res.code) {
+      case 'CANCELLED':
+        // User dismissed the picker — no popup, silent.
+        break;
+      case 'EXPO_GO':
+      case 'NO_MODULE':
+        setPopup({ type: 'info', title: 'Google', message: t('googleNotConfigured') });
+        break;
+      case 'PLAY_SERVICES':
+        setPopup({ type: 'error', title: 'Google', message: t('googlePlayServices') });
+        break;
+      case 'DEVELOPER_ERROR':
+        setPopup({ type: 'error', title: 'Google', message: t('googleDevError') });
+        break;
+      default:
+        setPopup({
+          type: 'error',
+          title: t('googleSignInFailed'),
+          message: res.error || 'Unknown error',
+        });
+    }
+  }, [t, router]);
+
+  const handleBack = useCallback(() => {
+    console.log(`${FILE_NAME} 🔙 handleBack() - Navigating back...`);
+    router.back();
+  }, [router]);
+
+  const handleEmailChange = useCallback((text: string) => {
+    console.log(`${FILE_NAME} ✏️ handleEmailChange() - Email updated (length: ${text.length})`);
+    setEmail(text);
+  }, []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    console.log(`${FILE_NAME} ✏️ handlePasswordChange() - Password updated (length: ${text.length})`);
+    setPassword(text);
+  }, []);
+
+  const toggleShowPassword = useCallback(() => {
+    console.log(`${FILE_NAME} 👁️ toggleShowPassword() - Show password: ${!showPassword}`);
+    setShowPassword(prev => !prev);
+  }, [showPassword]);
+
+  const handleLogin = useCallback(async () => {
+    console.log(`${FILE_NAME} 🔐 handleLogin() - Login attempt started`);
+    console.log(`${FILE_NAME} 📧 handleLogin() - Email: ${email}`);
+    
+    if (!email || !password) {
+      console.log(`${FILE_NAME} ⚠️ handleLogin() - Validation failed: missing fields`);
+      setPopup({ type: 'error', title: t('error'), message: t('fillAllFields') });
+      return;
+    }
+
+    setLoading(true);
+    console.log(`${FILE_NAME} ⏳ handleLogin() - Loading state: true`);
+    
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log(`${FILE_NAME} 📳 handleLogin() - Haptic feedback triggered`);
+    } catch (error) {
+      console.log(`${FILE_NAME} ⚠️ handleLogin() - Haptics not available`);
+    }
+
+    // Simulate network delay
+    console.log(`${FILE_NAME} 🌐 handleLogin() - Simulating network delay (800ms)...`);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    console.log(`${FILE_NAME} 🔍 handleLogin() - Attempting authentication...`);
+    const user = await storage.login(email, password);
+    setLoading(false);
+    console.log(`${FILE_NAME} ⏳ handleLogin() - Loading state: false`);
+
+    if (user) {
+      console.log(`${FILE_NAME} ✅ handleLogin() - Login successful! User: ${user.username}`);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        console.log(`${FILE_NAME} ⚠️ handleLogin() - Haptics not available`);
+      }
+      console.log(`${FILE_NAME} 🏠 handleLogin() - Navigating to home...`);
+      router.replace('/home');
+    } else {
+      console.log(`${FILE_NAME} ❌ handleLogin() - Login failed: Invalid credentials`);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } catch (error) {
+        console.log(`${FILE_NAME} ⚠️ handleLogin() - Haptics not available`);
+      }
+      setPopup({ type: 'error', title: t('error'), message: `${t('invalidCredentials')}\n\ntest@test.com / test123` });
+    }
+  }, [email, password, t, router]);
+
+  const handleGuest = useCallback(async () => {
+    console.log(`${FILE_NAME} 👤 handleGuest() - Guest login requested`);
+    
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      console.log(`${FILE_NAME} 📳 handleGuest() - Haptic feedback triggered`);
+    } catch (error) {
+      console.log(`${FILE_NAME} ⚠️ handleGuest() - Haptics not available`);
+    }
+    
+    console.log(`${FILE_NAME} 🔓 handleGuest() - Creating guest session...`);
+    await storage.loginAsGuest();
+    
+    console.log(`${FILE_NAME} ✅ handleGuest() - Guest login successful, navigating to home...`);
+    router.replace('/home');
+  }, [router]);
+
+  const handleRegister = useCallback(() => {
+    console.log(`${FILE_NAME} 📝 handleRegister() - Navigating to register screen...`);
+    router.push('/register');
+  }, [router]);
+
+  const handleForgotPassword = useCallback(() => {
+    console.log(`${FILE_NAME} 🔑 handleForgotPassword() - Forgot password tapped`);
+    setPopup({ type: 'info', title: t('resetPassword'), message: t('resetPasswordSoon') });
+  }, [t]);
+
+  console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
+
+  return (
+    <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+              style={styles.backButtonGradient}
+            >
+              <Text style={styles.backIcon}>←</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <LinearGradient
+                colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
+                style={styles.logoGradient}
+              >
+                <Text style={styles.emoji}>🔐</Text>
+              </LinearGradient>
+              <View style={styles.logoGlow} />
+            </View>
+            <Text style={styles.title}>{t('login')}</Text>
+            <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>{t('email')}</Text>
+              <View style={[
+                styles.inputWrapper,
+                focusedInput === 'email' && styles.inputWrapperFocused,
+              ]}>
+                <Text style={styles.inputIcon}>📧</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="test@test.com"
+                  placeholderTextColor="#475569"
+                  value={email}
+                  onChangeText={handleEmailChange}
+                  onFocus={() => setFocusedInput('email')}
+                  onBlur={() => setFocusedInput(null)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {email.length > 0 && (
+                  <TouchableOpacity onPress={() => setEmail('')} style={styles.clearButton}>
+                    <Text style={styles.clearButtonText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>{t('password')}</Text>
+              <View style={[
+                styles.inputWrapper,
+                focusedInput === 'password' && styles.inputWrapperFocused,
+              ]}>
+                <Text style={styles.inputIcon}>🔑</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor="#475569"
+                  value={password}
+                  onChangeText={handlePasswordChange}
+                  onFocus={() => setFocusedInput('password')}
+                  onBlur={() => setFocusedInput(null)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={toggleShowPassword} style={styles.showPasswordButton}>
+                  <Text style={styles.showPasswordText}>{showPassword ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
+              <Text style={styles.forgotPassword}>{t('forgotPassword')}</Text>
+            </TouchableOpacity>
+
+            {/* Login Button */}
+            <TouchableOpacity 
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={loading ? ['#64748b', '#475569'] : ['#4ade80', '#22c55e']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.loginGradient}
+              >
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingDots}>●●●</Text>
+                    <Text style={styles.loginText}>{t('loading')}</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.loginIcon}>🚀</Text>
+                    <Text style={styles.loginText}>{t('login')}</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <View style={styles.dividerTextContainer}>
+                <Text style={styles.dividerText}>OR</Text>
+              </View>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Sign-In */}
+            <TouchableOpacity style={styles.googleButton} onPress={handleGoogle} activeOpacity={0.9}>
+              <View style={styles.googleLogo}>
+                <Text style={styles.googleBlue}>G</Text>
+              </View>
+              <Text style={styles.googleText}>{t('continueWithGoogle')}</Text>
+            </TouchableOpacity>
+
+            {/* Guest Button */}
+            <TouchableOpacity style={styles.guestButton} onPress={handleGuest} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)']}
+                style={styles.guestGradient}
+              >
+                <Text style={styles.guestIcon}>👤</Text>
+                <Text style={styles.guestText}>{t('guest')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Register Link */}
+          <View style={styles.registerContainer}>
+            <Text style={styles.registerText}>{t('noAccount')} </Text>
+            <TouchableOpacity onPress={handleRegister} activeOpacity={0.7}>
+              <Text style={styles.registerLink}>{t('register')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Test Account Info */}
+          <View style={styles.testInfo}>
+            <LinearGradient
+              colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']}
+              style={styles.testInfoGradient}
+            >
+              <View style={styles.testHeader}>
+                <Text style={styles.testIcon}>🧪</Text>
+                <Text style={styles.testTitle}>{t('testAccount')}</Text>
+              </View>
+              <View style={styles.testCredentials}>
+                <View style={styles.testRow}>
+                  <Text style={styles.testLabel}>Email:</Text>
+                  <Text style={styles.testValue}>test@test.com</Text>
+                </View>
+                <View style={styles.testRow}>
+                  <Text style={styles.testLabel}>Password:</Text>
+                  <Text style={styles.testValue}>test123</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.autofillButton}
+                onPress={() => {
+                  console.log(`${FILE_NAME} 🔄 Autofill test credentials`);
+                  setEmail('test@test.com');
+                  setPassword('test123');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.autofillText}>{t('tapToAutofill')}</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+
+          {/* Bottom spacing */}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('ok')} />
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+    paddingTop: 60,
+  },
+  
+  // Back Button
+  backButton: {
+    width: 44,
+    height: 44,
+    marginBottom: 20,
+  },
+  backButtonGradient: {
+    flex: 1,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  backIcon: {
+    color: '#94a3b8',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  
+  // Header
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logoContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  logoGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(74,222,128,0.3)',
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(74,222,128,0.1)',
+    top: -10,
+    left: -10,
+  },
+  emoji: {
+    fontSize: 48,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#64748b',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  
+  // Form
+  form: {
+    gap: 18,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  inputLabel: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  inputWrapperFocused: {
+    borderColor: 'rgba(74,222,128,0.5)',
+    backgroundColor: 'rgba(74,222,128,0.05)',
+  },
+  inputIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#fff',
+  },
+  clearButton: {
+    padding: 8,
+  },
+  clearButtonText: {
+    color: '#64748b',
+    fontSize: 14,
+  },
+  showPasswordButton: {
+    padding: 8,
+  },
+  showPasswordText: {
+    fontSize: 18,
+  },
+  
+  // Forgot Password
+  forgotPassword: {
+    color: '#4ade80',
+    fontSize: 14,
+    textAlign: 'right',
+    fontWeight: '600',
+  },
+  
+  // Login Button
+  loginButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    shadowColor: '#4ade80',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  loginButtonDisabled: {
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  loginGradient: {
+    flexDirection: 'row',
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    gap: 10,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingDots: {
+    color: '#fff',
+    fontSize: 12,
+    letterSpacing: 2,
+  },
+  loginIcon: {
+    fontSize: 20,
+  },
+  loginText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  dividerTextContainer: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginHorizontal: 12,
+  },
+  dividerText: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Google Button
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingVertical: 14,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  googleLogo: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  googleBlue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#4285F4',
+  },
+  googleText: {
+    color: '#1f2937',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  
+  // Guest Button
+  guestButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  guestGradient: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 10,
+  },
+  guestIcon: {
+    fontSize: 20,
+  },
+  guestText: {
+    fontSize: 16,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  
+  // Register Link
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+  registerText: {
+    color: '#64748b',
+    fontSize: 15,
+  },
+  registerLink: {
+    color: '#4ade80',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  
+  // Test Info
+  testInfo: {
+    marginTop: 28,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  testInfoGradient: {
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.25)',
+  },
+  testHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  testIcon: {
+    fontSize: 20,
+  },
+  testTitle: {
+    color: '#fbbf24',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  testCredentials: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+  },
+  testRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  testLabel: {
+    color: '#94a3b8',
+    fontSize: 13,
+  },
+  testValue: {
+    color: '#fbbf24',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  autofillButton: {
+    marginTop: 14,
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  autofillText: {
+    color: '#fbbf24',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+});

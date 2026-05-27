@@ -1,0 +1,71 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/build-apk.yml"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to attach the APK to a Release on tags
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prebuild Android project
+        run: npx expo prebuild --platform android --no-install
+
+      # Use the SAME debug keystore whose SHA-1 is registered with Google OAuth,
+      # so Google sign-in keeps working in the distributed APK.
+      - name: Restore registered debug keystore
+        if: ${{ env.KS_B64 != '' }}
+        env:
+          KS_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: echo "$KS_B64" | base64 -d > android/app/debug.keystore
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Stage APK
+        run: |
+          mkdir -p ../artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk ../artifacts/sudoku-sally.apk
+          ls -la ../artifacts
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sudoku-sally-apk
+          path: artifacts/sudoku-sally.apk
+          if-no-files-found: error
+
+      - name: Attach APK to GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/sudoku-sally.apk
+          fail_on_unmatched_files: true

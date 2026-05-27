@@ -1,0 +1,41 @@
+name: Deploy to server 1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "landing/**"
+      - "deploy/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH (build & restart the sudoku stack)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: JWT_SECRET
+          script: |
+            set -euo pipefail
+            REPO_DIR=/opt/sudo-sally
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              git clone https://github.com/salistar/sudo-sally.git "$REPO_DIR"
+            fi
+            cd "$REPO_DIR"
+            git fetch --depth 1 origin main
+            git reset --hard origin/main
+            # Inject the JWT secret (file is gitignored / lives only on the server)
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET" > deploy/.env.prod
+            bash deploy/deploy.sh
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}

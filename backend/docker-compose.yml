@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: sudoku_sally_mongo
+    restart: always
+    ports:
+      - "27117:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - sudoku_network
+
+  api:
+    build: .
+    container_name: sudoku_sally_api
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongo:27017/sudoku_sally
+      - JWT_SECRET=${JWT_SECRET:-dev_secret_change_me}
+      - JWT_EXPIRE=30d
+    ports:
+      - "3101:3001"
+    depends_on:
+      - mongo
+    networks:
+      - sudoku_network
+
+  mongo-express:
+    image: mongo-express
+    container_name: sudoku_sally_admin
+    restart: always
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    ports:
+      - "8181:8081"
+    depends_on:
+      - mongo
+    networks:
+      - sudoku_network
+
+volumes:
+  mongo_data:
+
+networks:
+  sudoku_network:
+    driver: bridge

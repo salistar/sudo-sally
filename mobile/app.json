@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "SudokuSally V3",
+    "slug": "sudoku-sally-v3",
+    "version": "3.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sudokusallyv3",
+    "userInterfaceStyle": "automatic",
+    "sdkVersion": "52.0.0",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a1a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sudokusally.v3"
+    },
+    "android": {
+      "package": "com.sudokusally.v3",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0a0a1a"
+      }
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin",
+      "expo-asset"
+    ]
+  }
+}

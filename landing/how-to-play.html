@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Play — Sudoku Sally</title>
+  <meta name="description" content="Learn how to play Sudoku in three simple rules, then master the Sudoku Sally app: starting a level, entering numbers, pencil notes, smart hints, reveal and tracking your stats." />
+  <meta property="og:title" content="How to Play — Sudoku Sally" />
+  <meta property="og:description" content="The three rules of Sudoku explained simply, plus a guide to using notes, hints, reveal and stats in Sudoku Sally." />
+  <meta property="og:image" content="./assets/og-image.svg" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="./index.html" aria-label="Sudoku Sally home">
+        <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="hbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#15152e"/><stop offset="1" stop-color="#0a0a1a"/></linearGradient>
+            <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#22c55e"/></linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#hbg)" stroke="#22c55e" stroke-opacity="0.4" stroke-width="1.5"/>
+          <rect x="10" y="10" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="25.5" y="10" width="13" height="13" rx="3" fill="#fff" fill-opacity="0.05"/><rect x="41" y="10" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/>
+          <rect x="10" y="25.5" width="13" height="13" rx="3" fill="#fff" fill-opacity="0.05"/><rect x="25.5" y="25.5" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="41" y="25.5" width="13" height="13" rx="3" fill="#fff" fill-opacity="0.05"/>
+          <rect x="10" y="41" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="25.5" y="41" width="13" height="13" rx="3" fill="#fff" fill-opacity="0.05"/><rect x="41" y="41" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/>
+          <g fill="url(#hg)" font-family="Verdana, sans-serif" font-weight="bold" font-size="11" text-anchor="middle"><text x="16.5" y="20.5">5</text><text x="47.5" y="20.5">9</text><text x="32" y="36">7</text><text x="16.5" y="51.5">2</text><text x="47.5" y="51.5">6</text></g>
+        </svg>
+        <span class="wordmark">SUDOKU <span>SALLY</span></span>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primary-nav">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links" id="primary-nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./features.html">Features</a>
+        <a href="./how-to-play.html" class="active">How to Play</a>
+        <a href="./screenshots.html">Screenshots</a>
+        <a href="./faq.html">FAQ</a>
+        <a href="./download.html" class="nav-cta">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow reveal">How to Play</span>
+        <h1 class="reveal">Sudoku in <span class="text-grad">three simple rules</span></h1>
+        <p class="reveal">Never played before? No problem. Sudoku is easy to learn and endlessly satisfying to master.</p>
+      </div>
+    </section>
+
+    <!-- THE RULES -->
+    <section style="padding-top:30px">
+      <div class="container">
+        <div class="rules-grid">
+          <div class="rule reveal">
+            <div class="num text-grad">1</div>
+            <h3>Fill every row</h3>
+            <p>Each of the nine horizontal rows must contain the numbers 1 to 9 — each number used exactly once, with no repeats.</p>
+          </div>
+          <div class="rule reveal">
+            <div class="num text-grad">2</div>
+            <h3>Fill every column</h3>
+            <p>Each of the nine vertical columns must also contain the numbers 1 to 9, again with no number repeated.</p>
+          </div>
+          <div class="rule reveal">
+            <div class="num text-grad">3</div>
+            <h3>Fill every 3×3 box</h3>
+            <p>The grid is split into nine 3×3 boxes. Each box must contain all nine numbers once. Solve it when all three rules are satisfied!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISUAL EXAMPLE -->
+    <section style="padding-top:10px">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">A quick example</span>
+          <h2 class="section-title">What the board looks like</h2>
+          <p class="section-sub">Dark cells are the given clues, <span style="color:var(--green-1);font-weight:700">green numbers</span> are yours, and tiny corner marks are pencil notes.</p>
+        </div>
+        <div class="example-board reveal" role="img" aria-label="Example Sudoku board with given clues, user-entered numbers in green and pencil notes">
+          <span class="fixed">5</span><span class="user">3</span><span class="note">4 7</span><span class="fixed">6</span><span class="hl">7</span><span class="fixed">8</span><span class="user">9</span><span class="fixed">1</span><span class="fixed">2</span>
+          <span class="fixed">6</span><span class="note">1 2</span><span class="user">2</span><span class="fixed">1</span><span class="fixed">9</span><span class="fixed">5</span><span class="note">3 4</span><span class="user">4</span><span class="fixed">8</span>
+          <span class="note">1 9</span><span class="fixed">9</span><span class="fixed">8</span><span class="user">3</span><span class="fixed">4</span><span class="note">2 6</span><span class="fixed">5</span><span class="fixed">6</span><span class="user">7</span>
+          <span class="fixed">8</span><span class="user">5</span><span class="fixed">9</span><span class="hl">7</span><span class="fixed">6</span><span class="user">1</span><span class="fixed">4</span><span class="note">2 3</span><span class="fixed">3</span>
+          <span class="fixed">4</span><span class="fixed">2</span><span class="user">6</span><span class="fixed">8</span><span class="hl">5</span><span class="fixed">3</span><span class="user">7</span><span class="fixed">9</span><span class="fixed">1</span>
+          <span class="user">7</span><span class="fixed">1</span><span class="fixed">3</span><span class="fixed">9</span><span class="hl">2</span><span class="user">4</span><span class="fixed">8</span><span class="fixed">5</span><span class="note">6 9</span>
+          <span class="fixed">9</span><span class="note">4 8</span><span class="fixed">1</span><span class="fixed">5</span><span class="hl">3</span><span class="fixed">7</span><span class="fixed">2</span><span class="user">8</span><span class="fixed">4</span>
+          <span class="fixed">2</span><span class="fixed">8</span><span class="user">7</span><span class="fixed">4</span><span class="hl">1</span><span class="fixed">9</span><span class="note">5 6</span><span class="fixed">3</span><span class="fixed">5</span>
+          <span class="user">3</span><span class="fixed">4</span><span class="fixed">5</span><span class="fixed">2</span><span class="hl">8</span><span class="fixed">6</span><span class="fixed">1</span><span class="user">7</span><span class="fixed">9</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- USING THE APP -->
+    <section>
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Using the app</span>
+          <h2 class="section-title">Get going in six steps</h2>
+          <p class="section-sub">Here's exactly how to play inside Sudoku Sally.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <div class="step-n">1</div>
+            <div><h3>Start a level</h3><p>Open the app and pick a difficulty — Easy, Medium, Hard, Expert or Diabolique. Complete a tier to unlock the next one.</p></div>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">2</div>
+            <div><h3>Enter numbers</h3><p>Tap an empty cell to select it, then tap a number on the keypad to place it. Tap again to clear a mistake.</p></div>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">3</div>
+            <div><h3>Use pencil notes</h3><p>Switch on Notes mode to add small candidate numbers to a cell. Perfect for tracking possibilities on tougher puzzles.</p></div>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">4</div>
+            <div><h3>Take a hint</h3><p>Stuck on a cell? Tap Hint and Sudoku Sally fills in the correct number for the selected square so you can keep moving.</p></div>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">5</div>
+            <div><h3>Reveal the solution</h3><p>Curious how it ends or want to learn a technique? Use auto-solve to reveal the full completed board instantly.</p></div>
+          </div>
+          <div class="step reveal">
+            <div class="step-n">6</div>
+            <div><h3>Track your stats</h3><p>Every finished puzzle updates your stats — times, streaks, achievements and your ELO ranking from challenge matches.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="get">
+      <div class="container">
+        <div class="cta-band reveal">
+          <h2>Now it's your turn</h2>
+          <p>You know the rules and you know the app. Download Sudoku Sally and solve your first puzzle today.</p>
+          <div class="hero-cta">
+            <a href="./download.html" class="btn btn-primary btn-lg">⬇ Download APK</a>
+            <a href="./features.html" class="btn btn-ghost btn-lg">Explore features</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="./index.html">
+            <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
+              <rect x="2" y="2" width="60" height="60" rx="16" fill="#13132c" stroke="#22c55e" stroke-opacity="0.4" stroke-width="1.5"/>
+              <rect x="10" y="10" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="41" y="10" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="25.5" y="25.5" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="10" y="41" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/><rect x="41" y="41" width="13" height="13" rx="3" fill="#4ade80" fill-opacity="0.12"/>
+              <g fill="#4ade80" font-family="Verdana, sans-serif" font-weight="bold" font-size="11" text-anchor="middle"><text x="16.5" y="20.5">5</text><text x="47.5" y="20.5">9</text><text x="32" y="36">7</text><text x="16.5" y="51.5">2</text><text x="47.5" y="51.5">6</text></g>
+            </svg>
+            <span class="wordmark">SUDOKU <span>SALLY</span></span>
+          </a>
+          <p>The beautiful, modern Sudoku game for Android &amp; iOS. Train your brain daily.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <a href="./index.html">Home</a>
+          <a href="./features.html">Features</a>
+          <a href="./how-to-play.html">How to Play</a>
+          <a href="./screenshots.html">Screenshots</a>
+        </div>
+        <div class="footer-col">
+          <h4>More</h4>
+          <a href="./faq.html">FAQ</a>
+          <a href="./download.html">Download</a>
+          <a href="./privacy.html">Privacy Policy</a>
+          <a href="https://github.com/salistar/sudo-sally/releases/latest" rel="noopener">GitHub Releases</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Sudoku Sally</span>
+        <span class="made">Made with <b>♥</b> using React Native &amp; Expo</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/main.js"></script>
+</body>
+</html>
