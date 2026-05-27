@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/salistar/sudo-sally.git}"
-REPO_DIR="${REPO_DIR:-/opt/sudo-sally}"
+REPO_DIR="${REPO_DIR:-$HOME/apps/sudo-sally}"
 BRANCH="${BRANCH:-main}"
 
 echo "▶ Deploying $REPO_URL ($BRANCH) → $REPO_DIR"
@@ -39,5 +39,6 @@ docker image prune -f >/dev/null 2>&1 || true
 echo "▶ Status:"
 docker compose -f docker-compose.prod.yml ps
 
-echo "✅ Done. Site should be reachable via the Cloudflare Tunnel at https://sudoku.gowithsally.com"
-echo "   (ensure the ingress rule from deploy/cloudflared-ingress.example.yml is in place)"
+echo "✅ Done. The landing container is on the 'gowithsally_gws-net' edge network."
+echo "   Caddy (gws-caddy) serves https://sudoku.gowithsally.com → sudoku-landing:80"
+echo "   (ensure the Caddy block from deploy/Caddyfile.snippet is added + DNS A record exists)"

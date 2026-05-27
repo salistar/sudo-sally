@@ -1,5 +1,12 @@
 name: sudoku-sally
 
+# Production stack for server 2 (gowithsally-prod, 88.198.205.229).
+# The box already runs a Caddy reverse proxy (container `gws-caddy`) on the
+# external Docker network `gowithsally_gws-net`, with automatic HTTPS.
+# We attach ONLY the landing container to that edge network so Caddy can
+# reverse_proxy sudoku.gowithsally.com → sudoku-landing:80.
+# api + mongo stay on a private internal network. No host ports are published.
+
 services:
   api:
     build: ../backend
@@ -36,13 +43,9 @@ services:
     depends_on:
       - api
     networks:
-      - sudoku
-    # Cloudflare Tunnel reaches the site here (no public port is opened).
-    # If cloudflared runs as a HOST service → it hits 127.0.0.1:8091.
-    # If cloudflared runs as a CONTAINER → attach it to the `sudoku_net`
-    #   network instead and point the ingress at http://sudoku-landing:80.
-    ports:
-      - "127.0.0.1:8091:80"
+      - sudoku          # to reach sudoku-api (proxy /api & /socket.io)
+      - edge            # so gws-caddy can reach it
+    # No host ports: Caddy (on the edge network) fronts it on 443.
 
 volumes:
   sudoku_mongo_data:
@@ -50,3 +53,6 @@ volumes:
 networks:
   sudoku:
     name: sudoku_net
+  edge:
+    name: gowithsally_gws-net
+    external: true
