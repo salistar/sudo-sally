@@ -54,6 +54,7 @@ tmp="$(mktemp)"
 if curl -fsSL "$APK_URL" -o "$tmp" && [ -s "$tmp" ]; then
   docker exec sudoku-landing mkdir -p /usr/share/nginx/html/downloads
   docker cp "$tmp" sudoku-landing:/usr/share/nginx/html/downloads/sudoku-sally.apk
+  docker exec sudoku-landing chmod 644 /usr/share/nginx/html/downloads/sudoku-sally.apk
   echo "  ✓ APK staged ($(du -h "$tmp" | cut -f1))"
 else
   echo "  ⚠ APK download failed — skipping (download page will fall back to GitHub Releases)"

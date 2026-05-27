@@ -29,7 +29,14 @@ db.sudoku.gowithsally.com {
 	reverse_proxy sudoku-mongo-ui:8081
 }
 
+# redis-commander does not reliably enforce its own auth, so Caddy guards it.
+# Generate the hash:  docker exec sudoku-api node -e "console.log(require('bcryptjs').hashSync('<UI_PASS>',12))"
+# NOTE: after adding/changing basic_auth, RESTART caddy (a plain reload may not
+# re-init the auth handler):  docker restart gws-caddy
 cache.sudoku.gowithsally.com {
 	encode gzip zstd
+	basic_auth {
+		sally <bcrypt-hash-of-UI_PASS>
+	}
 	reverse_proxy sudoku-redis-ui:8081
 }
