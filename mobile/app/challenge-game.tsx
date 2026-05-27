@@ -35,8 +35,11 @@ interface Challenge {
   winner?: { _id: string; username: string };
 }
 
-// In dev, reuse the IP the device used to reach Metro (auto-tracks machine IP).
-const API_URL = `http://${Constants.expoConfig?.hostUri?.split(':')[0] ?? '192.168.1.9'}:3101/api`;
+// PRODUCTION API by default (works on any network, incl. 4G). Flip to local for dev.
+const USE_LOCAL_BACKEND = false;
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const API_URL =
+  (USE_LOCAL_BACKEND && devHost ? `http://${devHost}:3101` : 'https://api.sudoku.gowithsally.com') + '/api';
 
 export default function ChallengeGame() {
   const { id } = useLocalSearchParams<{ id: string }>();
