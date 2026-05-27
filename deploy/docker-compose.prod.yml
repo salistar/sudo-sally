@@ -15,10 +15,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3001"
-      MONGODB_URI: mongodb://mongo:27017/sudoku_sally
+      MONGODB_URI: mongodb://sudoku-mongo:27017/sudoku_sally
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in deploy/.env.prod}
       JWT_EXPIRE: 30d
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379   # ready for future caching
+      REDIS_URL: redis://:${REDIS_PASSWORD}@sudoku-redis:6379   # ready for future caching
     depends_on:
       - mongo
     networks:
@@ -80,7 +80,7 @@ services:
     container_name: sudoku-mongo-ui
     restart: unless-stopped
     environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_MONGODB_URL: mongodb://sudoku-mongo:27017
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_BASICAUTH_USERNAME: ${UI_USER:?UI_USER must be set}
       ME_CONFIG_BASICAUTH_PASSWORD: ${UI_PASS:?UI_PASS must be set}
@@ -97,7 +97,7 @@ services:
     container_name: sudoku-redis-ui
     restart: unless-stopped
     environment:
-      REDIS_HOSTS: "local:redis:6379:0:${REDIS_PASSWORD}"
+      REDIS_HOSTS: "local:sudoku-redis:6379:0:${REDIS_PASSWORD}"
       HTTP_USER: ${UI_USER:?UI_USER must be set}
       HTTP_PASSWORD: ${UI_PASS:?UI_PASS must be set}
     depends_on:
