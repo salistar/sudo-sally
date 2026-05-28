@@ -122,7 +122,13 @@ class SocketService {
       'challenge:result',
       'opponent:progress',
       'player:completed',
-      'player:abandoned'
+      'player:abandoned',
+      // ── NEW: chat + WebRTC signaling ──
+      'chat:message',
+      'webrtc:offer',
+      'webrtc:answer',
+      'webrtc:ice',
+      'call:end',
     ];
 
     events.forEach(event => {

@@ -22,9 +22,9 @@ const { width } = Dimensions.get('window');
 // we override #root max-width to 1100px in a useEffect below; on native we
 // already have the device's full width. Cells stay readable on phones.
 const IS_WEB = Platform.OS === 'web';
-// Big cells now that boards are STACKED vertically (one after the other).
-// On web we'll override #root to be full-width so each 9*60 = 540px board fits easily.
-const CELL_SIZE = IS_WEB ? 60 : Math.max(22, Math.floor((Math.min(width, 480) - 24) / 9));
+// Cells sized so BOTH boards + the bottom deck + top call bar all fit on
+// a typical desktop viewport without the deck "eating" the boards.
+const CELL_SIZE = IS_WEB ? 42 : Math.max(22, Math.floor((Math.min(width, 480) - 24) / 9));
 
 type Board = (number | null)[][];
 
@@ -47,32 +47,60 @@ const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const API_URL =
   (USE_LOCAL_BACKEND && devHost ? `http://${devHost}:3101` : 'https://api.sudoku.gowithsally.com') + '/api';
 
-// ============ SOCIAL BRAND BUTTON ============
-const BRANDS: Record<string, { color: string; icon: string; name: string; grad?: [string, string] }> = {
-  facebook:  { color: '#1877F2', icon: 'f',  name: 'Facebook' },
-  instagram: { color: '#E1306C', icon: '📷', name: 'Instagram', grad: ['#F58529', '#DD2A7B'] },
-  tiktok:    { color: '#010101', icon: '♪',  name: 'TikTok' },
-  youtube:   { color: '#FF0000', icon: '▶',  name: 'YouTube' },
-  linkedin:  { color: '#0A66C2', icon: 'in', name: 'LinkedIn' },
-  twitter:   { color: '#000000', icon: '𝕏',  name: 'X / Twitter' },
+// ============ SOCIAL BRAND BUTTON — real SVG icons + brand colors ============
+import Svg, { Path, Circle, Rect, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+
+function FacebookIcon()  { return (<Svg viewBox="0 0 24 24" width={28} height={28}><Path fill="#fff" d="M13.5 21v-7.5h2.55l.38-2.97H13.5V8.75c0-.86.24-1.45 1.47-1.45H16.5V4.65c-.27-.04-1.18-.12-2.24-.12-2.21 0-3.72 1.35-3.72 3.83v2.17H8v2.97h2.54V21h2.96z"/></Svg>); }
+function InstagramIcon() {
+  return (
+    <Svg viewBox="0 0 24 24" width={28} height={28}>
+      <Defs>
+        <SvgLinearGradient id="ig" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#feda75"/><Stop offset=".25" stopColor="#fa7e1e"/><Stop offset=".55" stopColor="#d62976"/><Stop offset=".85" stopColor="#962fbf"/><Stop offset="1" stopColor="#4f5bd5"/>
+        </SvgLinearGradient>
+      </Defs>
+      <Rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/>
+      <Rect x="5.5" y="5.5" width="13" height="13" rx="4" stroke="#fff" strokeWidth="1.6" fill="none"/>
+      <Circle cx="12" cy="12" r="3.4" stroke="#fff" strokeWidth="1.6" fill="none"/>
+      <Circle cx="17.2" cy="6.8" r="1" fill="#fff"/>
+    </Svg>
+  );
+}
+function TiktokIcon() {
+  return (
+    <Svg viewBox="0 0 24 24" width={28} height={28}>
+      <Path fill="#25F4EE" d="M16.6 5.82A4.83 4.83 0 0 1 15.43 3h-2.74v11.93a2.42 2.42 0 1 1-2.42-2.42c.13 0 .26.02.38.04V9.79a5.27 5.27 0 0 0-.38-.02 5.16 5.16 0 1 0 5.16 5.16V8.94a7.55 7.55 0 0 0 4.4 1.41V7.6a4.54 4.54 0 0 1-3.23-1.78z"/>
+      <Path fill="#FE2C55" d="M17.85 7.13A4.83 4.83 0 0 1 16.6 4.4h-1.17a4.54 4.54 0 0 0 3.23 3.97V7.13z" opacity=".9"/>
+    </Svg>
+  );
+}
+function YoutubeIcon()  { return (<Svg viewBox="0 0 24 24" width={28} height={28}><Path fill="#fff" d="M21.6 7.2s-.19-1.35-.78-1.94c-.74-.77-1.57-.78-1.95-.82C16.13 4.2 12 4.2 12 4.2h-.01s-4.12 0-6.86.24c-.38.05-1.21.05-1.95.82C2.59 5.85 2.4 7.2 2.4 7.2S2.2 8.79 2.2 10.39v1.49c0 1.59.2 3.19.2 3.19s.19 1.35.78 1.94c.74.77 1.71.74 2.14.82 1.56.15 6.6.2 6.6.2s4.13-.01 6.87-.25c.38-.05 1.21-.05 1.95-.82.59-.59.78-1.94.78-1.94s.2-1.59.2-3.19v-1.49c0-1.59-.2-3.19-.2-3.19zM9.93 13.58V8.13l5.31 2.74-5.31 2.71z"/></Svg>); }
+function LinkedinIcon() { return (<Svg viewBox="0 0 24 24" width={28} height={28}><Path fill="#fff" d="M6.94 5a1.94 1.94 0 1 1-3.88 0 1.94 1.94 0 0 1 3.88 0zM7 8.48H3V21h4V8.48zM13.32 8.48H9.34V21h3.94v-6.57c0-3.66 4.78-4 4.78 0V21H22v-7.93c0-6.17-7.06-5.94-8.68-2.91v-1.68z"/></Svg>); }
+function XIcon()        { return (<Svg viewBox="0 0 24 24" width={28} height={28}><Path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></Svg>); }
+
+const BRANDS: Record<string, { color: string; bg?: string; Icon: React.FC; name: string; grad?: [string, string] }> = {
+  facebook:  { color: '#1877F2', Icon: FacebookIcon,  name: 'Facebook' },
+  instagram: { color: '#E1306C', Icon: InstagramIcon, name: 'Instagram', bg: 'transparent' },
+  tiktok:    { color: '#010101', Icon: TiktokIcon,    name: 'TikTok' },
+  youtube:   { color: '#FF0000', Icon: YoutubeIcon,   name: 'YouTube' },
+  linkedin:  { color: '#0A66C2', Icon: LinkedinIcon,  name: 'LinkedIn' },
+  twitter:   { color: '#000000', Icon: XIcon,         name: 'X' },
 };
 function SocialBtn({ brand, label, onPress }: { brand: keyof typeof BRANDS; label?: string; onPress: () => void }) {
   const b = BRANDS[brand];
-  const Wrap: any = b.grad ? LinearGradient : View;
-  const wrapProps: any = b.grad ? { colors: b.grad, start:{x:0,y:0}, end:{x:1,y:1} } : { style: { backgroundColor: b.color } };
+  const Icon = b.Icon;
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={socStyles.btn}>
-      <Wrap {...wrapProps} style={[socStyles.iconBox, !b.grad && { backgroundColor: b.color }]}>
-        <Text style={socStyles.icon}>{b.icon}</Text>
-      </Wrap>
+      <View style={[socStyles.iconBox, { backgroundColor: b.bg || b.color }]}>
+        <Icon />
+      </View>
       <Text style={socStyles.label}>{label || b.name}</Text>
     </TouchableOpacity>
   );
 }
 const socStyles = StyleSheet.create({
-  btn: { alignItems: 'center', width: 86, gap: 6 },
-  iconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-  icon: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  btn: { alignItems: 'center', width: 78, gap: 6 },
+  iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
   label: { color: '#cbd5e1', fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });
 
@@ -805,7 +833,7 @@ export default function ChallengeGame() {
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.scroll}>
         {/* VS Banner */}
         <View style={styles.vs}>
           <View style={styles.player}>
@@ -1110,7 +1138,8 @@ const styles = StyleSheet.create({
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
   diff: { color: '#fbbf24', fontSize: 11, backgroundColor: 'rgba(251,191,36,0.2)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
 
-  scroll: { padding: 10, paddingBottom: 30 },
+  scrollFlex: { flex: 1 },
+  scroll: { padding: 10, paddingBottom: 20, alignItems: 'center' },
 
   vs: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 14, marginBottom: 12 },
   player: { alignItems: 'center', flex: 1 },
