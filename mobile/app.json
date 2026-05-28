@@ -24,9 +24,16 @@
         "backgroundColor": "#0a0a1a"
       }
     },
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
+    },
     "plugins": [
       "@react-native-google-signin/google-signin",
-      "expo-asset"
+      "expo-asset",
+      "expo-router"
     ]
   }
 }
