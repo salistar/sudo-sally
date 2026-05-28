@@ -18,7 +18,10 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
-const CELL_SIZE = Math.floor((width - 60) / 9 / 2);
+// Clamp width to 480px so the dual-board layout looks right on a wide browser
+// (matches the #root max-width in app/+html.tsx).
+const EFFECTIVE_W = Math.min(width, 480);
+const CELL_SIZE = Math.floor((EFFECTIVE_W - 60) / 9 / 2);
 
 type Board = (number | null)[][];
 
