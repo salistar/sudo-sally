@@ -38,6 +38,8 @@ if [ -n "${JWT_SECRET:-}" ]; then
     printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD:-}"
     printf 'UI_USER=%s\n'        "${UI_USER:-sally}"
     printf 'UI_PASS=%s\n'        "${UI_PASS:-}"
+    printf 'TURN_SHARED_SECRET=%s\n' "${TURN_SHARED_SECRET:-}"
+    printf 'TURN_HOST=%s\n'      "${TURN_HOST:-turn.salistar.com}"
   } > .env.prod
   chmod 600 .env.prod
 fi

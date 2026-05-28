@@ -24,7 +24,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: JWT_SECRET,REDIS_PASSWORD,UI_USER,UI_PASS
+          envs: JWT_SECRET,REDIS_PASSWORD,UI_USER,UI_PASS,TURN_SHARED_SECRET
           script: |
             set -euo pipefail
             REPO_DIR="$HOME/apps/sudo-sally"
@@ -42,3 +42,4 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           UI_USER: ${{ secrets.UI_USER }}
           UI_PASS: ${{ secrets.UI_PASS }}
+          TURN_SHARED_SECRET: ${{ secrets.TURN_SHARED_SECRET }}
