@@ -529,10 +529,28 @@ export default function ChallengeGame() {
   };
 
   // ─────────── REAL WebRTC AUDIO/VIDEO CALL ───────────
+  // STUN to discover public IPs + free TURN relay (OpenRelay by Metered) for
+  // cross-NAT cases where STUN alone isn't enough.
   const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
   ];
+  const [callStatus, setCallStatus] = useState<'idle'|'calling'|'incoming'|'connecting'|'connected'|'failed'>('idle');
+
+  // Attach the latest stream to a <video>/<audio> whenever EITHER the ref or
+  // the stream changes (React refs attach AFTER render, so we can't rely on
+  // ref being non-null when onTrack fires).
+  function attachLocal(el: any) {
+    localVidRef.current = el;
+    if (el && localStreamRef.current && el.srcObject !== localStreamRef.current) el.srcObject = localStreamRef.current;
+  }
+  function attachRemote(el: any) {
+    remoteVidRef.current = el;
+    if (el && remoteStreamRef.current && el.srcObject !== remoteStreamRef.current) el.srcObject = remoteStreamRef.current;
+  }
 
   function createPeer() {
     if (typeof window === 'undefined') return null;
@@ -543,8 +561,16 @@ export default function ChallengeGame() {
     pc.ontrack = (e: any) => {
       remoteStreamRef.current = e.streams[0];
       if (remoteVidRef.current) remoteVidRef.current.srcObject = e.streams[0];
+      console.log('[webrtc] remote stream attached, tracks=', e.streams[0].getTracks().map((t: any) => t.kind));
+    };
+    pc.oniceconnectionstatechange = () => {
+      console.log('[webrtc] iceConnectionState =', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') setCallStatus('connected');
+      if (pc.iceConnectionState === 'failed') setCallStatus('failed');
     };
     pc.onconnectionstatechange = () => {
+      console.log('[webrtc] connectionState =', pc.connectionState);
+      if (pc.connectionState === 'connected') setCallStatus('connected');
       if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) hangup(false);
     };
     return pc;
@@ -566,6 +592,7 @@ export default function ChallengeGame() {
     try {
       setCallKind(video ? 'video' : 'audio');
       setCallActive(true);
+      setCallStatus('calling');
       setCallError(null);
       const pc = createPeer();
       if (!pc) return;
@@ -575,7 +602,9 @@ export default function ChallengeGame() {
       const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
       await pc.setLocalDescription(offer);
       socketService.emitWebRTCOffer(challengeId, offer);
+      console.log('[webrtc] offer sent for challenge', challengeId, 'video=', video);
     } catch (e: any) {
+      console.log('[webrtc] startCall error:', e?.message || e);
       setCallError(String(e?.message || e));
       setPopup({ type: 'error', title: 'Call failed', message: String(e?.message || e) });
       hangup(false);
@@ -588,8 +617,10 @@ export default function ChallengeGame() {
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     pcRef.current = null;
+    pendingIceRef.current = [];
     if (notify) socketService.emitCallEnd(challengeId);
     setCallActive(false);
+    setCallStatus('idle');
     setCallError(null);
   }
 
@@ -598,15 +629,16 @@ export default function ChallengeGame() {
     if (typeof window === 'undefined') return;
     try {
       const video = !!data?.sdp?.sdp?.includes('m=video');
+      console.log('[webrtc] incoming offer (video=', video, ')');
       setCallKind(video ? 'video' : 'audio');
       setCallActive(true);
+      setCallStatus('connecting');
       const pc = createPeer();
       if (!pc) return;
       pcRef.current = pc;
       const stream = await ensureLocalMedia(video);
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
       await pc.setRemoteDescription(new (window as any).RTCSessionDescription(data.sdp));
-      // drain any ICE that arrived before remote desc
       for (const cand of pendingIceRef.current) {
         try { await pc.addIceCandidate(new (window as any).RTCIceCandidate(cand)); } catch {}
       }
@@ -614,7 +646,9 @@ export default function ChallengeGame() {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socketService.emitWebRTCAnswer(challengeId, answer);
+      console.log('[webrtc] answer sent');
     } catch (e: any) {
+      console.log('[webrtc] handleOffer error:', e?.message || e);
       setCallError(String(e?.message || e));
       hangup(false);
     }
@@ -729,29 +763,45 @@ export default function ChallengeGame() {
         <Text style={styles.diff}>{challenge?.difficulty?.toUpperCase()}</Text>
       </View>
 
-      {/* ============ TOP CALL BAR — always visible (audio + video buttons + remote/local stream) ============ */}
+      {/* ============ TOP CALL BAR — always visible ============ */}
       <View style={styles.topCallBar}>
         <View style={styles.topCallBtns}>
           {!callActive ? (
             <>
+              <Text style={styles.topCallLabel}>📞 Call your opponent — STUN + free TURN relay:</Text>
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video</Text></TouchableOpacity>
             </>
           ) : (
             <>
-              <Text style={[styles.callText, { color:'#4ade80', marginRight: 12 }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call</Text>
+              <View style={[styles.callStatusDot, callStatus === 'connected' && { backgroundColor: '#4ade80' }, callStatus === 'calling' && { backgroundColor: '#fbbf24' }, callStatus === 'failed' && { backgroundColor: '#ef4444' }]} />
+              <Text style={[styles.callText, { color:'#fff', marginRight: 12 }]}>
+                {callKind === 'video' ? '📹 Video' : '📞 Audio'} —{' '}
+                {callStatus === 'calling' ? 'ringing opponent…' :
+                 callStatus === 'connecting' ? 'connecting…' :
+                 callStatus === 'connected' ? 'connected ✓' :
+                 callStatus === 'failed' ? 'failed' : 'active'}
+              </Text>
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#ef4444' }]} onPress={() => hangup(true)}><Text style={styles.callIcon}>📵</Text><Text style={styles.callText}>Hang up</Text></TouchableOpacity>
             </>
           )}
         </View>
-        {callActive && callKind === 'video' && Platform.OS === 'web' && (
+        {callActive && Platform.OS === 'web' && (
           <View style={styles.topCallVideos}>
-            {React.createElement('video', { ref: localVidRef, autoPlay: true, playsInline: true, muted: true, style: { width: 160, height: 110, borderRadius: 10, background: '#000', objectFit: 'cover' } })}
-            {React.createElement('video', { ref: remoteVidRef, autoPlay: true, playsInline: true, style: { width: 160, height: 110, borderRadius: 10, background: '#000', objectFit: 'cover' } })}
+            {/* Local video (or hidden for audio-only). Muted to avoid echo. */}
+            {React.createElement('video', { ref: attachLocal, autoPlay: true, playsInline: true, muted: true,
+              style: { width: callKind === 'video' ? 180 : 0, height: callKind === 'video' ? 120 : 0, borderRadius: 10, background: '#000', objectFit: 'cover', display: callKind === 'video' ? 'block' : 'none' } })}
+            {/* Remote: always rendered. As <video> for video, as visible avatar+<audio> for audio. */}
+            {callKind === 'video'
+              ? React.createElement('video', { ref: attachRemote, autoPlay: true, playsInline: true,
+                  style: { width: 180, height: 120, borderRadius: 10, background: '#000', objectFit: 'cover' } })
+              : (<View style={styles.audioRemoteWrap}>
+                  <Text style={styles.audioRemoteIcon}>🔊</Text>
+                  <Text style={styles.audioRemoteName}>{opponent?.username || 'opponent'}</Text>
+                  {React.createElement('audio', { ref: attachRemote, autoPlay: true, style: { display: 'none' } })}
+                </View>)
+            }
           </View>
-        )}
-        {callActive && callKind === 'audio' && Platform.OS === 'web' && (
-          <View>{React.createElement('audio', { ref: remoteVidRef, autoPlay: true, style: { display: 'none' } })}</View>
         )}
       </View>
 
@@ -1156,10 +1206,15 @@ const styles = StyleSheet.create({
   videoRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
 
   // ============ TOP CALL BAR ============
-  topCallBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, paddingHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', gap: 12, flexWrap: 'wrap' },
+  topCallBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, paddingHorizontal: 20, backgroundColor: 'rgba(17,17,40,0.6)', borderBottomWidth: 1, borderBottomColor: 'rgba(74,222,128,0.15)', gap: 12, flexWrap: 'wrap' },
   topCallBtns: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   topCallVideos: { flexDirection: 'row', gap: 10 },
+  topCallLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginRight: 6 },
   callBtnSm: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
+  callStatusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fbbf24', marginRight: 6 },
+  audioRemoteWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: 'rgba(74,222,128,0.12)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' },
+  audioRemoteIcon: { fontSize: 20 },
+  audioRemoteName: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   // ============ BOTTOM DECK (always visible: Chat | Record | Go Live) ============
   deck: { flexDirection: 'row', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
