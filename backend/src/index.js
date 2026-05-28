@@ -30,6 +30,7 @@ const dailyRoutes = require('./routes/daily');
 const shopRoutes = require('./routes/shop');
 const statsRoutes = require('./routes/stats');
 const challengeRoutes = require('./routes/challenges');
+const turnRoutes = require('./routes/turn');
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/api/stats', statsRoutes);
 
 // NEW: Challenge routes
 app.use('/api/challenges', challengeRoutes);
+app.use('/api', turnRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

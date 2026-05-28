@@ -557,15 +557,26 @@ export default function ChallengeGame() {
   };
 
   // ─────────── REAL WebRTC AUDIO/VIDEO CALL ───────────
-  // STUN to discover public IPs + free TURN relay (OpenRelay by Metered) for
-  // cross-NAT cases where STUN alone isn't enough.
-  const ICE_SERVERS = [
+  // ICE servers are fetched at runtime from /api/turn-creds (STUN + time-limited
+  // TURN credentials on turn.salistar.com, our own coturn). OpenRelay removed.
+  const [iceServers, setIceServers] = useState<any[]>([
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-  ];
+  ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('https://api.sudoku.gowithsally.com/api/turn-creds');
+        if (r.ok) {
+          const d = await r.json();
+          if (Array.isArray(d?.iceServers) && d.iceServers.length) {
+            setIceServers(d.iceServers);
+            console.log('[webrtc] ICE servers loaded:', d.iceServers.map((s: any) => s.urls));
+          }
+        }
+      } catch (e) { console.log('[webrtc] turn-creds fetch failed', e); }
+    })();
+  }, []);
   const [callStatus, setCallStatus] = useState<'idle'|'calling'|'incoming'|'connecting'|'connected'|'failed'>('idle');
 
   // Attach the latest stream to a <video>/<audio> whenever EITHER the ref or
@@ -582,7 +593,7 @@ export default function ChallengeGame() {
 
   function createPeer() {
     if (typeof window === 'undefined') return null;
-    const pc = new (window as any).RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new (window as any).RTCPeerConnection({ iceServers });
     pc.onicecandidate = (e: any) => {
       if (e.candidate) socketService.emitWebRTCIce(challengeId, e.candidate);
     };
@@ -833,6 +844,7 @@ export default function ChallengeGame() {
         )}
       </View>
 
+      <View style={styles.bodyRow}>
       <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.scroll}>
         {/* VS Banner */}
         <View style={styles.vs}>
@@ -950,9 +962,7 @@ export default function ChallengeGame() {
         </View>
       </Modal>
 
-      <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
-
-      {/* ============ PERMANENT BOTTOM DECK — chat | record | go-live (all visible at once) ============ */}
+      {/* ============ RIGHT SIDEBAR — chat / record / go-live (web), bottom row on mobile ============ */}
       <View style={styles.deck}>
         {/* CHAT — left */}
         <View style={[styles.deckCol, styles.deckChat]}>
@@ -1007,6 +1017,9 @@ export default function ChallengeGame() {
           </View>
         </View>
       </View>
+      </View>{/* bodyRow */}
+
+      <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
 
       {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL (legacy — kept hidden) ============ */}
       <Modal visible={false} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
@@ -1245,15 +1258,22 @@ const styles = StyleSheet.create({
   audioRemoteIcon: { fontSize: 20 },
   audioRemoteName: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
-  // ============ BOTTOM DECK (always visible: Chat | Record | Go Live) ============
-  deck: { flexDirection: 'row', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
-  deckCol: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 10, gap: 8 },
-  deckChat: { flex: 2 },
-  deckRec: { flex: 1 },
-  deckLive: { flex: 2 },
+  // ============ BODY ROW — web: ScrollView (main) | deck (right sidebar) ============
+  bodyRow: IS_WEB
+    ? { flex: 1, flexDirection: 'row', alignItems: 'stretch', minHeight: 0 }
+    : { flex: 1, flexDirection: 'column' },
+
+  // ============ DECK — chat / record / live ============
+  deck: IS_WEB
+    ? { width: 360, flexDirection: 'column', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.08)' }
+    : { flexDirection: 'row', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
+  deckCol: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 12, gap: 8, ...(IS_WEB ? {} : { flex: 1 }) },
+  deckChat: IS_WEB ? { flex: 2 } : { flex: 2 },
+  deckRec: { },
+  deckLive: { },
   deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
-  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: 130, minHeight: 80 },
+  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: IS_WEB ? 200 : 130, minHeight: 80, flexGrow: IS_WEB ? 1 : 0 },
   deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
 
   // ============ SOCIAL GRID ============
