@@ -22,8 +22,9 @@ const { width } = Dimensions.get('window');
 // we override #root max-width to 1100px in a useEffect below; on native we
 // already have the device's full width. Cells stay readable on phones.
 const IS_WEB = Platform.OS === 'web';
-// Big, prominent cells: ~52px on web (two 9x52 = 468px boards fit comfortably in 1100px root)
-const CELL_SIZE = IS_WEB ? 52 : Math.max(22, Math.floor((Math.min(width, 700) - 60) / 9 / 2));
+// Big cells now that boards are STACKED vertically (one after the other).
+// On web we'll override #root to be full-width so each 9*60 = 540px board fits easily.
+const CELL_SIZE = IS_WEB ? 60 : Math.max(22, Math.floor((Math.min(width, 480) - 24) / 9));
 
 type Board = (number | null)[][];
 
@@ -131,8 +132,9 @@ export default function ChallengeGame() {
     const root = document.getElementById('root');
     if (!root) return;
     const prev = root.style.maxWidth;
-    root.style.maxWidth = '1100px';
-    return () => { if (root) root.style.maxWidth = prev || ''; };
+    root.style.maxWidth = 'none';
+    root.style.width = '100%';
+    return () => { if (root) { root.style.maxWidth = prev || ''; root.style.width = ''; } };
   }, []);
 
   // ============ INIT ============
@@ -727,6 +729,32 @@ export default function ChallengeGame() {
         <Text style={styles.diff}>{challenge?.difficulty?.toUpperCase()}</Text>
       </View>
 
+      {/* ============ TOP CALL BAR — always visible (audio + video buttons + remote/local stream) ============ */}
+      <View style={styles.topCallBar}>
+        <View style={styles.topCallBtns}>
+          {!callActive ? (
+            <>
+              <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video</Text></TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.callText, { color:'#4ade80', marginRight: 12 }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call</Text>
+              <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#ef4444' }]} onPress={() => hangup(true)}><Text style={styles.callIcon}>📵</Text><Text style={styles.callText}>Hang up</Text></TouchableOpacity>
+            </>
+          )}
+        </View>
+        {callActive && callKind === 'video' && Platform.OS === 'web' && (
+          <View style={styles.topCallVideos}>
+            {React.createElement('video', { ref: localVidRef, autoPlay: true, playsInline: true, muted: true, style: { width: 160, height: 110, borderRadius: 10, background: '#000', objectFit: 'cover' } })}
+            {React.createElement('video', { ref: remoteVidRef, autoPlay: true, playsInline: true, style: { width: 160, height: 110, borderRadius: 10, background: '#000', objectFit: 'cover' } })}
+          </View>
+        )}
+        {callActive && callKind === 'audio' && Platform.OS === 'web' && (
+          <View>{React.createElement('audio', { ref: remoteVidRef, autoPlay: true, style: { display: 'none' } })}</View>
+        )}
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* VS Banner */}
         <View style={styles.vs}>
@@ -846,16 +874,64 @@ export default function ChallengeGame() {
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
 
-      {/* ============ FLOATING TOOLS BUTTON ============ */}
-      <TouchableOpacity style={styles.fab} onPress={() => setPanelOpen(true)} activeOpacity={0.85}>
-        <Text style={styles.fabIcon}>💬</Text>
-        {chatMessages.length > 0 && (
-          <View style={styles.fabBadge}><Text style={styles.fabBadgeText}>{chatMessages.length}</Text></View>
-        )}
-      </TouchableOpacity>
+      {/* ============ PERMANENT BOTTOM DECK — chat | record | go-live (all visible at once) ============ */}
+      <View style={styles.deck}>
+        {/* CHAT — left */}
+        <View style={[styles.deckCol, styles.deckChat]}>
+          <Text style={styles.deckTitle}>💬 Chat</Text>
+          <ScrollView style={styles.deckChatList} contentContainerStyle={{ padding: 10, gap: 6 }}>
+            {chatMessages.length === 0 && <Text style={styles.deckEmpty}>Say hi to {opponent?.username || 'your opponent'}…</Text>}
+            {chatMessages.map(m => {
+              const mine = m.from === (currentUser?.username || 'You');
+              return (
+                <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
+                  <Text style={styles.chatFrom}>{m.from}</Text>
+                  {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
+                  {!!m.img && <Text style={[styles.chatText, { fontStyle:'italic', opacity:0.7 }]}>📷 image</Text>}
+                </View>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.chatInputRow}>
+            <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={{ fontSize: 16 }}>📎</Text></TouchableOpacity>
+            <TextInput value={chatInput} onChangeText={setChatInput} placeholder="Type a message…" placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
+            <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700', fontSize:12 }}>Send</Text></TouchableOpacity>
+          </View>
+        </View>
 
-      {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL ============ */}
-      <Modal visible={panelOpen} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
+        {/* RECORD — middle */}
+        <View style={[styles.deckCol, styles.deckRec]}>
+          <Text style={styles.deckTitle}>🎙️ Record</Text>
+          <Text style={styles.deckHint}>Capture your microphone during the match. Download as .webm.</Text>
+          <View style={styles.callRow}>
+            {!isRecording ? (
+              <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={startRecording}><Text style={styles.callIcon}>🔴</Text><Text style={styles.callText}>Start</Text></TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#fbbf24' }]} onPress={stopRecording}><Text style={styles.callIcon}>⏹️</Text><Text style={styles.callText}>Stop</Text></TouchableOpacity>
+            )}
+            {recordedUrl && (
+              <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#4ade80' }]} onPress={downloadRecording}><Text style={styles.callIcon}>⬇️</Text><Text style={styles.callText}>Download</Text></TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* GO LIVE / SHARE — right */}
+        <View style={[styles.deckCol, styles.deckLive]}>
+          <Text style={styles.deckTitle}>🔴 Go Live · ↗️ Share</Text>
+          <Text style={styles.deckHint}>Each button opens the platform's "create live" or "share" page.</Text>
+          <View style={styles.socialGrid}>
+            <SocialBtn brand="youtube" label="YouTube" onPress={() => openExt(LIVE_LINKS.youtube)} />
+            <SocialBtn brand="facebook" label="Facebook" onPress={() => openExt(LIVE_LINKS.facebook)} />
+            <SocialBtn brand="tiktok" label="TikTok" onPress={() => openExt(LIVE_LINKS.tiktok)} />
+            <SocialBtn brand="instagram" label="Instagram" onPress={() => openExt(LIVE_LINKS.instagram)} />
+            <SocialBtn brand="linkedin" label="LinkedIn" onPress={() => openExt(LIVE_LINKS.linkedin)} />
+            <SocialBtn brand="twitter" label="Share on X" onPress={() => openExt(SHARE_LINKS.twitter)} />
+          </View>
+        </View>
+      </View>
+
+      {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL (legacy — kept hidden) ============ */}
+      <Modal visible={false} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
         <View style={styles.panelOverlay}>
           <View style={styles.panelCard}>
             {/* tabs */}
@@ -994,8 +1070,9 @@ const styles = StyleSheet.create({
   done: { color: '#4ade80', fontSize: 11, marginTop: 3, fontWeight: '600' },
   vsText: { color: '#ef4444', fontWeight: '800', fontSize: 14 },
 
-  boards: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 16 },
-  boardWrap: { alignItems: 'center' }, // no flex:1 — let the boards keep their natural CELL_SIZE*9 width
+  // Stacked layout: ONE board after the other (vertical column), centered horizontally.
+  boards: { flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 20 },
+  boardWrap: { alignItems: 'center' },
   boardLabel: { color: '#64748b', fontSize: 11, marginBottom: 6 },
   board: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 2 },
   opponentBoard: { opacity: 0.8 },
@@ -1077,6 +1154,23 @@ const styles = StyleSheet.create({
   callIcon: { fontSize: 26 },
   callText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   videoRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
+
+  // ============ TOP CALL BAR ============
+  topCallBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, paddingHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', gap: 12, flexWrap: 'wrap' },
+  topCallBtns: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  topCallVideos: { flexDirection: 'row', gap: 10 },
+  callBtnSm: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
+
+  // ============ BOTTOM DECK (always visible: Chat | Record | Go Live) ============
+  deck: { flexDirection: 'row', gap: 10, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
+  deckCol: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 10, gap: 8 },
+  deckChat: { flex: 2 },
+  deckRec: { flex: 1 },
+  deckLive: { flex: 2 },
+  deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
+  deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
+  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: 130, minHeight: 80 },
+  deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
 
   // ============ SOCIAL GRID ============
   socialGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center', paddingVertical: 10 },

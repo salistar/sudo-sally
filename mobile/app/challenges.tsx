@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  RefreshControl, ActivityIndicator, Modal
+  RefreshControl, ActivityIndicator, Modal, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -68,6 +68,17 @@ export default function Challenges() {
     totalChallenges: 0, 
     winRate: 0 
   });
+
+  // ============ WEB — widen the #root so all tabs (Online/Received/Sent/Active/History) fit ============
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const root = document.getElementById('root');
+    if (!root) return;
+    const prev = root.style.maxWidth;
+    root.style.maxWidth = 'none';
+    root.style.width = '100%';
+    return () => { if (root) { root.style.maxWidth = prev || ''; root.style.width = ''; } };
+  }, []);
 
   // ============ INIT ============
   useEffect(() => {
