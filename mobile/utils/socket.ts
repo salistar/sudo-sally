@@ -181,6 +181,12 @@ class SocketService {
     this.socket?.emit('challenge:chat', { challengeId, ...payload });
   }
 
+  /** WebRTC signaling — relayed within the challenge room by the backend. */
+  emitWebRTCOffer(challengeId: string, sdp: any)        { this.socket?.emit('webrtc:offer',  { challengeId, sdp }); }
+  emitWebRTCAnswer(challengeId: string, sdp: any)       { this.socket?.emit('webrtc:answer', { challengeId, sdp }); }
+  emitWebRTCIce(challengeId: string, candidate: any)    { this.socket?.emit('webrtc:ice',    { challengeId, candidate }); }
+  emitCallEnd(challengeId: string)                      { this.socket?.emit('call:end',      { challengeId }); }
+
   notifyAccepted(challengeId: string) {
     this.socket?.emit('challenge:accepted', { challengeId });
   }

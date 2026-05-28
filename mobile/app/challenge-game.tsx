@@ -3,7 +3,7 @@
  * Shows both players' grids side by side in real-time
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert, Modal,
   Dimensions, ScrollView, ActivityIndicator, Platform, TextInput, Linking
@@ -19,11 +19,11 @@ import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
 // This screen needs more horizontal room than the rest of the app: on web,
-// we override #root max-width to 800px in a useEffect below; on native we
+// we override #root max-width to 1100px in a useEffect below; on native we
 // already have the device's full width. Cells stay readable on phones.
 const IS_WEB = Platform.OS === 'web';
-const EFFECTIVE_W = IS_WEB ? Math.min(width, 800) : Math.min(width, 700);
-const CELL_SIZE = Math.max(22, Math.floor((EFFECTIVE_W - 60) / 9 / 2));
+// Big, prominent cells: ~52px on web (two 9x52 = 468px boards fit comfortably in 1100px root)
+const CELL_SIZE = IS_WEB ? 52 : Math.max(22, Math.floor((Math.min(width, 700) - 60) / 9 / 2));
 
 type Board = (number | null)[][];
 
@@ -101,6 +101,16 @@ export default function ChallengeGame() {
   const [opponentCompleted, setOpponentCompleted] = useState(false);
   const [myCompleted, setMyCompleted] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  // ── WebRTC call ──
+  const [callActive, setCallActive] = useState(false);
+  const [callKind, setCallKind] = useState<'audio' | 'video'>('audio');
+  const [callError, setCallError] = useState<string | null>(null);
+  const pcRef = useRef<any>(null);
+  const localStreamRef = useRef<any>(null);
+  const remoteStreamRef = useRef<any>(null);
+  const localVidRef = useRef<any>(null);
+  const remoteVidRef = useRef<any>(null);
+  const pendingIceRef = useRef<any[]>([]);
 
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -121,7 +131,7 @@ export default function ChallengeGame() {
     const root = document.getElementById('root');
     if (!root) return;
     const prev = root.style.maxWidth;
-    root.style.maxWidth = '880px';
+    root.style.maxWidth = '1100px';
     return () => { if (root) root.style.maxWidth = prev || ''; };
   }, []);
 
@@ -138,6 +148,11 @@ export default function ChallengeGame() {
       socketService.removeAllListeners('player:abandoned');
       socketService.removeAllListeners('challenge:result');
       socketService.removeAllListeners('chat:message');
+      socketService.removeAllListeners('webrtc:offer');
+      socketService.removeAllListeners('webrtc:answer');
+      socketService.removeAllListeners('webrtc:ice');
+      socketService.removeAllListeners('call:end');
+      try { hangup(true); } catch {}
     };
   }, [challengeId]);
 
@@ -152,6 +167,12 @@ export default function ChallengeGame() {
   // ============ SOCKET LISTENERS ============
   const setupSocketListeners = () => {
     socketService.joinChallenge(challengeId);
+
+    // ── WebRTC signaling ──
+    socketService.on('webrtc:offer',  (d: any) => handleOffer(d));
+    socketService.on('webrtc:answer', (d: any) => handleAnswer(d));
+    socketService.on('webrtc:ice',    (d: any) => handleIce(d));
+    socketService.on('call:end',      () => hangup(false));
 
     // Chat messages from opponent (text + optional base64 image)
     socketService.on('chat:message', (data: any) => {
@@ -505,15 +526,109 @@ export default function ChallengeGame() {
     a.click();
   };
 
-  const startCall = async (video: boolean) => {
-    setPopup({
-      type: 'info',
-      title: video ? '📹 Video call' : '📞 Audio call',
-      message:
-        `WebRTC ${video ? 'video' : 'audio'} call signaling is wired through the socket (events: webrtc:offer/answer/ice). ` +
-        `To finalize, the app needs to capture local media and exchange SDP — UI scaffolding is in place; a full call setup is part of the next iteration.`,
-    });
-  };
+  // ─────────── REAL WebRTC AUDIO/VIDEO CALL ───────────
+  const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ];
+
+  function createPeer() {
+    if (typeof window === 'undefined') return null;
+    const pc = new (window as any).RTCPeerConnection({ iceServers: ICE_SERVERS });
+    pc.onicecandidate = (e: any) => {
+      if (e.candidate) socketService.emitWebRTCIce(challengeId, e.candidate);
+    };
+    pc.ontrack = (e: any) => {
+      remoteStreamRef.current = e.streams[0];
+      if (remoteVidRef.current) remoteVidRef.current.srcObject = e.streams[0];
+    };
+    pc.onconnectionstatechange = () => {
+      if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) hangup(false);
+    };
+    return pc;
+  }
+
+  async function ensureLocalMedia(video: boolean) {
+    if (localStreamRef.current) return localStreamRef.current;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
+    localStreamRef.current = stream;
+    setTimeout(() => { if (localVidRef.current) localVidRef.current.srcObject = stream; }, 0);
+    return stream;
+  }
+
+  const startCall = useCallback(async (video: boolean) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !(window as any).RTCPeerConnection) {
+      setPopup({ type: 'info', title: 'Calls', message: 'WebRTC calls work in the web build of the app.' });
+      return;
+    }
+    try {
+      setCallKind(video ? 'video' : 'audio');
+      setCallActive(true);
+      setCallError(null);
+      const pc = createPeer();
+      if (!pc) return;
+      pcRef.current = pc;
+      const stream = await ensureLocalMedia(video);
+      stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
+      const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
+      await pc.setLocalDescription(offer);
+      socketService.emitWebRTCOffer(challengeId, offer);
+    } catch (e: any) {
+      setCallError(String(e?.message || e));
+      setPopup({ type: 'error', title: 'Call failed', message: String(e?.message || e) });
+      hangup(false);
+    }
+  }, [challengeId]);
+
+  function hangup(notify: boolean = true) {
+    try { localStreamRef.current?.getTracks?.().forEach((t: any) => t.stop()); } catch {}
+    try { pcRef.current?.close?.(); } catch {}
+    localStreamRef.current = null;
+    remoteStreamRef.current = null;
+    pcRef.current = null;
+    if (notify) socketService.emitCallEnd(challengeId);
+    setCallActive(false);
+    setCallError(null);
+  }
+
+  // Incoming offer → answer
+  async function handleOffer(data: any) {
+    if (typeof window === 'undefined') return;
+    try {
+      const video = !!data?.sdp?.sdp?.includes('m=video');
+      setCallKind(video ? 'video' : 'audio');
+      setCallActive(true);
+      const pc = createPeer();
+      if (!pc) return;
+      pcRef.current = pc;
+      const stream = await ensureLocalMedia(video);
+      stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
+      await pc.setRemoteDescription(new (window as any).RTCSessionDescription(data.sdp));
+      // drain any ICE that arrived before remote desc
+      for (const cand of pendingIceRef.current) {
+        try { await pc.addIceCandidate(new (window as any).RTCIceCandidate(cand)); } catch {}
+      }
+      pendingIceRef.current = [];
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socketService.emitWebRTCAnswer(challengeId, answer);
+    } catch (e: any) {
+      setCallError(String(e?.message || e));
+      hangup(false);
+    }
+  }
+  async function handleAnswer(data: any) {
+    try {
+      if (!pcRef.current) return;
+      await pcRef.current.setRemoteDescription(new (window as any).RTCSessionDescription(data.sdp));
+    } catch (e) { console.log('answer err', e); }
+  }
+  async function handleIce(data: any) {
+    try {
+      if (!pcRef.current?.remoteDescription) { pendingIceRef.current.push(data.candidate); return; }
+      await pcRef.current.addIceCandidate(new (window as any).RTCIceCandidate(data.candidate));
+    } catch (e) { console.log('ice err', e); }
+  }
 
   const shareUrl = `https://sudoku.gowithsally.com`;
   const shareText = `I'm playing a real-time 1v1 Sudoku duel on Sudoku Sally!`;
@@ -783,11 +898,32 @@ export default function ChallengeGame() {
 
             {panelTab === 'call' && (
               <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Voice or video call your opponent during the match. (Signaling wired through the socket; WebRTC peer setup is in progress.)</Text>
-                <View style={styles.callRow}>
-                  <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
-                  <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video call</Text></TouchableOpacity>
-                </View>
+                {!callActive ? (
+                  <>
+                    <Text style={styles.tabHint}>Real WebRTC call with your opponent — peer-to-peer, signaled via the socket, STUN servers from Google. Allow the browser to use your microphone (and camera for video).</Text>
+                    <View style={styles.callRow}>
+                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
+                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video call</Text></TouchableOpacity>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.tabHint, { color: '#4ade80' }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call active{callError ? ` — ${callError}` : ''}</Text>
+                    {callKind === 'video' && Platform.OS === 'web' && (
+                      <View style={styles.videoRow}>
+                        {React.createElement('video', { ref: localVidRef, autoPlay: true, playsInline: true, muted: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
+                        {React.createElement('video', { ref: remoteVidRef, autoPlay: true, playsInline: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
+                      </View>
+                    )}
+                    {callKind === 'audio' && Platform.OS === 'web' && (
+                      // Hidden audio element so the remote audio actually plays
+                      <View>{React.createElement('audio', { ref: remoteVidRef, autoPlay: true, style: { display: 'none' } })}</View>
+                    )}
+                    <View style={styles.callRow}>
+                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={() => hangup(true)}><Text style={styles.callIcon}>📵</Text><Text style={styles.callText}>Hang up</Text></TouchableOpacity>
+                    </View>
+                  </>
+                )}
               </View>
             )}
 
@@ -858,8 +994,8 @@ const styles = StyleSheet.create({
   done: { color: '#4ade80', fontSize: 11, marginTop: 3, fontWeight: '600' },
   vsText: { color: '#ef4444', fontWeight: '800', fontSize: 14 },
 
-  boards: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  boardWrap: { alignItems: 'center', flex: 1 },
+  boards: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 16 },
+  boardWrap: { alignItems: 'center' }, // no flex:1 — let the boards keep their natural CELL_SIZE*9 width
   boardLabel: { color: '#64748b', fontSize: 11, marginBottom: 6 },
   board: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 2 },
   opponentBoard: { opacity: 0.8 },
@@ -940,6 +1076,7 @@ const styles = StyleSheet.create({
   callBtn: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 14, alignItems: 'center', gap: 6, minWidth: 130 },
   callIcon: { fontSize: 26 },
   callText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  videoRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
 
   // ============ SOCIAL GRID ============
   socialGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center', paddingVertical: 10 },
