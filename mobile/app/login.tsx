@@ -81,6 +81,21 @@ export default function Login() {
     setShowPassword(prev => !prev);
   }, [showPassword]);
 
+  /** One-click login for the demo accounts (idriss1 / idriss2). */
+  const quickLogin = useCallback(async (label: string, mail: string, pwd: string) => {
+    setLoading(true);
+    try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+    await new Promise(r => setTimeout(r, 200));
+    const user = await storage.login(mail, pwd);
+    setLoading(false);
+    if (user) {
+      try { await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+      router.replace('/home');
+    } else {
+      setPopup({ type: 'error', title: t('error'), message: `Login failed for ${label}.\n${mail}` });
+    }
+  }, [router, t]);
+
   const handleLogin = useCallback(async () => {
     console.log(`${FILE_NAME} 🔐 handleLogin() - Login attempt started`);
     console.log(`${FILE_NAME} 📧 handleLogin() - Email: ${email}`);
@@ -193,6 +208,33 @@ export default function Login() {
             </View>
             <Text style={styles.title}>{t('login')}</Text>
             <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
+          </View>
+
+          {/* ── Demo accounts: 1-tap login (real users in the DB) ── */}
+          <View style={styles.demoBox}>
+            <Text style={styles.demoHint}>One-tap demo · play a 1v1 between these two:</Text>
+            <View style={styles.demoRow}>
+              <TouchableOpacity
+                style={[styles.demoTab, styles.demoTabA]}
+                onPress={() => quickLogin('idriss1', 'idriss1@sudoku.local', 'Sally-idriss-2026!')}
+                activeOpacity={0.85}
+                disabled={loading}
+              >
+                <Text style={styles.demoAvatar}>🧑‍💻</Text>
+                <Text style={styles.demoName}>idriss1</Text>
+                <Text style={styles.demoSub}>Sign in</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.demoTab, styles.demoTabB]}
+                onPress={() => quickLogin('idriss2', 'idriss2@sudoku.local', 'Sally-idriss-2026!')}
+                activeOpacity={0.85}
+                disabled={loading}
+              >
+                <Text style={styles.demoAvatar}>🧑‍🎮</Text>
+                <Text style={styles.demoName}>idriss2</Text>
+                <Text style={styles.demoSub}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Form */}
@@ -698,4 +740,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+
+  // ── Demo accounts (idriss1 / idriss2) — one-tap sign in ──
+  demoBox: { marginBottom: 18 },
+  demoHint: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+  },
+  demoRow: { flexDirection: 'row', gap: 12 },
+  demoTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  demoTabA: { borderColor: 'rgba(74,222,128,0.5)', backgroundColor: 'rgba(74,222,128,0.08)' },
+  demoTabB: { borderColor: 'rgba(96,165,250,0.5)', backgroundColor: 'rgba(96,165,250,0.08)' },
+  demoAvatar: { fontSize: 28 },
+  demoName: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 4 },
+  demoSub: { color: '#94a3b8', fontSize: 11, marginTop: 2, fontWeight: '600', letterSpacing: 1 },
 });

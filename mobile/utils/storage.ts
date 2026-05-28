@@ -304,6 +304,40 @@ export const storage = {
   },
   
   async login(email: string, password: string): Promise<User | null> {
+    // 1) Real backend login (any user registered via the prod API — idriss1, idriss2, ...)
+    try {
+      const res = await fetch('https://api.sudoku.gowithsally.com/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && data.token) {
+          const u = data.user || {};
+          const user: User = {
+            id: u.id || u._id || 'u_' + Math.random().toString(36).slice(2, 9),
+            username: u.username || email.split('@')[0],
+            email: u.email || email,
+            avatar: u.avatar || '🎮',
+            level: u.level ?? 1,
+            xp: u.xp ?? 0,
+            coins: u.coins ?? 100,
+            stars: u.stars ?? 0,
+            createdAt: u.createdAt || new Date().toISOString(),
+          };
+          await this.setUser(user);
+          // store under BOTH keys: 'sudoku_token' (read by utils/socket + utils/api)
+          // and KEYS.AUTH_TOKEN (read by isLoggedIn).
+          await AsyncStorage.setItem('sudoku_token', data.token);
+          await AsyncStorage.setItem(KEYS.AUTH_TOKEN, data.token);
+          return user;
+        }
+      }
+    } catch (e) {
+      console.log('[storage] login API error:', String(e));
+    }
+    // 2) Fallback: local TEST_USERS (legacy demo accounts that don't exist in the backend)
     const testUser = TEST_USERS.find(u => u.email === email && u.password === password);
     if (testUser) {
       const user: User = {
