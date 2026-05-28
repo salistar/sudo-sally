@@ -1370,3 +1370,14 @@ h2.section-title {
     scroll-behavior: auto;
   }
 }
+
+/* ============================================================
+   Real screenshots inside the phone mockup frame
+   ============================================================ */
+.phone > img.shot {
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  object-fit: cover;
+  display: block;
+}

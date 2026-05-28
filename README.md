@@ -1,5 +1,11 @@
 # 🧩 Sudoku Sally — Monorepo
 
+[![Build APK](https://github.com/salistar/sudo-sally/actions/workflows/build-apk.yml/badge.svg)](https://github.com/salistar/sudo-sally/actions/workflows/build-apk.yml)
+[![Deploy](https://github.com/salistar/sudo-sally/actions/workflows/deploy.yml/badge.svg)](https://github.com/salistar/sudo-sally/actions/workflows/deploy.yml)
+[![Latest release](https://img.shields.io/github/v/release/salistar/sudo-sally?display_name=tag&sort=semver)](https://github.com/salistar/sudo-sally/releases/latest)
+[![Live site](https://img.shields.io/website?url=https%3A%2F%2Fsudoku.gowithsally.com&label=site&up_message=live&down_message=down)](https://sudoku.gowithsally.com)
+[![API health](https://img.shields.io/website?url=https%3A%2F%2Fapi.sudoku.gowithsally.com%2Fhealth&label=API&up_message=ok)](https://api.sudoku.gowithsally.com/health)
+
 Beautiful, modern **Sudoku** game (mobile) + realtime backend + marketing/download site — all in one repo, with full CI/CD to the cloud.
 
 **Live site:** https://sudoku.gowithsally.com · **API:** https://api.sudoku.gowithsally.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
@@ -278,19 +284,88 @@ docker compose --env-file deploy/.env.prod -f deploy/docker-compose.prod.yml res
 
 ---
 
-## 🔐 Google sign-in — switch from Test mode to Production
+## 🔐 Google sign-in — full prod walkthrough
 
-Google sign-in works in the dev/release APK because the signing keystore's SHA-1 is registered in the **Android OAuth client**. While the OAuth consent screen is in **Testing**, only the emails listed under *Test users* can sign in. To open it to everyone:
+While the OAuth consent screen is in **Testing**, **only emails listed under *Test users* can sign in** (everyone else gets `403 access_denied`). To open it to every Google account, you publish the consent screen. The app only requests the *basic* scopes (`openid`, `email`, `profile`), so Google **does not require an app verification** — publishing is instant.
 
-1. **Google Cloud Console** → your project → **APIs & Services → OAuth consent screen**.
-2. Under **Publishing status: Testing**, click **PUBLISH APP** → confirm. Status becomes **In production**.
-3. If the app only requests the basic `email` / `profile` / `openid` scopes (this app does), Google **does not require verification** — publishing is instant and any Google account can sign in.
-4. (Only if you later add *sensitive/restricted* scopes will Google ask you to submit for **verification**: provide an app logo, a privacy-policy URL — you have https://sudoku.gowithsally.com/privacy.html — the authorized domain `gowithsally.com`, and a demo video.)
+### Step-by-step
 
-Checklist for Google sign-in to work end-to-end:
-- **Android OAuth client**: package `com.sudokusally.v3` + the keystore SHA-1 (debug: `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`). For a Play Store build, also add Google Play's **App Signing SHA-1**.
-- **Web OAuth client** ID is passed as `webClientId` in `mobile/utils/googleAuth.ts` (used to mint the ID token).
-- Both clients live in the **same** Google Cloud project.
+1. **Open the consent screen**
+   - https://console.cloud.google.com → top bar → pick your project (the same one that owns the **Web** + **Android** OAuth clients used by the app).
+   - Left menu → **APIs & Services → OAuth consent screen**.
+
+2. **Confirm User type = External**
+   - On the consent-screen page, make sure **User type: External** is shown. (Internal is only for Google Workspace.)
+
+3. **Fill the required fields** (do this before publishing)
+   - **App name**: `Sudoku Sally`
+   - **User support email**: your Gmail (e.g. `salistarcompany@gmail.com`)
+   - **App logo**: optional in basic mode (recommended: a 120 × 120 PNG).
+   - **Application home page**: `https://sudoku.gowithsally.com`
+   - **Application privacy policy**: `https://sudoku.gowithsally.com/privacy.html` ✅ (already live)
+   - **Application terms of service**: optional.
+   - **Authorized domains**: add `gowithsally.com`.
+   - **Developer contact information**: your email.
+   - → **Save and continue**.
+
+4. **Scopes** — keep only the basic three
+   - `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` → **Save and continue**. *Do not add sensitive/restricted scopes — that's what would trigger verification.*
+
+5. **Publish the app**
+   - Back on the **OAuth consent screen** summary, look for **Publishing status: Testing**.
+   - Click **PUBLISH APP** → in the dialog **Push to production**, confirm.
+   - Status becomes **In production**. ✅ Done — any Google account can now sign in.
+
+### Checklist — Google sign-in works end-to-end
+
+| Item | Where | Value |
+|---|---|---|
+| **Android OAuth client** package | Google Cloud → Credentials | `com.sudokusally.v3` |
+| **Android OAuth client** SHA-1 (debug) | Google Cloud → Credentials | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` |
+| **Android OAuth client** SHA-1 (Play Store) | add later when you upload to Play | the **App signing certificate SHA-1** shown in *Play Console → Setup → App signing* |
+| **Web OAuth client ID** used by the app | `mobile/utils/googleAuth.ts` → `GOOGLE_CLIENT_IDS.web` | the *Web application* client ID (NOT the Android one) |
+| Both OAuth clients live in the **same** Google Cloud project | Credentials list | ✓ |
+| OAuth consent screen | **In production** | ✓ (step 5 above) |
+
+### Common errors → fix
+
+| Symptom on the device | Cause | Fix |
+|---|---|---|
+| `DEVELOPER_ERROR (code 10)` | SHA-1 not registered / wrong | Add the **exact** SHA-1 from `mobile/android/app/debug.keystore` to the **Android** OAuth client |
+| `403 access_denied` while consent is Testing | account not in Test users | Add the email under *Test users*, **or** publish (step 5) |
+| `Sign in failed` with no clear code | Web Client ID missing | Set `webClientId` in `mobile/utils/googleAuth.ts` to the **Web** OAuth client ID |
+| `NO_MODULE` popup | running in Expo Go | Use a dev / release build (the native module isn't in Expo Go) |
+
+---
+
+## 📈 Monitoring — what we have and what to add
+
+### Already in place (no extra setup)
+- **Docker healthchecks** on `sudoku-api` (HTTP `/health`), `sudoku-mongo` (`mongosh ping`), `sudoku-redis` (`redis-cli ping`), `sudoku-landing` (HTTP). Visible in `docker ps` and `docker inspect`. Compose restarts unhealthy containers (`restart: unless-stopped`).
+- **Caddy access logs + auto-TLS rotation** for the four sub-domains.
+- **GitHub badges** at the top of this README — green when the latest build/deploy passed and when the live URLs respond.
+
+### Tier 1 — Uptime (5 min to wire, recommended next)
+- **External pings every minute** on the public URLs from anywhere on the planet.
+  - https://sudoku.gowithsally.com/ (HTTP 200 + content match "Sudoku Sally")
+  - https://api.sudoku.gowithsally.com/health (HTTP 200 + JSON match `"status":"ok"`)
+- Free options:
+  - **UptimeRobot** — 50 monitors free, e-mail/Slack alerts.
+  - **Better Stack / Better Uptime** — nicer UI, status page, free tier.
+  - Self-hosted: **Uptime-Kuma** as a single container next to the existing stack — beautiful status page at `status.sudoku.gowithsally.com`.
+
+### Tier 2 — Metrics & dashboards
+- **Prometheus + Grafana** as two extra containers on `gowithsally_gws-net`, plus a `prom-client` middleware in `backend/` to expose `/metrics` (request rate, latency p50/p95/p99, error rate, socket connections, Mongo/Redis pool health). Mirror the pattern the GoWithSally backoffice already uses on the same VPS. A new sub-domain `grafana.sudoku.gowithsally.com` (DNS-only, Caddy basic-auth) would host the dashboard.
+
+### Tier 3 — Centralized logs
+- Add **Loki + Promtail** (or **Filebeat → Logstash → Elasticsearch + Kibana** — already used by GoWithSally). All container stdout/stderr ends up searchable, with retention rules. Query: "all 5xx in the last hour on `sudoku-api`".
+
+### Tier 4 — App + crash analytics
+- **Sentry** (free tier) wired into the **mobile** app for crash reports + perf, and into the **backend** for unhandled errors. Two SDK installs, one DSN per project. Lets you see real-device crashes from users.
+- **Plausible** or **Umami** (self-hosted) for landing-site analytics — privacy-friendly, no cookie banner needed.
+
+### Recommended minimum
+Tier 1 today (UptimeRobot or Uptime-Kuma), Tier 4 (Sentry) when the app gets a few users, Tier 2 when you start tweaking performance.
 
 ---
 
