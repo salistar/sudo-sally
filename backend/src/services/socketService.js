@@ -203,6 +203,32 @@ function initializeSocket(io) {
       });
     });
 
+    // ============ CHAT (text + base64 image, scoped to a challenge room) ============
+    socket.on('challenge:chat', ({ challengeId, text, img }) => {
+      if (!challengeId) return;
+      socket.to(`challenge:${challengeId}`).emit('chat:message', {
+        odcUserId, from: username, text, img, ts: Date.now()
+      });
+    });
+
+    // ============ WebRTC signaling (audio/video calls within a challenge) ============
+    socket.on('webrtc:offer', ({ challengeId, sdp }) => {
+      if (!challengeId) return;
+      socket.to(`challenge:${challengeId}`).emit('webrtc:offer', { from: odcUserId, sdp });
+    });
+    socket.on('webrtc:answer', ({ challengeId, sdp }) => {
+      if (!challengeId) return;
+      socket.to(`challenge:${challengeId}`).emit('webrtc:answer', { from: odcUserId, sdp });
+    });
+    socket.on('webrtc:ice', ({ challengeId, candidate }) => {
+      if (!challengeId) return;
+      socket.to(`challenge:${challengeId}`).emit('webrtc:ice', { from: odcUserId, candidate });
+    });
+    socket.on('call:end', ({ challengeId }) => {
+      if (!challengeId) return;
+      socket.to(`challenge:${challengeId}`).emit('call:end', { from: odcUserId });
+    });
+
     // ============ PRESENCE EVENTS ============
 
     // Heartbeat to keep user active

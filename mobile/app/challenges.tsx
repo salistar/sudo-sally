@@ -363,7 +363,12 @@ export default function Challenges() {
       </View>
 
       {/* Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabsScroll}
+        contentContainerStyle={styles.tabsScrollContent}
+      >
         {[
           { key: 'online', label: `👥 ${t('online')}`, count: onlineUsers.length },
           { key: 'received', label: `📩 ${t('received')}`, count: receivedChallenges.length },
@@ -573,8 +578,9 @@ const styles = StyleSheet.create({
   statNum: { color: '#fff', fontSize: 18, fontWeight: '700' },
   statLabel: { color: '#64748b', fontSize: 11, marginTop: 2 },
   
-  tabsScroll: { maxHeight: 50, paddingHorizontal: 15, marginTop: 10 },
-  tab: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', marginRight: 10 },
+  tabsScroll: { maxHeight: 52, marginTop: 10 },
+  tabsScrollContent: { paddingHorizontal: 15, paddingRight: 30, alignItems: 'center', gap: 8 },
+  tab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)' },
   tabActive: { backgroundColor: '#4ade80' },
   tabText: { color: '#94a3b8', fontWeight: '600' },
   tabTextActive: { color: '#000' },

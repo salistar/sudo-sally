@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,6 +6,11 @@ import { storage } from '../utils/storage';
 import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppModal, { PopupData } from '../components/AppModal';
+
+// Production API (matches utils/api.ts / utils/socket.ts).
+const API_URL = 'https://api.sudoku.gowithsally.com/api';
 
 const FILE_NAME = '📁 [Home.tsx]';
 
@@ -25,6 +30,10 @@ export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
+  // ── incoming-challenge notification (popup with Accept / Decline) ──
+  const [popup, setPopup] = useState<PopupData | null>(null);
+  const pendingChallengeId = useRef<string | null>(null);
+  const handledRef = useRef(false);
 
   console.log(`${FILE_NAME} 📊 Initial state - user: ${user ? 'loaded' : 'null'}, stats: ${stats ? 'loaded' : 'null'}, loading: ${loading}`);
 
@@ -63,18 +72,77 @@ export default function Home() {
     }
   }, []);
 
-  // Connect to socket for online status
+  // Connect to socket for online status + listen for incoming challenges
   const connectSocket = useCallback(async () => {
     console.log(`${FILE_NAME} 🔌 connectSocket() - Connecting to socket...`);
     try {
       const connected = await socketService.connect();
       setIsOnline(connected);
-      console.log(`${FILE_NAME} ${connected ? '✅' : '❌'} connectSocket() - Socket ${connected ? 'connected' : 'failed'}`);
+      if (connected) {
+        socketService.removeAllListeners('challenge:received');
+        socketService.on('challenge:received', async (data: any) => {
+          console.log(`${FILE_NAME} ⚔️ challenge:received from ${data?.challengerName}`);
+          try { await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+          try {
+            // Fetch the latest received challenge to get its id (backend doesn't include it in the socket event)
+            const token = await AsyncStorage.getItem('sudoku_token');
+            const r = await fetch(`${API_URL}/challenges/my`, { headers: { Authorization: `Bearer ${token}` } });
+            const d = await r.json();
+            const latest = (d?.received || [])[0];
+            if (!latest) return;
+            pendingChallengeId.current = latest._id;
+            handledRef.current = false;
+            setPopup({
+              type: 'info',
+              title: `⚔️ Challenge from ${data?.challengerName || latest.challenger?.username}`,
+              message: `${data?.challengerName || latest.challenger?.username} wants to play a ${latest.difficulty?.toUpperCase()} 1v1 match.\nAccept to start the duel.`,
+              confirmLabel: 'Accept',
+              onConfirm: () => {
+                handledRef.current = true;
+                const id = pendingChallengeId.current;
+                if (id) acceptIncomingChallenge(id);
+              },
+            });
+          } catch (e) { console.log('[home] could not fetch incoming challenge', e); }
+        });
+      }
     } catch (error) {
       console.error(`${FILE_NAME} ❌ connectSocket() - Error:`, error);
       setIsOnline(false);
     }
   }, []);
+
+  const acceptIncomingChallenge = useCallback(async (challengeId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      const r = await fetch(`${API_URL}/challenges/${challengeId}/accept`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        try { socketService.notifyAccepted?.(challengeId); } catch {}
+        router.push(`/challenge-game?id=${challengeId}` as any);
+      }
+    } catch (e) { console.log('[home] accept failed', e); }
+  }, [router]);
+
+  const declineIncomingChallenge = useCallback(async (challengeId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      await fetch(`${API_URL}/challenges/${challengeId}/decline`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      });
+      try { socketService.notifyDeclined?.(challengeId); } catch {}
+    } catch (e) { console.log('[home] decline failed', e); }
+  }, []);
+
+  const closeChallengePopup = useCallback(() => {
+    if (!handledRef.current && pendingChallengeId.current) {
+      declineIncomingChallenge(pendingChallengeId.current);
+    }
+    pendingChallengeId.current = null;
+    handledRef.current = false;
+    setPopup(null);
+  }, [declineIncomingChallenge]);
 
   useEffect(() => {
     console.log(`${FILE_NAME} 🔧 useEffect() - Component mounted, triggering loadData()`);
@@ -343,6 +411,9 @@ export default function Home() {
         {/* Bottom spacing */}
         <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Incoming challenge notification (Accept / Decline) */}
+      <AppModal popup={popup} onClose={closeChallengePopup} buttonLabel="Decline" />
     </LinearGradient>
   );
 }

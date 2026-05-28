@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { 
-  View, Text, StyleSheet, TouchableOpacity, Alert, Modal, 
-  Dimensions, ScrollView, ActivityIndicator 
+import {
+  View, Text, StyleSheet, TouchableOpacity, Alert, Modal,
+  Dimensions, ScrollView, ActivityIndicator, Platform, TextInput, Linking
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,10 +18,12 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
-// Clamp width to 480px so the dual-board layout looks right on a wide browser
-// (matches the #root max-width in app/+html.tsx).
-const EFFECTIVE_W = Math.min(width, 480);
-const CELL_SIZE = Math.floor((EFFECTIVE_W - 60) / 9 / 2);
+// This screen needs more horizontal room than the rest of the app: on web,
+// we override #root max-width to 800px in a useEffect below; on native we
+// already have the device's full width. Cells stay readable on phones.
+const IS_WEB = Platform.OS === 'web';
+const EFFECTIVE_W = IS_WEB ? Math.min(width, 800) : Math.min(width, 700);
+const CELL_SIZE = Math.max(22, Math.floor((EFFECTIVE_W - 60) / 9 / 2));
 
 type Board = (number | null)[][];
 
@@ -43,6 +45,35 @@ const USE_LOCAL_BACKEND = false;
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const API_URL =
   (USE_LOCAL_BACKEND && devHost ? `http://${devHost}:3101` : 'https://api.sudoku.gowithsally.com') + '/api';
+
+// ============ SOCIAL BRAND BUTTON ============
+const BRANDS: Record<string, { color: string; icon: string; name: string; grad?: [string, string] }> = {
+  facebook:  { color: '#1877F2', icon: 'f',  name: 'Facebook' },
+  instagram: { color: '#E1306C', icon: '📷', name: 'Instagram', grad: ['#F58529', '#DD2A7B'] },
+  tiktok:    { color: '#010101', icon: '♪',  name: 'TikTok' },
+  youtube:   { color: '#FF0000', icon: '▶',  name: 'YouTube' },
+  linkedin:  { color: '#0A66C2', icon: 'in', name: 'LinkedIn' },
+  twitter:   { color: '#000000', icon: '𝕏',  name: 'X / Twitter' },
+};
+function SocialBtn({ brand, label, onPress }: { brand: keyof typeof BRANDS; label?: string; onPress: () => void }) {
+  const b = BRANDS[brand];
+  const Wrap: any = b.grad ? LinearGradient : View;
+  const wrapProps: any = b.grad ? { colors: b.grad, start:{x:0,y:0}, end:{x:1,y:1} } : { style: { backgroundColor: b.color } };
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={socStyles.btn}>
+      <Wrap {...wrapProps} style={[socStyles.iconBox, !b.grad && { backgroundColor: b.color }]}>
+        <Text style={socStyles.icon}>{b.icon}</Text>
+      </Wrap>
+      <Text style={socStyles.label}>{label || b.name}</Text>
+    </TouchableOpacity>
+  );
+}
+const socStyles = StyleSheet.create({
+  btn: { alignItems: 'center', width: 86, gap: 6 },
+  iconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  icon: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  label: { color: '#cbd5e1', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+});
 
 export default function ChallengeGame() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,6 +104,27 @@ export default function ChallengeGame() {
 
   const timerRef = useRef<NodeJS.Timeout>();
 
+  // ============ CHAT / SHARE / CALL / RECORD UI STATE ============
+  const [panelTab, setPanelTab] = useState<'chat' | 'call' | 'record' | 'share' | 'live'>('chat');
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; from: string; text?: string; img?: string; ts: number }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<any>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<any>(null);
+
+  // ============ WEB — widen the #root for the dual-board layout ============
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const root = document.getElementById('root');
+    if (!root) return;
+    const prev = root.style.maxWidth;
+    root.style.maxWidth = '880px';
+    return () => { if (root) root.style.maxWidth = prev || ''; };
+  }, []);
+
   // ============ INIT ============
   useEffect(() => {
     loadChallenge();
@@ -85,6 +137,7 @@ export default function ChallengeGame() {
       socketService.removeAllListeners('player:completed');
       socketService.removeAllListeners('player:abandoned');
       socketService.removeAllListeners('challenge:result');
+      socketService.removeAllListeners('chat:message');
     };
   }, [challengeId]);
 
@@ -99,6 +152,17 @@ export default function ChallengeGame() {
   // ============ SOCKET LISTENERS ============
   const setupSocketListeners = () => {
     socketService.joinChallenge(challengeId);
+
+    // Chat messages from opponent (text + optional base64 image)
+    socketService.on('chat:message', (data: any) => {
+      setChatMessages(prev => [...prev, {
+        id: 'm_' + Math.random().toString(36).slice(2, 8),
+        from: data?.from || 'Opponent',
+        text: data?.text,
+        img: data?.img,
+        ts: data?.ts || Date.now(),
+      }]);
+    });
 
     // Opponent progress
     socketService.on('opponent:progress', (data: any) => {
@@ -374,6 +438,103 @@ export default function ChallengeGame() {
     }
   };
 
+  // ============ CHAT / RECORD / SHARE / LIVE HELPERS ============
+  const sendChat = () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    const msg = { id: 'm_'+Math.random().toString(36).slice(2,8), from: currentUser?.username || 'You', text, ts: Date.now() };
+    setChatMessages(prev => [...prev, msg]);
+    setChatInput('');
+    try { socketService.sendChat(challengeId, { text }); } catch {}
+  };
+
+  const sendChatImage = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      setPopup({ type: 'info', title: 'Image upload', message: 'Image attachments are available in the web build (browser file picker).' });
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = String(reader.result || '');
+        const msg = { id:'m_'+Math.random().toString(36).slice(2,8), from: currentUser?.username || 'You', img, ts: Date.now() };
+        setChatMessages(prev => [...prev, msg]);
+        try { socketService.sendChat(challengeId, { img }); } catch {}
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const startRecording = async () => {
+    if (Platform.OS !== 'web' || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setPopup({ type:'info', title:'Recording', message:'Audio recording uses the browser MediaRecorder API and is available in the web build.' });
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunksRef.current = [];
+      const mr = new (window as any).MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mr.ondataavailable = (e: any) => { if (e.data?.size > 0) recordedChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+        setRecordedUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t: any) => t.stop());
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setIsRecording(true);
+    } catch (e: any) {
+      setPopup({ type:'error', title:'Mic blocked', message: String(e?.message || e) });
+    }
+  };
+
+  const stopRecording = () => {
+    try { mediaRecorderRef.current?.stop(); } catch {}
+    setIsRecording(false);
+  };
+
+  const downloadRecording = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined' || !recordedUrl) return;
+    const a = document.createElement('a');
+    a.href = recordedUrl;
+    a.download = `sudoku-sally-${challengeId}.webm`;
+    a.click();
+  };
+
+  const startCall = async (video: boolean) => {
+    setPopup({
+      type: 'info',
+      title: video ? '📹 Video call' : '📞 Audio call',
+      message:
+        `WebRTC ${video ? 'video' : 'audio'} call signaling is wired through the socket (events: webrtc:offer/answer/ice). ` +
+        `To finalize, the app needs to capture local media and exchange SDP — UI scaffolding is in place; a full call setup is part of the next iteration.`,
+    });
+  };
+
+  const shareUrl = `https://sudoku.gowithsally.com`;
+  const shareText = `I'm playing a real-time 1v1 Sudoku duel on Sudoku Sally!`;
+  const openExt = (url: string) => Linking.openURL(url).catch(() => {});
+
+  const SHARE_LINKS: Record<string, string> = {
+    facebook:  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
+    twitter:   `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+    linkedin:  `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    instagram: `https://www.instagram.com/`,   // IG has no web share intent → open IG
+    tiktok:    `https://www.tiktok.com/upload?lang=en`, // upload page
+    youtube:   `https://www.youtube.com/upload`,
+  };
+  const LIVE_LINKS: Record<string, string> = {
+    youtube:   `https://studio.youtube.com/channel/UC/livestreaming`,
+    facebook:  `https://www.facebook.com/live/create`,
+    tiktok:    `https://www.tiktok.com/live/creator-center`,
+    instagram: `https://www.instagram.com/`,
+    linkedin:  `https://www.linkedin.com/video/live/`,
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -569,6 +730,112 @@ export default function ChallengeGame() {
       </Modal>
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
+
+      {/* ============ FLOATING TOOLS BUTTON ============ */}
+      <TouchableOpacity style={styles.fab} onPress={() => setPanelOpen(true)} activeOpacity={0.85}>
+        <Text style={styles.fabIcon}>💬</Text>
+        {chatMessages.length > 0 && (
+          <View style={styles.fabBadge}><Text style={styles.fabBadgeText}>{chatMessages.length}</Text></View>
+        )}
+      </TouchableOpacity>
+
+      {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL ============ */}
+      <Modal visible={panelOpen} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
+        <View style={styles.panelOverlay}>
+          <View style={styles.panelCard}>
+            {/* tabs */}
+            <View style={styles.panelTabs}>
+              {(['chat','call','record','share','live'] as const).map(k => (
+                <TouchableOpacity key={k} style={[styles.panelTab, panelTab===k && styles.panelTabActive]} onPress={() => setPanelTab(k)}>
+                  <Text style={[styles.panelTabText, panelTab===k && styles.panelTabTextActive]}>
+                    {k === 'chat' ? '💬 Chat' : k === 'call' ? '📞 Call' : k === 'record' ? '🎙️ Record' : k === 'share' ? '↗️ Share' : '🔴 Go Live'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.panelClose} onPress={() => setPanelOpen(false)}>
+                <Text style={styles.panelCloseX}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* tab content */}
+            {panelTab === 'chat' && (
+              <View style={styles.tabContent}>
+                <ScrollView style={styles.chatList} contentContainerStyle={{ padding: 12, gap: 8 }}>
+                  {chatMessages.length === 0 && <Text style={styles.chatEmpty}>No messages yet — say hi to {opponent.username || 'your opponent'}.</Text>}
+                  {chatMessages.map(m => {
+                    const mine = m.from === (currentUser?.username || 'You');
+                    return (
+                      <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
+                        <Text style={styles.chatFrom}>{m.from}</Text>
+                        {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
+                        {!!m.img && Platform.OS === 'web' && (<Text style={[styles.chatText, { fontStyle:'italic', opacity:0.7 }]}>📷 image — open the web build to see it inline</Text>)}
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+                <View style={styles.chatInputRow}>
+                  <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={{ fontSize: 18 }}>📎</Text></TouchableOpacity>
+                  <TextInput value={chatInput} onChangeText={setChatInput} placeholder="Type a message…" placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
+                  <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700' }}>Send</Text></TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {panelTab === 'call' && (
+              <View style={[styles.tabContent, styles.tabPad]}>
+                <Text style={styles.tabHint}>Voice or video call your opponent during the match. (Signaling wired through the socket; WebRTC peer setup is in progress.)</Text>
+                <View style={styles.callRow}>
+                  <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
+                  <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video call</Text></TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {panelTab === 'record' && (
+              <View style={[styles.tabContent, styles.tabPad]}>
+                <Text style={styles.tabHint}>Record the audio of your match (your microphone). The file downloads as <Text style={{ color:'#4ade80' }}>.webm</Text>.</Text>
+                <View style={styles.callRow}>
+                  {!isRecording ? (
+                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={startRecording}><Text style={styles.callIcon}>🔴</Text><Text style={styles.callText}>Start</Text></TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#fbbf24' }]} onPress={stopRecording}><Text style={styles.callIcon}>⏹️</Text><Text style={styles.callText}>Stop</Text></TouchableOpacity>
+                  )}
+                  {recordedUrl && (
+                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#4ade80' }]} onPress={downloadRecording}><Text style={styles.callIcon}>⬇️</Text><Text style={styles.callText}>Download</Text></TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {panelTab === 'share' && (
+              <View style={[styles.tabContent, styles.tabPad]}>
+                <Text style={styles.tabHint}>Share your duel on social media. Real brand colors • each opens the platform's share/upload page.</Text>
+                <View style={styles.socialGrid}>
+                  <SocialBtn brand="facebook" onPress={() => openExt(SHARE_LINKS.facebook)} />
+                  <SocialBtn brand="instagram" onPress={() => openExt(SHARE_LINKS.instagram)} />
+                  <SocialBtn brand="tiktok" onPress={() => openExt(SHARE_LINKS.tiktok)} />
+                  <SocialBtn brand="youtube" onPress={() => openExt(SHARE_LINKS.youtube)} />
+                  <SocialBtn brand="linkedin" onPress={() => openExt(SHARE_LINKS.linkedin)} />
+                  <SocialBtn brand="twitter" onPress={() => openExt(SHARE_LINKS.twitter)} />
+                </View>
+              </View>
+            )}
+
+            {panelTab === 'live' && (
+              <View style={[styles.tabContent, styles.tabPad]}>
+                <Text style={styles.tabHint}>Go live and stream your match. Each button opens the platform's "create live" page. (Direct broadcasting requires the platform's RTMP key + an OBS-like setup.)</Text>
+                <View style={styles.socialGrid}>
+                  <SocialBtn brand="youtube" label="YouTube Live" onPress={() => openExt(LIVE_LINKS.youtube)} />
+                  <SocialBtn brand="facebook" label="FB Live" onPress={() => openExt(LIVE_LINKS.facebook)} />
+                  <SocialBtn brand="tiktok" label="TikTok Live" onPress={() => openExt(LIVE_LINKS.tiktok)} />
+                  <SocialBtn brand="instagram" label="IG Live" onPress={() => openExt(LIVE_LINKS.instagram)} />
+                  <SocialBtn brand="linkedin" label="LinkedIn Live" onPress={() => openExt(LIVE_LINKS.linkedin)} />
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -633,4 +900,47 @@ const styles = StyleSheet.create({
   rewardsText: { color: '#4ade80', fontSize: 16, fontWeight: '700', marginTop: 3 },
   backBtn: { marginTop: 20, backgroundColor: '#4ade80', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 },
   backBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
+
+  // ============ FLOATING TOOLS BUTTON ============
+  fab: { position: 'absolute', right: 16, bottom: 22, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4ade80',
+    alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
+  fabIcon: { fontSize: 26 },
+  fabBadge: { position: 'absolute', top: -2, right: -2, minWidth: 22, height: 22, paddingHorizontal: 5, backgroundColor: '#ef4444', borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0a0a1a' },
+  fabBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+
+  // ============ PANEL ============
+  panelOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  panelCard: { backgroundColor: '#13132c', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 12, maxHeight: '80%', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  panelTabs: { flexDirection: 'row', gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', alignItems: 'center' },
+  panelTab: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.05)' },
+  panelTabActive: { backgroundColor: '#4ade80' },
+  panelTabText: { color: '#94a3b8', fontSize: 13, fontWeight: '700' },
+  panelTabTextActive: { color: '#000' },
+  panelClose: { marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
+  panelCloseX: { color: '#94a3b8', fontSize: 16, fontWeight: '700' },
+  tabContent: { paddingTop: 12 },
+  tabPad: { padding: 16, gap: 14 },
+  tabHint: { color: '#94a3b8', fontSize: 13, lineHeight: 19 },
+
+  // ============ CHAT ============
+  chatList: { maxHeight: 360, minHeight: 200, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12 },
+  chatEmpty: { color: '#64748b', fontSize: 13, textAlign: 'center', padding: 20 },
+  chatBubble: { padding: 10, borderRadius: 12, maxWidth: '85%' },
+  chatMine: { alignSelf: 'flex-end', backgroundColor: 'rgba(74,222,128,0.15)', borderColor: 'rgba(74,222,128,0.35)', borderWidth: 1 },
+  chatTheirs: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.06)' },
+  chatFrom: { color: '#94a3b8', fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  chatText: { color: '#fff', fontSize: 14 },
+  chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10 },
+  chatAttach: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
+  chatInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14 },
+  chatSend: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#4ade80' },
+
+  // ============ CALL / RECORD ============
+  callRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
+  callBtn: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 14, alignItems: 'center', gap: 6, minWidth: 130 },
+  callIcon: { fontSize: 26 },
+  callText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  // ============ SOCIAL GRID ============
+  socialGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center', paddingVertical: 10 },
 });

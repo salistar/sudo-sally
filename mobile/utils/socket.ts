@@ -176,6 +176,11 @@ class SocketService {
     this.socket?.emit('challenge:send', { targetUserId, difficulty });
   }
 
+  /** Emit a chat message in the challenge room (handled by backend → broadcast as 'chat:message'). */
+  sendChat(challengeId: string, payload: { text?: string; img?: string }) {
+    this.socket?.emit('challenge:chat', { challengeId, ...payload });
+  }
+
   notifyAccepted(challengeId: string) {
     this.socket?.emit('challenge:accepted', { challengeId });
   }

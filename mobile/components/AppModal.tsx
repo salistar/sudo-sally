@@ -110,9 +110,10 @@ export default function AppModal({ popup, onClose, buttonLabel }: AppModalProps)
                   style={styles.btnConfirm}
                   activeOpacity={0.9}
                   onPress={() => {
-                    const action = popup.onConfirm;
+                    // Run the confirm action first so handlers can mark "handled"
+                    // before our onClose runs (decline-vs-accept differentiation).
+                    popup.onConfirm?.();
                     onClose();
-                    action?.();
                   }}
                 >
                   <LinearGradient
