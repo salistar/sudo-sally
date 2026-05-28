@@ -532,40 +532,71 @@ export default function ChallengeGame() {
    *    actually supports (webm/opus, webm, mp4) instead of forcing audio/webm
    *    which Safari/Firefox sometimes reject silently.
    */
-  const recordModeRef = useRef<'audio' | 'cam'>('audio');
-  const startRecording = async (mode: 'audio' | 'cam' = 'audio') => {
+  const recordModeRef = useRef<'audio' | 'cam' | 'screen'>('audio');
+  const startRecording = async (mode: 'audio' | 'cam' | 'screen' = 'audio') => {
     if (Platform.OS !== 'web' || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setPopup({ type:'info', title:'Recording', message:'Browser MediaRecorder API only — available in the web build.' });
       return;
     }
     try {
       recordModeRef.current = mode;
-      const constraints: any = mode === 'cam' ? { audio: true, video: { width: 640, height: 480 } } : { audio: true };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream: MediaStream;
+
+      if (mode === 'screen') {
+        // Capture screen (the user picks a tab/window/screen). On Chrome, the
+        // "Share tab audio" checkbox brings in tab audio. Mix the mic on top
+        // via WebAudio so your commentary is in the recording too.
+        const dm: any = (navigator.mediaDevices as any).getDisplayMedia;
+        if (!dm) { setPopup({ type:'info', title:'Screen recording', message:'Your browser does not expose getDisplayMedia.' }); return; }
+        const display: MediaStream = await dm.call(navigator.mediaDevices, { video: { frameRate: 24 }, audio: true });
+        let combined = display;
+        try {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+          if (AC) {
+            const ctx = new AC();
+            const dest = ctx.createMediaStreamDestination();
+            if (display.getAudioTracks().length) ctx.createMediaStreamSource(display).connect(dest);
+            ctx.createMediaStreamSource(mic).connect(dest);
+            combined = new MediaStream([
+              ...display.getVideoTracks(),
+              ...dest.stream.getAudioTracks(),
+            ]);
+          }
+          // When the user clicks "Stop sharing" in the browser bar, end the recording too
+          display.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
+        } catch (e) { console.log('[record] mic-with-screen unavailable:', e); }
+        stream = combined;
+      } else {
+        const constraints: any = mode === 'cam'
+          ? { audio: true, video: { width: 640, height: 480 } }
+          : { audio: true };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
       recordedChunksRef.current = [];
 
       // Pick the first mime type the browser actually supports
       const W: any = window;
-      const candidates = mode === 'cam'
+      const candidates = (mode === 'cam' || mode === 'screen')
         ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
         : ['audio/webm;codecs=opus',     'audio/webm',                  'audio/mp4',  'audio/ogg;codecs=opus'];
       const mime = candidates.find(m => W.MediaRecorder && W.MediaRecorder.isTypeSupported(m)) || '';
-      console.log('[record] chosen mime:', mime || '(default)');
+      console.log('[record] mode:', mode, 'mime:', mime || '(default)', 'tracks:', stream.getTracks().map(t => `${t.kind}:${(t as any).readyState}`));
 
       const mr = new W.MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       mr.ondataavailable = (e: any) => { if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: mime || (mode === 'cam' ? 'video/webm' : 'audio/webm') });
+        const blob = new Blob(recordedChunksRef.current, { type: mime || (mode === 'audio' ? 'audio/webm' : 'video/webm') });
         console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'size:', blob.size);
         setRecordedUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((t: any) => t.stop());
       };
       mr.onerror = (e: any) => console.log('[record] error', e);
       mediaRecorderRef.current = mr;
-      mr.start(1000);          // ← CRUCIAL: timeslice so chunks are emitted regularly
+      mr.start(1000);          // timeslice so chunks are emitted every 1s
       setIsRecording(true);
     } catch (e: any) {
-      setPopup({ type:'error', title:'Mic/cam blocked', message: String(e?.message || e) });
+      setPopup({ type:'error', title:'Recording blocked', message: String(e?.message || e) });
     }
   };
 
@@ -1026,7 +1057,7 @@ export default function ChallengeGame() {
         {/* RECORD */}
         <View style={[styles.deckCol, styles.deckRec]}>
           <Text style={styles.deckTitle}>🎙️ Record</Text>
-          <Text style={styles.deckHint}>Capture your mic{Platform.OS==='web'?' or cam+mic':''}. Saves as .webm.</Text>
+          <Text style={styles.deckHint}>Capture mic, cam+mic, or the whole screen+mic. Saves as .webm.</Text>
           <View style={styles.recRow}>
             {!isRecording ? (
               <>
@@ -1034,7 +1065,10 @@ export default function ChallengeGame() {
                   <Text style={styles.recIcon}>🎙️</Text><Text style={styles.recText}>Mic</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#a855f7' }]} onPress={() => startRecording('cam')}>
-                  <Text style={styles.recIcon}>📹</Text><Text style={styles.recText}>Cam+Mic</Text>
+                  <Text style={styles.recIcon}>📹</Text><Text style={styles.recText}>Cam</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#0ea5e9' }]} onPress={() => startRecording('screen')}>
+                  <Text style={styles.recIcon}>🖥️</Text><Text style={styles.recText}>Screen</Text>
                 </TouchableOpacity>
               </>
             ) : (
