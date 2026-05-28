@@ -8,7 +8,7 @@
 
 Beautiful, modern **Sudoku** game (mobile) + realtime backend + marketing/download site — all in one repo, with full CI/CD to the cloud.
 
-**Live site:** https://sudoku.gowithsally.com · **API:** https://api.sudoku.gowithsally.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
+**Live site:** https://sudoku.gowithsally.com · **Web app:** https://app.sudoku.gowithsally.com · **API:** https://api.sudoku.gowithsally.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
 
 ---
 
@@ -16,7 +16,7 @@ Beautiful, modern **Sudoku** game (mobile) + realtime backend + marketing/downlo
 
 | Folder | What | Stack |
 |--------|------|-------|
-| [`mobile/`](./mobile) | The Sudoku Sally app | Expo SDK 52 · React Native 0.76 · expo-router · TypeScript |
+| [`mobile/`](./mobile) | The Sudoku Sally app (Android + iOS + **Web** via react-native-web) | Expo SDK 52 · React Native 0.76 · expo-router · TypeScript |
 | [`backend/`](./backend) | REST API + realtime challenge server | Node.js · Express · Socket.IO · MongoDB · JWT |
 | [`landing/`](./landing) | Multi-page marketing & download site | Static HTML/CSS/JS · nginx |
 | [`deploy/`](./deploy) | Production Docker stack + Caddy reverse-proxy snippet | docker compose |
@@ -68,7 +68,8 @@ All 21 screens live in [`docs/screenshots/`](./docs/screenshots).
                           │  :80 / :443       │  shared net: gowithsally_gws-net
                           └────────┬──────────┘
        sudoku.gowithsally.com  ───►│──► sudoku-landing (nginx :80) ── /api,/socket.io ─┐
-       api.sudoku.gowithsally.com ►│──► sudoku-api (:3001) ◄───────────────────────────┘
+       app.sudoku.gowithsally.com ►│──► sudoku-web (Expo Web build) ──────────────────┐│
+       api.sudoku.gowithsally.com ►│──► sudoku-api (:3001) ◄───────────────────────────┴┘
        db.sudoku.gowithsally.com  ►│──► sudoku-mongo-ui (mongo-express, basic-auth)
        cache.sudoku.gowithsally.com►│─► sudoku-redis-ui (redis-commander, basic-auth)
                                     │
@@ -103,6 +104,34 @@ docker compose down             # stop (add -v to wipe the mongo volume)
 ```
 
 By default the **mobile app talks to the production API** (`https://api.sudoku.gowithsally.com`) so it works on any network, including 4G. To develop the app against this local backend instead, flip `USE_LOCAL_BACKEND = true` at the top of `mobile/utils/api.ts`, `mobile/utils/socket.ts`, `mobile/app/challenges.tsx` and `mobile/app/challenge-game.tsx`.
+
+---
+
+## 🌍 Web build of the app (same React Native code, runs in the browser)
+
+The mobile app code is also exported to a static web app via **react-native-web** — same screens, same backend, no native modules required (Google sign-in falls back to email/guest on web).
+
+```bash
+# 1) build the web bundle (writes mobile/dist/)
+cd mobile
+npx expo export --platform web
+
+# 2) tar + ship + build the container on the server
+tar -czf /tmp/web.tgz dist Dockerfile.web nginx-web.conf
+scp -i ~/.ssh/gowithsally /tmp/web.tgz deploy@88.198.205.229:/tmp/
+ssh -i ~/.ssh/gowithsally deploy@88.198.205.229 '
+  mkdir -p ~/apps/sudoku-web && rm -rf ~/apps/sudoku-web/dist
+  tar -xzf /tmp/web.tgz -C ~/apps/sudoku-web && mv ~/apps/sudoku-web/Dockerfile.web ~/apps/sudoku-web/Dockerfile
+  cd ~/apps/sudoku-web && docker build -t sudoku-sally-web:latest .
+  docker rm -f sudoku-web 2>/dev/null
+  docker run -d --name sudoku-web --restart unless-stopped --network gowithsally_gws-net sudoku-sally-web:latest'
+
+# 3) Caddy block (idempotent) + DNS record  app.sudoku.gowithsally.com → 88.198.205.229 (grey cloud)
+#    see the existing pattern in deploy/Caddyfile.snippet — same shape:
+#    app.sudoku.gowithsally.com { encode gzip zstd; reverse_proxy sudoku-web:80 }
+```
+
+Live at https://app.sudoku.gowithsally.com.
 
 ---
 
