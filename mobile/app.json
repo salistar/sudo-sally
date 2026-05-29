@@ -2,7 +2,7 @@
   "expo": {
     "name": "SudokuSally V3",
     "slug": "sudoku-sally-v3",
-    "version": "3.1.4",
+    "version": "3.1.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sudokusallyv3",

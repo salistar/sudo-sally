@@ -47,6 +47,21 @@ jobs:
           KS_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
         run: echo "$KS_B64" | base64 -d > android/app/debug.keystore
 
+      # Embed the JS bundle INTO the APK. Without this step gradle builds a
+      # debug variant that tries to fetch the bundle from Metro (localhost:8081)
+      # at runtime, which fails on a freshly-installed APK and shows a black
+      # screen ("Failed to connect to localhost/127.0.0.1:8081").
+      - name: Embed JS bundle into APK
+        run: |
+          mkdir -p android/app/src/main/assets
+          npx expo export:embed \
+            --platform android \
+            --entry-file node_modules/expo-router/entry.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --dev false
+          ls -la android/app/src/main/assets/index.android.bundle
+
       - name: Build debug APK
         run: |
           cd android
