@@ -602,16 +602,35 @@ export default function ChallengeGame() {
       mr.onstop = async () => {
         const durMs = Date.now() - recordStartRef.current;
         const type = mime || (mode === 'audio' ? 'audio/webm' : 'video/webm');
-        const blob = new Blob(recordedChunksRef.current, { type });
-        // NOTE: fix-webm-duration was patching EBML metadata but in practice
-        // some players were stopping early on the patched file. We leave the
-        // raw MediaRecorder webm — it plays to the end. The trade-off is that
-        // a few players (Windows Media Player) won't show the timeline length
-        // up-front. We display the duration in the Download button instead.
-        void fixWebmDuration; // keep import alive; can be re-enabled per-codec later
-        console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'size:', blob.size, 'dur:', durMs, 'ms');
+        const rawBlob = new Blob(recordedChunksRef.current, { type });
+        console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'raw size:', rawBlob.size, 'duration:', durMs, 'ms');
+
+        // fix-webm-duration uses a *callback* API. Wrapping it in a Promise
+        // so the await actually waits for the patched blob (previous bug:
+        // await returned undefined synchronously → the unpatched blob was
+        // served and players showed the wrong duration / no progress bar).
+        let finalBlob = rawBlob;
+        if (type.startsWith('video/webm') || type.startsWith('audio/webm')) {
+          try {
+            finalBlob = await new Promise<Blob>((resolve) => {
+              const t = setTimeout(() => { console.log('[record] fix timed out — using raw'); resolve(rawBlob); }, 4000);
+              try {
+                (fixWebmDuration as any)(rawBlob, durMs, (fixed: Blob) => {
+                  clearTimeout(t);
+                  console.log('[record] patched size:', (fixed || rawBlob).size);
+                  resolve(fixed || rawBlob);
+                });
+              } catch (e) {
+                clearTimeout(t);
+                console.log('[record] fix sync threw:', e);
+                resolve(rawBlob);
+              }
+            });
+          } catch (e) { console.log('[record] fix wrap failed:', e); }
+        }
+
         setRecordingDurMs(durMs);
-        setRecordedUrl(URL.createObjectURL(blob));
+        setRecordedUrl(URL.createObjectURL(finalBlob));
         stream.getTracks().forEach((t: any) => t.stop());
       };
       mr.onerror = (e: any) => console.log('[record] error', e);
