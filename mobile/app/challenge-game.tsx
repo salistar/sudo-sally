@@ -91,9 +91,16 @@ const BRANDS: Record<string, { color: string; bg?: string; Icon: React.FC; name:
   linkedin:  { color: '#0A66C2', Icon: LinkedinIcon,  name: 'LinkedIn' },
   twitter:   { color: '#000000', Icon: XIcon,         name: 'X' },
 };
-function SocialBtn({ brand, label, onPress }: { brand: keyof typeof BRANDS; label?: string; onPress: () => void }) {
+function SocialBtn({ brand, label, onPress, compact }: { brand: keyof typeof BRANDS; label?: string; onPress: () => void; compact?: boolean }) {
   const b = BRANDS[brand];
   const Icon = b.Icon;
+  if (compact) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[socStyles.iconBox, socStyles.compactBox, { backgroundColor: b.bg || b.color }]}>
+        <Icon />
+      </TouchableOpacity>
+    );
+  }
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={socStyles.btn}>
       <View style={[socStyles.iconBox, { backgroundColor: b.bg || b.color }]}>
@@ -106,6 +113,7 @@ function SocialBtn({ brand, label, onPress }: { brand: keyof typeof BRANDS; labe
 const socStyles = StyleSheet.create({
   btn: { alignItems: 'center', width: 78, gap: 6 },
   iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  compactBox: { width: 38, height: 38, borderRadius: 10, shadowOpacity: 0.25, shadowRadius: 4 },
   label: { color: '#cbd5e1', fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });
 
@@ -946,6 +954,19 @@ export default function ChallengeGame() {
             </>
           )}
         </View>
+        {/* Live / Share — right side of the top bar */}
+        <View style={styles.topSocialBlock}>
+          <Text style={styles.topSocialLabel}>🔴 Live · ↗️ Share</Text>
+          <View style={styles.topSocialRow}>
+            <SocialBtn brand="youtube"   compact onPress={() => openExt(LIVE_LINKS.youtube)} />
+            <SocialBtn brand="facebook"  compact onPress={() => openExt(LIVE_LINKS.facebook)} />
+            <SocialBtn brand="tiktok"    compact onPress={() => openExt(LIVE_LINKS.tiktok)} />
+            <SocialBtn brand="instagram" compact onPress={() => openExt(LIVE_LINKS.instagram)} />
+            <SocialBtn brand="linkedin"  compact onPress={() => openExt(LIVE_LINKS.linkedin)} />
+            <SocialBtn brand="twitter"   compact onPress={() => openExt(SHARE_LINKS.twitter)} />
+          </View>
+        </View>
+
         {callActive && Platform.OS === 'web' && (
           <View style={styles.topCallVideos}>
             {/* Local video (or hidden for audio-only). Muted to avoid echo. */}
@@ -1150,20 +1171,7 @@ export default function ChallengeGame() {
           )}
         </View>
 
-        {/* GO LIVE / SHARE — right */}
-        <View style={[styles.deckCol, styles.deckLive]}>
-          <Text style={styles.deckTitle}>🔴 Go Live · ↗️ Share</Text>
-          <Text style={styles.deckHint}>Each button opens the platform's "create live" or "share" page.</Text>
-          <View style={styles.socialGrid}>
-            <SocialBtn brand="youtube" label="YouTube" onPress={() => openExt(LIVE_LINKS.youtube)} />
-            <SocialBtn brand="facebook" label="Facebook" onPress={() => openExt(LIVE_LINKS.facebook)} />
-            <SocialBtn brand="tiktok" label="TikTok" onPress={() => openExt(LIVE_LINKS.tiktok)} />
-            <SocialBtn brand="instagram" label="Instagram" onPress={() => openExt(LIVE_LINKS.instagram)} />
-            <SocialBtn brand="linkedin" label="LinkedIn" onPress={() => openExt(LIVE_LINKS.linkedin)} />
-            <SocialBtn brand="twitter" label="Share on X" onPress={() => openExt(SHARE_LINKS.twitter)} />
-          </View>
-          <Text style={styles.deckFootnote}>YouTube Live needs a 24h activation on first request — that's a YouTube account policy, not the app. Other platforms open instantly.</Text>
-        </View>
+        {/* Go Live / Share moved to the TOP CALL BAR */}
       </View>
       )}
       </View>{/* bodyRow */}
@@ -1430,6 +1438,11 @@ const styles = StyleSheet.create({
   audioRemoteIcon: { fontSize: 20 },
   audioRemoteName: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
+  // ============ TOP SOCIAL (Live + Share inside the top call bar) ============
+  topSocialBlock: { alignItems: 'center', gap: 4 },
+  topSocialLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  topSocialRow: { flexDirection: 'row', gap: 8 },
+
   // ============ BODY ROW — web: ScrollView (main) | deck (right sidebar) ============
   bodyRow: IS_WEB
     ? { flex: 1, flexDirection: 'row', alignItems: 'stretch', minHeight: 0 }
@@ -1468,7 +1481,7 @@ const styles = StyleSheet.create({
   ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
-  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: IS_WEB ? 200 : 130, minHeight: 80, flexGrow: IS_WEB ? 1 : 0 },
+  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: IS_WEB ? 480 : 130, minHeight: 200, flexGrow: IS_WEB ? 1 : 0 },
   deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
 
   // ============ SOCIAL GRID ============
