@@ -31,7 +31,10 @@ jobs:
           java-version: "17"
 
       - name: Install dependencies
-        run: npm ci
+        # --legacy-peer-deps: react-native-webrtc + expo-av occasionally publish
+        # newer peer ranges than what SDK 52 ships; locally we use the same
+        # flag, so CI matches.
+        run: npm ci --legacy-peer-deps
 
       - name: Prebuild Android project
         run: npx expo prebuild --platform android --no-install
