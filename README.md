@@ -283,6 +283,9 @@ Two workflows in [`.github/workflows/`](./.github/workflows):
 | `JWT_SECRET` | deploy | backend JWT signing secret |
 | `REDIS_PASSWORD` | deploy | Redis password (sudoku-redis + redis-commander) |
 | `UI_USER` / `UI_PASS` | deploy | basic-auth creds for the Mongo/Redis admin UIs |
+| `TURN_SHARED_SECRET` | deploy | shared HMAC secret for the `turn.salistar.com` coturn server |
+| `CF_API_TOKEN` *(optional)* | deploy | Cloudflare API token (scope: zone-edit on `gowithsally.com`) — if set, `deploy.sh` purges the CDN cache for the APK URL after every deploy so users see the new APK instantly |
+| `CF_ZONE_ID` *(optional)* | deploy | Cloudflare zone ID for `gowithsally.com` — paired with `CF_API_TOKEN` |
 
 ```bash
 # set a secret from the CLI

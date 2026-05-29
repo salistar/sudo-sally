@@ -58,6 +58,22 @@ if curl -fsSL "$APK_URL" -o "$tmp" && [ -s "$tmp" ]; then
   docker cp "$tmp" sudoku-landing:/usr/share/nginx/html/downloads/sudoku-sally.apk
   docker exec sudoku-landing chmod 644 /usr/share/nginx/html/downloads/sudoku-sally.apk
   echo "  ✓ APK staged ($(du -h "$tmp" | cut -f1))"
+
+  # Purge the Cloudflare cache for this URL so the new APK is visible
+  # immediately to anyone who clicks the download button. Without this,
+  # CF would serve the previously-cached file for hours.
+  if [ -n "${CF_API_TOKEN:-}" ] && [ -n "${CF_ZONE_ID:-}" ]; then
+    echo "▶ Purging Cloudflare cache for /downloads/sudoku-sally.apk..."
+    curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+      -H "Authorization: Bearer $CF_API_TOKEN" \
+      -H "Content-Type: application/json" \
+      --data '{"files":["https://sudoku.gowithsally.com/downloads/sudoku-sally.apk"]}' \
+      | grep -o '"success":[a-z]*' || true
+  else
+    echo "  ℹ CF_API_TOKEN / CF_ZONE_ID not set — skipping CF purge."
+    echo "    (Visitors may see the cached APK for up to ~4h until TTL expires."
+    echo "     Set CF_API_TOKEN + CF_ZONE_ID GitHub Secrets to enable instant purge.)"
+  fi
 else
   echo "  ⚠ APK download failed — skipping (download page will fall back to GitHub Releases)"
 fi

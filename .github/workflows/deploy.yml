@@ -24,7 +24,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: JWT_SECRET,REDIS_PASSWORD,UI_USER,UI_PASS,TURN_SHARED_SECRET
+          envs: JWT_SECRET,REDIS_PASSWORD,UI_USER,UI_PASS,TURN_SHARED_SECRET,CF_API_TOKEN,CF_ZONE_ID
           script: |
             set -euo pipefail
             REPO_DIR="$HOME/apps/sudo-sally"
@@ -35,7 +35,7 @@ jobs:
             cd "$REPO_DIR"
             git fetch --depth 1 origin main
             git reset --hard origin/main
-            export JWT_SECRET REDIS_PASSWORD UI_USER UI_PASS
+            export JWT_SECRET REDIS_PASSWORD UI_USER UI_PASS TURN_SHARED_SECRET CF_API_TOKEN CF_ZONE_ID
             bash deploy/deploy.sh
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -43,3 +43,7 @@ jobs:
           UI_USER: ${{ secrets.UI_USER }}
           UI_PASS: ${{ secrets.UI_PASS }}
           TURN_SHARED_SECRET: ${{ secrets.TURN_SHARED_SECRET }}
+          # Optional — when set, deploy.sh purges the CDN cache for the APK URL
+          # so a new build is visible immediately instead of after Cloudflare's TTL.
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
