@@ -18,6 +18,41 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import fixWebmDuration from 'fix-webm-duration';
 
+// ─── Native WebRTC + audio recording (Android/iOS APK) ─────────────────────
+// On the web build these `require()` calls don't run, so Metro never tries to
+// bundle the native modules for web. On native we lazy-load them and expose
+// the same handful of constructors the rest of the file already uses.
+let NativeWebRTC: any = null;
+let NativeAudio: any = null;
+let NativeFS: any = null;
+let NativeSharing: any = null;
+if (Platform.OS !== 'web') {
+  try { NativeWebRTC = require('react-native-webrtc'); } catch (e) { console.log('[webrtc] native module missing', e); }
+  try { NativeAudio  = require('expo-av').Audio;       } catch (e) { console.log('[expo-av] missing',         e); }
+  try { NativeFS     = require('expo-file-system');    } catch {}
+  try { NativeSharing = require('expo-sharing');       } catch {}
+}
+const RTCView: any = NativeWebRTC?.RTCView ?? null;
+
+/** Picks `window.X` on the web build and `NativeWebRTC.X` on the APK. */
+function getRTC() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const W: any = window;
+    return {
+      RTCPeerConnection:    W.RTCPeerConnection,
+      RTCSessionDescription: W.RTCSessionDescription,
+      RTCIceCandidate:       W.RTCIceCandidate,
+      mediaDevices:          (typeof navigator !== 'undefined' && navigator.mediaDevices) || null,
+    };
+  }
+  return NativeWebRTC ? {
+    RTCPeerConnection:     NativeWebRTC.RTCPeerConnection,
+    RTCSessionDescription: NativeWebRTC.RTCSessionDescription,
+    RTCIceCandidate:       NativeWebRTC.RTCIceCandidate,
+    mediaDevices:          NativeWebRTC.mediaDevices,
+  } : { RTCPeerConnection: null, RTCSessionDescription: null, RTCIceCandidate: null, mediaDevices: null };
+}
+
 const { width } = Dimensions.get('window');
 // This screen needs more horizontal room than the rest of the app: on web,
 // we override #root max-width to 1100px in a useEffect below; on native we
@@ -153,6 +188,10 @@ export default function ChallengeGame() {
   const localVidRef = useRef<any>(null);
   const remoteVidRef = useRef<any>(null);
   const pendingIceRef = useRef<any[]>([]);
+  // Native (react-native-webrtc) needs a `streamURL` to feed into <RTCView>;
+  // web binds streams directly via DOM `.srcObject` so these stay null there.
+  const [localStreamUrl, setLocalStreamUrl] = useState<string | null>(null);
+  const [remoteStreamUrl, setRemoteStreamUrl] = useState<string | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -547,9 +586,37 @@ export default function ChallengeGame() {
    *    which Safari/Firefox sometimes reject silently.
    */
   const recordModeRef = useRef<'audio' | 'cam' | 'screen'>('audio');
+  const nativeRecRef = useRef<any>(null);   // expo-av Audio.Recording instance
   const startRecording = async (mode: 'audio' | 'cam' | 'screen' = 'audio') => {
-    if (Platform.OS !== 'web' || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setPopup({ type:'info', title:'Recording', message:'Browser MediaRecorder API only — available in the web build.' });
+    // ── Native (Android/iOS): expo-av Audio.Recording for mic, others = N/A. ──
+    if (Platform.OS !== 'web') {
+      if (mode !== 'audio') {
+        setPopup({ type: 'info', title: 'Recording', message: mode === 'cam'
+          ? 'Camera+mic recording is only available in the web build for now.'
+          : 'Screen recording is only available in the web build.' });
+        return;
+      }
+      if (!NativeAudio) { setPopup({ type:'error', title:'Recording', message:'expo-av is not installed in this build.' }); return; }
+      try {
+        recordModeRef.current = 'audio';
+        const perm = await NativeAudio.requestPermissionsAsync();
+        if (!perm?.granted) { setPopup({ type:'error', title:'Mic blocked', message:'Microphone permission denied.' }); return; }
+        await NativeAudio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+        const rec = new NativeAudio.Recording();
+        await rec.prepareToRecordAsync(NativeAudio.RecordingOptionsPresets.HIGH_QUALITY);
+        await rec.startAsync();
+        nativeRecRef.current = rec;
+        recordStartRef.current = Date.now();
+        setIsRecording(true);
+        console.log('[record native] started');
+      } catch (e: any) {
+        console.log('[record native] start err', e);
+        setPopup({ type:'error', title:'Recording', message: String(e?.message || e) });
+      }
+      return;
+    }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setPopup({ type:'info', title:'Recording', message:'Browser MediaRecorder API not available here.' });
       return;
     }
     try {
@@ -643,13 +710,41 @@ export default function ChallengeGame() {
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
+    if (Platform.OS !== 'web') {
+      const rec = nativeRecRef.current;
+      if (!rec) { setIsRecording(false); return; }
+      try {
+        await rec.stopAndUnloadAsync();
+        const uri: string | null = rec.getURI?.() ?? null;
+        nativeRecRef.current = null;
+        setRecordingDurMs(Date.now() - recordStartRef.current);
+        setRecordedUrl(uri);
+        console.log('[record native] stopped, uri=', uri);
+      } catch (e) { console.log('[record native] stop err', e); }
+      setIsRecording(false);
+      return;
+    }
     try { mediaRecorderRef.current?.stop(); } catch {}
     setIsRecording(false);
   };
 
-  const downloadRecording = () => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined' || !recordedUrl) return;
+  const downloadRecording = async () => {
+    if (!recordedUrl) return;
+    // Native: share the file (Files app / WhatsApp / Drive…). Web: trigger DOM download.
+    if (Platform.OS !== 'web') {
+      try {
+        if (NativeSharing && (await NativeSharing.isAvailableAsync())) {
+          await NativeSharing.shareAsync(recordedUrl, { dialogTitle: 'Save recording', mimeType: 'audio/m4a', UTI: 'public.audio' });
+        } else {
+          setPopup({ type:'info', title:'Saved', message:`Recording saved to:\n${recordedUrl}` });
+        }
+      } catch (e: any) {
+        setPopup({ type:'error', title:'Share failed', message: String(e?.message || e) });
+      }
+      return;
+    }
+    if (typeof document === 'undefined') return;
     const ext = recordModeRef.current === 'cam' ? 'webm' : 'webm'; // webm container, audio or video
     const kind = recordModeRef.current === 'cam' ? 'video' : 'audio';
     const a = document.createElement('a');
@@ -694,14 +789,17 @@ export default function ChallengeGame() {
   }
 
   function createPeer() {
-    if (typeof window === 'undefined') return null;
-    const pc = new (window as any).RTCPeerConnection({ iceServers });
+    const { RTCPeerConnection } = getRTC();
+    if (!RTCPeerConnection) return null;
+    const pc: any = new RTCPeerConnection({ iceServers });
     pc.onicecandidate = (e: any) => {
       if (e.candidate) socketService.emitWebRTCIce(challengeId, e.candidate);
     };
     pc.ontrack = (e: any) => {
       remoteStreamRef.current = e.streams[0];
-      if (remoteVidRef.current) remoteVidRef.current.srcObject = e.streams[0];
+      // Web: attach via DOM srcObject. Native: rerender so RTCView picks it up.
+      if (Platform.OS === 'web' && remoteVidRef.current) remoteVidRef.current.srcObject = e.streams[0];
+      setRemoteStreamUrl(e.streams[0]?.toURL ? e.streams[0].toURL() : null);
       console.log('[webrtc] remote stream attached, tracks=', e.streams[0].getTracks().map((t: any) => t.kind));
     };
     pc.oniceconnectionstatechange = () => {
@@ -719,15 +817,24 @@ export default function ChallengeGame() {
 
   async function ensureLocalMedia(video: boolean) {
     if (localStreamRef.current) return localStreamRef.current;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
+    const { mediaDevices } = getRTC();
+    if (!mediaDevices?.getUserMedia) throw new Error('No mediaDevices available');
+    // Native (react-native-webrtc) expects { video: { facingMode: 'user' } } for cam.
+    const constraints =
+      Platform.OS === 'web'
+        ? { audio: true, video }
+        : { audio: true, video: video ? { facingMode: 'user', width: 640, height: 480 } : false };
+    const stream: any = await mediaDevices.getUserMedia(constraints);
     localStreamRef.current = stream;
-    setTimeout(() => { if (localVidRef.current) localVidRef.current.srcObject = stream; }, 0);
+    setLocalStreamUrl(stream?.toURL ? stream.toURL() : null);
+    if (Platform.OS === 'web') setTimeout(() => { if (localVidRef.current) localVidRef.current.srcObject = stream; }, 0);
     return stream;
   }
 
   const startCall = useCallback(async (video: boolean) => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || !(window as any).RTCPeerConnection) {
-      setPopup({ type: 'info', title: 'Calls', message: 'WebRTC calls work in the web build of the app.' });
+    const { RTCPeerConnection } = getRTC();
+    if (!RTCPeerConnection) {
+      setPopup({ type: 'info', title: 'Calls', message: 'WebRTC is not available in this build.' });
       return;
     }
     try {
@@ -754,11 +861,15 @@ export default function ChallengeGame() {
 
   function hangup(notify: boolean = true) {
     try { localStreamRef.current?.getTracks?.().forEach((t: any) => t.stop()); } catch {}
+    try { localStreamRef.current?.release?.(); } catch {}   // react-native-webrtc
+    try { remoteStreamRef.current?.release?.(); } catch {}
     try { pcRef.current?.close?.(); } catch {}
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     pcRef.current = null;
     pendingIceRef.current = [];
+    setLocalStreamUrl(null);
+    setRemoteStreamUrl(null);
     if (notify) socketService.emitCallEnd(challengeId);
     setCallActive(false);
     setCallStatus('idle');
@@ -809,7 +920,9 @@ export default function ChallengeGame() {
   }
 
   async function acceptIncomingCall() {
-    if (!incomingOffer || typeof window === 'undefined') return;
+    if (!incomingOffer) return;
+    const { RTCSessionDescription, RTCIceCandidate } = getRTC();
+    if (!RTCSessionDescription) return;
     stopRing();
     const { sdp, video } = incomingOffer;
     setIncomingOffer(null);
@@ -821,9 +934,9 @@ export default function ChallengeGame() {
       pcRef.current = pc;
       const stream = await ensureLocalMedia(video);
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
-      await pc.setRemoteDescription(new (window as any).RTCSessionDescription(sdp));
+      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
       for (const cand of pendingIceRef.current) {
-        try { await pc.addIceCandidate(new (window as any).RTCIceCandidate(cand)); } catch {}
+        try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch {}
       }
       pendingIceRef.current = [];
       const answer = await pc.createAnswer();
@@ -842,14 +955,17 @@ export default function ChallengeGame() {
   }
   async function handleAnswer(data: any) {
     try {
-      if (!pcRef.current) return;
-      await pcRef.current.setRemoteDescription(new (window as any).RTCSessionDescription(data.sdp));
+      const { RTCSessionDescription } = getRTC();
+      if (!pcRef.current || !RTCSessionDescription) return;
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
     } catch (e) { console.log('answer err', e); }
   }
   async function handleIce(data: any) {
     try {
+      const { RTCIceCandidate } = getRTC();
+      if (!RTCIceCandidate) return;
       if (!pcRef.current?.remoteDescription) { pendingIceRef.current.push(data.candidate); return; }
-      await pcRef.current.addIceCandidate(new (window as any).RTCIceCandidate(data.candidate));
+      await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
     } catch (e) { console.log('ice err', e); }
   }
 
@@ -999,6 +1115,24 @@ export default function ChallengeGame() {
                   <Text style={styles.audioRemoteIcon}>🔊</Text>
                   <Text style={styles.audioRemoteName}>{opponent?.username || 'opponent'}</Text>
                   {React.createElement('audio', { ref: attachRemote, autoPlay: true, style: { display: 'none' } })}
+                </View>)
+            }
+          </View>
+        )}
+
+        {/* Native call surface — RTCView for video, talking-head avatar for audio (mic captured, plays through earpiece by default) */}
+        {callActive && Platform.OS !== 'web' && (
+          <View style={styles.topCallVideos}>
+            {callKind === 'video' && RTCView && localStreamUrl && (
+              <RTCView streamURL={localStreamUrl} style={{ width: 120, height: 90, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" mirror />
+            )}
+            {callKind === 'video'
+              ? (RTCView && remoteStreamUrl
+                  ? <RTCView streamURL={remoteStreamUrl} style={{ width: 180, height: 130, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" />
+                  : <View style={{ width: 180, height: 130, borderRadius: 10, backgroundColor: '#0008', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#fff' }}>📹 waiting…</Text></View>)
+              : (<View style={styles.audioRemoteWrap}>
+                  <Text style={styles.audioRemoteIcon}>🔊</Text>
+                  <Text style={styles.audioRemoteName}>{opponent?.username || 'opponent'}</Text>
                 </View>)
             }
           </View>

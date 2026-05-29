@@ -212,7 +212,7 @@ export default function Login() {
 
           {/* ── Demo accounts: 1-tap login (real users in the DB) ── */}
           <View style={styles.demoBox}>
-            <Text style={styles.demoHint}>One-tap demo · play a 1v1 between these two:</Text>
+            <Text style={styles.demoHint}>One-tap demo · play 1v1 across web ↔ mobile:</Text>
             <View style={styles.demoRow}>
               <TouchableOpacity
                 style={[styles.demoTab, styles.demoTabA]}
@@ -232,6 +232,16 @@ export default function Login() {
               >
                 <Text style={styles.demoAvatar}>🧑‍🎮</Text>
                 <Text style={styles.demoName}>idriss2</Text>
+                <Text style={styles.demoSub}>Sign in</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.demoTab, styles.demoTabC]}
+                onPress={() => quickLogin('idrissmobile', 'idrissmobile@sudoku.local', 'Sally-idriss-2026!')}
+                activeOpacity={0.85}
+                disabled={loading}
+              >
+                <Text style={styles.demoAvatar}>📱</Text>
+                <Text style={styles.demoName}>idrissmobile</Text>
                 <Text style={styles.demoSub}>Sign in</Text>
               </TouchableOpacity>
             </View>
@@ -750,18 +760,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     letterSpacing: 0.5,
   },
-  demoRow: { flexDirection: 'row', gap: 12 },
+  demoRow: { flexDirection: 'row', gap: 8 },
   demoTab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 14,
     borderWidth: 1.5,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   demoTabA: { borderColor: 'rgba(74,222,128,0.5)', backgroundColor: 'rgba(74,222,128,0.08)' },
   demoTabB: { borderColor: 'rgba(96,165,250,0.5)', backgroundColor: 'rgba(96,165,250,0.08)' },
-  demoAvatar: { fontSize: 28 },
-  demoName: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 4 },
-  demoSub: { color: '#94a3b8', fontSize: 11, marginTop: 2, fontWeight: '600', letterSpacing: 1 },
+  demoTabC: { borderColor: 'rgba(251,191,36,0.5)', backgroundColor: 'rgba(251,191,36,0.08)' },
+  demoAvatar: { fontSize: 24 },
+  demoName: { color: '#fff', fontSize: 13, fontWeight: '700', marginTop: 4 },
+  demoSub: { color: '#94a3b8', fontSize: 10, marginTop: 2, fontWeight: '600', letterSpacing: 0.5 },
 });

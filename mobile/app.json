@@ -2,7 +2,7 @@
   "expo": {
     "name": "SudokuSally V3",
     "slug": "sudoku-sally-v3",
-    "version": "3.1.3",
+    "version": "3.1.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sudokusallyv3",
@@ -15,14 +15,26 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sudokusally.v3"
+      "bundleIdentifier": "com.sudokusally.v3",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Sudoku Sally to access your camera so you can video-call your opponent during a challenge.",
+        "NSMicrophoneUsageDescription": "Allow Sudoku Sally to access your microphone so you can talk to your opponent during a challenge."
+      }
     },
     "android": {
       "package": "com.sudokusally.v3",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a1a"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH"
+      ]
     },
     "platforms": ["ios", "android", "web"],
     "web": {
@@ -33,7 +45,14 @@
     "plugins": [
       "@react-native-google-signin/google-signin",
       "expo-asset",
-      "expo-router"
+      "expo-router",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Allow Sudoku Sally to access your camera so you can video-call your opponent during a challenge.",
+          "microphonePermission": "Allow Sudoku Sally to access your microphone so you can talk to your opponent during a challenge."
+        }
+      ]
     ]
   }
 }
