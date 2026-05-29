@@ -5,15 +5,17 @@
 
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+// import Constants from 'expo-constants';   // re-enable only for the dev block below
 
-// Backend base URL — PRODUCTION API by default (works on any network, incl. 4G).
-// Caddy proxies WebSocket upgrades to sudoku-api. Flip USE_LOCAL_BACKEND to
-// develop against a local Docker backend (port 3101).
-const USE_LOCAL_BACKEND = false;
-const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const SOCKET_URL =
-  USE_LOCAL_BACKEND && devHost ? `http://${devHost}:3101` : 'https://api.sudoku.gowithsally.com';
+// Socket.io endpoint — Caddy on the VPS proxies WebSocket upgrades to sudoku-api.
+// The release APK is locked to production; the localhost path below is kept as
+// documentation for contributors and is unreachable in shipped builds.
+const SOCKET_URL = 'https://api.sudoku.gowithsally.com';
+
+// ── Dev-only override (kept for reference, NEVER reached in release APK) ──
+// const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+// const USE_LOCAL_BACKEND = __DEV__ && false;
+// if (USE_LOCAL_BACKEND && devHost) SOCKET_URL = `http://${devHost}:3101`;
 
 class SocketService {
   private socket: Socket | null = null;

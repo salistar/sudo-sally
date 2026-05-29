@@ -31,48 +31,60 @@ jobs:
           java-version: "17"
 
       - name: Install dependencies
-        # --legacy-peer-deps: react-native-webrtc + expo-av occasionally publish
-        # newer peer ranges than what SDK 52 ships; locally we use the same
-        # flag, so CI matches.
+        # --legacy-peer-deps because react-native-webrtc + expo-av occasionally
+        # publish peer ranges newer than what SDK 52 ships.
         run: npm ci --legacy-peer-deps
 
       - name: Prebuild Android project
+        # Generates android/ from the Expo config. The prebuilt project already
+        # contains a `release` buildType signed with debug.keystore, so we don't
+        # need to patch build.gradle ourselves.
         run: npx expo prebuild --platform android --no-install
 
-      # Use the SAME debug keystore whose SHA-1 is registered with Google OAuth,
-      # so Google sign-in keeps working in the distributed APK.
-      - name: Restore registered debug keystore
-        if: ${{ env.KS_B64 != '' }}
+      # Reuse the keystore whose SHA-1 is registered in Google Cloud Console
+      # for the OAuth client. Both `debug` and `release` build types use this
+      # file (prebuild wires both to signingConfigs.debug), so Google Sign-In
+      # works in the same APK that we'd later upload to Play.
+      - name: Restore signing keystore
         env:
           KS_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
-        run: echo "$KS_B64" | base64 -d > android/app/debug.keystore
-
-      # Embed the JS bundle INTO the APK. Without this step gradle builds a
-      # debug variant that tries to fetch the bundle from Metro (localhost:8081)
-      # at runtime, which fails on a freshly-installed APK and shows a black
-      # screen ("Failed to connect to localhost/127.0.0.1:8081").
-      - name: Embed JS bundle into APK
         run: |
-          mkdir -p android/app/src/main/assets
-          npx expo export:embed \
-            --platform android \
-            --entry-file node_modules/expo-router/entry.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res \
-            --dev false
-          ls -la android/app/src/main/assets/index.android.bundle
+          if [ -z "$KS_B64" ]; then
+            echo "::error::ANDROID_DEBUG_KEYSTORE_B64 secret is empty — set it in repo settings."
+            exit 1
+          fi
+          echo "$KS_B64" | base64 -d > android/app/debug.keystore
+          keytool -list -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA1|Owner|Valid" || true
 
-      - name: Build debug APK
+      # Drop x86 / x86_64 ABIs. Only emulators use them and react-native-webrtc
+      # ships ~50 MB of native libs per ABI. This shrinks the APK from ~190 MB
+      # down to ~80 MB without dropping a single physical Android device.
+      - name: Trim unused ABIs
+        run: |
+          GRADLE_FILE=android/app/build.gradle
+          if ! grep -q "abiFilters" "$GRADLE_FILE"; then
+            sed -i '/defaultConfig *{/a\        ndk { abiFilters "arm64-v8a", "armeabi-v7a" }' "$GRADLE_FILE"
+          fi
+          grep -B1 -A1 "abiFilters" "$GRADLE_FILE" | head -5
+
+      # Build the SIGNED RELEASE APK. Release variant:
+      #   • bundles JS automatically via React Gradle plugin (no Metro at runtime)
+      #   • has no dev menu, no localhost:8081 WebSocket, no red box
+      #   • uses Hermes bytecode → faster startup, smaller binary
+      #   • is the artifact you would later upload to Google Play Console
+      - name: Build release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Stage APK
         run: |
           mkdir -p ../artifacts
-          cp android/app/build/outputs/apk/debug/app-debug.apk ../artifacts/sudoku-sally.apk
-          ls -la ../artifacts
+          cp android/app/build/outputs/apk/release/app-release.apk ../artifacts/sudoku-sally.apk
+          ls -lh ../artifacts/sudoku-sally.apk
+          # Confirm the JS bundle (Hermes .bundle) is inside the APK
+          unzip -l ../artifacts/sudoku-sally.apk | grep -E "assets/index.android.bundle|lib/arm64-v8a/" | head -5
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

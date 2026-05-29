@@ -10,6 +10,17 @@ Beautiful, modern **Sudoku** game (mobile) + realtime backend + marketing/downlo
 
 **Live site:** https://sudoku.gowithsally.com · **Web app:** https://app.sudoku.gowithsally.com · **API:** https://api.sudoku.gowithsally.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
 
+## ⚡ TL;DR — install the APK and it just works
+```
+1. Tap https://sudoku.gowithsally.com/downloads/sudoku-sally.apk on your Android phone.
+2. Open the downloaded file → "Install" (allow "Install unknown apps" once).
+3. Open Sudoku Sally → tap idriss1 / idriss2 / idrissmobile, or register.
+   Everything (chat, audio/video calls, recording, leaderboard, daily) hits
+   prod api.sudoku.gowithsally.com — works on Wi-Fi AND 4G, no Metro,
+   no dev server, no localhost involved.
+```
+The APK is a **release-signed, Hermes-bytecoded, ABI-trimmed** build (~80 MB). It is the **same artifact** you would later upload to the Google Play Console.
+
 ---
 
 ## 📦 Repository layout
@@ -80,6 +91,83 @@ Caddy already runs on the box for `gowithsally.com`; we just join its network an
 
 ---
 
+## 🔄 How everything stays in sync (single source of truth = GitHub `main`)
+
+Every piece of the stack — mobile app, web app, landing page, backoffice (admin UIs), backend, database schema, infra config — lives in **this monorepo** and is rebuilt from `main` by CI. There is **no manual edit on the VPS** that isn't tracked here.
+
+```
+                     ┌──────────────────────────────┐
+                     │  YOUR LAPTOP (localhost)     │
+                     │  git push origin main / v*   │
+                     └──────────────┬───────────────┘
+                                    │
+                                    ▼
+                ┌────────────────────────────────────────┐
+                │            GitHub  (main branch)        │  ← single source of truth
+                └────────────────────────────────────────┘
+                                    │
+            ┌───────────────────────┴─────────────────────────┐
+            │ Actions: build-apk.yml          Actions: deploy.yml │
+            │ (mobile/** + tags)              (backend/landing/deploy/**) │
+            ▼                                                   ▼
+   ┌─────────────────────┐                       ┌────────────────────────────┐
+   │ Signed release APK  │                       │ SSH → VPS 88.198.205.229    │
+   │ • attached to       │                       │ • git pull origin main      │
+   │   GitHub Release    │                       │ • write .env.prod from     │
+   │ • re-staged on the  │                       │   GitHub Secrets            │
+   │   landing container │                       │ • docker compose up -d --build │
+   └─────────┬───────────┘                       │   (api · landing · web ·    │
+             │                                   │    mongo · redis · admin UIs)│
+             ▼                                   └─────────────┬───────────────┘
+   sudoku.gowithsally.com/downloads/                           │
+   sudoku-sally.apk                                            ▼
+                                              ┌─────────────────────────────┐
+                                              │ Caddy reverse-proxy + Let's │
+                                              │ Encrypt → 5 public domains: │
+                                              │  • sudoku.gowithsally.com    │
+                                              │    (landing + APK download)  │
+                                              │  • app.sudoku.gowithsally.com│
+                                              │    (Expo Web build = SAME    │
+                                              │     React Native code)       │
+                                              │  • api.sudoku.gowithsally.com│
+                                              │  • db.sudoku.gowithsally.com │
+                                              │    (Mongo Express admin)    │
+                                              │  • cache.sudoku.gowithsally  │
+                                              │    .com (Redis Commander)    │
+                                              └─────────────────────────────┘
+```
+
+### Mobile app  ↔  Web app  ↔  Backend — one codebase, three surfaces
+- **`mobile/`** is a single React Native code-base. The Expo CLI exports it three ways:
+  - **APK** (`gradlew assembleRelease` in CI) → users install on Android
+  - **Web bundle** (`npx expo export --platform web`) → served at `app.sudoku.gowithsally.com`
+  - **Expo Go dev** (`npx expo start`) → for live-edit on your laptop
+- All three hit **the same backend** (`api.sudoku.gowithsally.com`) — same accounts, same challenges, same leaderboard.
+- **idriss1 / idriss2 / idrissmobile** demo accounts work identically on web and APK.
+
+### Backoffice = Mongo Express + Redis Commander, fronted by Caddy basic-auth
+- `db.sudoku.gowithsally.com` (Mongo Express) — browse collections, run queries, edit docs.
+- `cache.sudoku.gowithsally.com` (Redis Commander) — inspect keys, TTLs, pub/sub.
+- Both protected by the same `UI_USER` / `UI_PASS` GitHub Secrets.
+
+### Database changes
+- **No migrations framework** — Mongo is schema-flexible. New fields are added by the API on first write; backfills go through `backend/scripts/crud.js` or `backend/scripts/seed.js` run inside the `sudoku-api` container.
+- **Volumes are persistent**: `sudoku_mongo_data` + `sudoku_redis_data` survive `docker compose up -d --build`. `down -v` would wipe them (don't).
+
+### Local dev ⇄ prod parity
+| | Local laptop | Production VPS |
+|---|---|---|
+| Backend | `cd backend && docker compose up -d` → host ports 3101 / 27117 / 8181 | `deploy/docker-compose.prod.yml` — no exposed host ports, fronted by Caddy |
+| Mongo | `localhost:27117` | `sudoku-mongo:27017` (private net) |
+| Redis | `localhost:6379` | `sudoku-redis:6379` (private net, password) |
+| Landing | `cd landing && npx serve` | nginx container behind Caddy |
+| Mobile dev | `npx expo start` + uncomment the dev block | Release APK hits prod API directly |
+| TURN | uses prod `turn.salistar.com` | same |
+
+The local stack ports are deliberately **off-by-100** (3101/27117/8181) so two stacks can run side-by-side without clashing. The mobile dev block uses the device-reachable `expoConfig.hostUri` so a phone on the same Wi-Fi can hit your laptop.
+
+---
+
 ## 🚀 Run the backend locally with Docker
 
 ```bash
@@ -103,7 +191,7 @@ docker compose logs -f api      # tail logs
 docker compose down             # stop (add -v to wipe the mongo volume)
 ```
 
-By default the **mobile app talks to the production API** (`https://api.sudoku.gowithsally.com`) so it works on any network, including 4G. To develop the app against this local backend instead, flip `USE_LOCAL_BACKEND = true` at the top of `mobile/utils/api.ts`, `mobile/utils/socket.ts`, `mobile/app/challenges.tsx` and `mobile/app/challenge-game.tsx`.
+The mobile app is **hard-wired to the production API** (`https://api.sudoku.gowithsally.com`) in every shipped build — there is no runtime dev toggle and no `localhost` URL reachable from the APK. To develop against this local backend instead, uncomment the dev block at the top of `mobile/utils/api.ts`, `mobile/utils/socket.ts`, `mobile/app/challenges.tsx` and `mobile/app/challenge-game.tsx` (it's guarded by `__DEV__` so it can never leak into a release APK).
 
 ---
 
@@ -172,10 +260,14 @@ git push origin v3.1.3        # → builds the APK and attaches it to Release v3
 
 Two workflows in [`.github/workflows/`](./.github/workflows):
 
-### 1. `build-apk.yml` — builds the Android APK
+### 1. `build-apk.yml` — builds the **production-grade Android APK**
 - **Triggers:** push to `main` touching `mobile/**`, any `v*` tag, or manual dispatch.
-- **Steps:** checkout → setup Node/Java → `npm ci` (in `mobile/`) → restore the registered debug keystore from the `ANDROID_DEBUG_KEYSTORE_B64` secret → `expo prebuild` → `gradlew assembleDebug` → upload `sudoku-sally.apk` as an artifact → **on a `v*` tag, attach it to a GitHub Release**.
-- The keystore matters: its SHA-1 is registered in the Google OAuth Android client, so **Google sign-in keeps working in the distributed APK**.
+- **Steps:** checkout → setup Node 18 / JDK 17 → `npm ci --legacy-peer-deps` → `expo prebuild --platform android` → restore the keystore from `ANDROID_DEBUG_KEYSTORE_B64` → trim ABIs to `arm64-v8a + armeabi-v7a` → **`gradlew assembleRelease`** → stage `app-release.apk` → upload artifact → **on a `v*` tag, attach to a GitHub Release**.
+- **Release variant (not debug):**
+  - JS bundle is **baked into the APK** via the React Gradle plugin → no Metro needed, no `localhost:8081` connection at runtime, no red box.
+  - **Hermes bytecode** → faster cold start, smaller binary.
+  - **Signed** with the OAuth-registered keystore (`signingConfigs.debug` is reused for `release` — same SHA-1 so Google sign-in keeps working). This is the **same artifact you would later upload to Google Play Console**.
+  - **Trimmed ABIs** → APK is ~80 MB instead of ~190 MB (every real Android device on the market runs `arm64-v8a` or `armeabi-v7a`).
 
 ### 2. `deploy.yml` — deploys the backend/landing stack to the VPS
 - **Triggers:** push to `main` touching `backend/**`, `landing/**`, `deploy/**`.

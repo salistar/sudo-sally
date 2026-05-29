@@ -1,15 +1,20 @@
 /**
- * API Service - Connects to Sudoku Sally Backend
+ * API Service — connects to the Sudoku Sally backend (VPS prod).
+ *
+ * The shipped APK ALWAYS talks to the production API. There is no dev URL
+ * baked into release builds. The commented snippet below is kept as
+ * documentation for contributors who want to point a local Expo Go session
+ * at a self-hosted Docker backend.
  */
-import Constants from 'expo-constants';
+// import Constants from 'expo-constants';   // re-enable if you uncomment the dev block below
 
-// Backend base URL. Defaults to the PRODUCTION API so the app works on any
-// network (incl. mobile data / 4G). To develop against a local Docker backend,
-// flip USE_LOCAL_BACKEND to true (uses the IP the device reached Metro on:3101).
-const USE_LOCAL_BACKEND = false;
-const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const SERVER_URL =
-  USE_LOCAL_BACKEND && devHost ? `http://${devHost}:3101` : 'https://api.sudoku.gowithsally.com';
+const SERVER_URL = 'https://api.sudoku.gowithsally.com';
+
+// ── Dev-only override (kept for reference, NEVER reached in release APK) ──
+// const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+// const USE_LOCAL_BACKEND = __DEV__ && false;
+// if (USE_LOCAL_BACKEND && devHost) SERVER_URL = `http://${devHost}:3101`;
+
 const API_URL = `${SERVER_URL}/api`;
 
 class ApiService {
