@@ -55,8 +55,8 @@ import Svg, { Path, Circle, Rect, Defs, LinearGradient as SvgLinearGradient, Sto
 const ICON_SZ = 30;
 function FacebookIcon()  { return (<Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}><Path fill="#fff" d="M13.5 21v-7.5h2.55l.38-2.97H13.5V8.75c0-.86.24-1.45 1.47-1.45H16.5V4.65c-.27-.04-1.18-.12-2.24-.12-2.21 0-3.72 1.35-3.72 3.83v2.17H8v2.97h2.54V21h2.96z"/></Svg>); }
 function InstagramIcon() {
-  // Fills the FULL 24x24 viewBox like the other brand icons so the visual size
-  // matches Facebook/YouTube/etc. The gradient covers edge-to-edge.
+  // Bolder strokes + bigger inner shapes so IG reads at the same visual weight
+  // as Facebook/YouTube (which have solid filled paths).
   return (
     <Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}>
       <Defs>
@@ -65,9 +65,9 @@ function InstagramIcon() {
         </SvgLinearGradient>
       </Defs>
       <Rect x="0" y="0" width="24" height="24" rx="6" fill="url(#ig)"/>
-      <Rect x="4.5" y="4.5" width="15" height="15" rx="4.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
-      <Circle cx="12" cy="12" r="4" stroke="#fff" strokeWidth="1.8" fill="none"/>
-      <Circle cx="17.5" cy="6.5" r="1.2" fill="#fff"/>
+      <Rect x="3.8" y="3.8" width="16.4" height="16.4" rx="4.8" stroke="#fff" strokeWidth="2.4" fill="none"/>
+      <Circle cx="12" cy="12" r="4.3" stroke="#fff" strokeWidth="2.4" fill="none"/>
+      <Circle cx="17.5" cy="6.5" r="1.6" fill="#fff"/>
     </Svg>
   );
 }
@@ -602,13 +602,13 @@ export default function ChallengeGame() {
       mr.onstop = async () => {
         const durMs = Date.now() - recordStartRef.current;
         const type = mime || (mode === 'audio' ? 'audio/webm' : 'video/webm');
-        let blob = new Blob(recordedChunksRef.current, { type });
-        // Patch the WebM EBML headers with the actual duration so players show
-        // the timeline / minutes-seconds when the file is opened.
-        if (type.startsWith('video/webm') || type.startsWith('audio/webm')) {
-          try { blob = (await (fixWebmDuration as any)(blob, durMs, { logger: false })) || blob; }
-          catch (e) { console.log('[record] fix-webm-duration failed', e); }
-        }
+        const blob = new Blob(recordedChunksRef.current, { type });
+        // NOTE: fix-webm-duration was patching EBML metadata but in practice
+        // some players were stopping early on the patched file. We leave the
+        // raw MediaRecorder webm — it plays to the end. The trade-off is that
+        // a few players (Windows Media Player) won't show the timeline length
+        // up-front. We display the duration in the Download button instead.
+        void fixWebmDuration; // keep import alive; can be re-enabled per-codec later
         console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'size:', blob.size, 'dur:', durMs, 'ms');
         setRecordingDurMs(durMs);
         setRecordedUrl(URL.createObjectURL(blob));
@@ -1452,9 +1452,10 @@ const styles = StyleSheet.create({
   deck: IS_WEB
     ? { width: 360, flexDirection: 'column', gap: 16, padding: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.08)' }
     : { flexDirection: 'row', gap: 12, padding: 12, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
-  deckCol: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', ...(IS_WEB ? {} : { flex: 1 }) },
-  deckChat: IS_WEB ? { flex: 2 } : { flex: 2 },
-  deckRec: { },
+  deckCol: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', ...(IS_WEB ? {} : { flex: 1 }) },
+  // Chat takes ALL remaining vertical space; record card never shrinks.
+  deckChat: IS_WEB ? { flex: 1, minHeight: 280 } : { flex: 2 },
+  deckRec: IS_WEB ? { flexShrink: 0 } : { },
   deckLive: { },
   deckFootnote: { color: '#64748b', fontSize: 10, lineHeight: 14, fontStyle: 'italic', marginTop: 6 },
 
@@ -1481,7 +1482,10 @@ const styles = StyleSheet.create({
   ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
-  deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: IS_WEB ? 480 : 130, minHeight: 200, flexGrow: IS_WEB ? 1 : 0 },
+  // No maxHeight on web — let flex:1 fill the chat card. minHeight to prevent collapse on small screens.
+  deckChatList: IS_WEB
+    ? { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, flex: 1, minHeight: 120 }
+    : { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: 130, minHeight: 80 },
   deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
 
   // ============ SOCIAL GRID ============
