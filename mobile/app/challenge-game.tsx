@@ -16,6 +16,7 @@ import AppModal, { PopupData } from '../components/AppModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import fixWebmDuration from 'fix-webm-duration';
 
 const { width } = Dimensions.get('window');
 // This screen needs more horizontal room than the rest of the app: on web,
@@ -54,6 +55,8 @@ import Svg, { Path, Circle, Rect, Defs, LinearGradient as SvgLinearGradient, Sto
 const ICON_SZ = 30;
 function FacebookIcon()  { return (<Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}><Path fill="#fff" d="M13.5 21v-7.5h2.55l.38-2.97H13.5V8.75c0-.86.24-1.45 1.47-1.45H16.5V4.65c-.27-.04-1.18-.12-2.24-.12-2.21 0-3.72 1.35-3.72 3.83v2.17H8v2.97h2.54V21h2.96z"/></Svg>); }
 function InstagramIcon() {
+  // Fills the FULL 24x24 viewBox like the other brand icons so the visual size
+  // matches Facebook/YouTube/etc. The gradient covers edge-to-edge.
   return (
     <Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}>
       <Defs>
@@ -61,10 +64,10 @@ function InstagramIcon() {
           <Stop offset="0" stopColor="#feda75"/><Stop offset=".25" stopColor="#fa7e1e"/><Stop offset=".55" stopColor="#d62976"/><Stop offset=".85" stopColor="#962fbf"/><Stop offset="1" stopColor="#4f5bd5"/>
         </SvgLinearGradient>
       </Defs>
-      <Rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/>
-      <Rect x="5.5" y="5.5" width="13" height="13" rx="4" stroke="#fff" strokeWidth="1.6" fill="none"/>
-      <Circle cx="12" cy="12" r="3.4" stroke="#fff" strokeWidth="1.6" fill="none"/>
-      <Circle cx="17.2" cy="6.8" r="1" fill="#fff"/>
+      <Rect x="0" y="0" width="24" height="24" rx="6" fill="url(#ig)"/>
+      <Rect x="4.5" y="4.5" width="15" height="15" rx="4.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
+      <Circle cx="12" cy="12" r="4" stroke="#fff" strokeWidth="1.8" fill="none"/>
+      <Circle cx="17.5" cy="6.5" r="1.2" fill="#fff"/>
     </Svg>
   );
 }
@@ -155,6 +158,8 @@ export default function ChallengeGame() {
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const mediaRecorderRef = useRef<any>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef<number>(0);
+  const [recordingDurMs, setRecordingDurMs] = useState<number>(0);
   const fileInputRef = useRef<any>(null);
 
   // ============ WEB — widen the #root for the dual-board layout ============
@@ -186,6 +191,7 @@ export default function ChallengeGame() {
       socketService.removeAllListeners('webrtc:ice');
       socketService.removeAllListeners('call:end');
       try { hangup(true); } catch {}
+      stopRing();
     };
   }, [challengeId]);
 
@@ -585,14 +591,24 @@ export default function ChallengeGame() {
 
       const mr = new W.MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       mr.ondataavailable = (e: any) => { if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data); };
-      mr.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: mime || (mode === 'audio' ? 'audio/webm' : 'video/webm') });
-        console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'size:', blob.size);
+      mr.onstop = async () => {
+        const durMs = Date.now() - recordStartRef.current;
+        const type = mime || (mode === 'audio' ? 'audio/webm' : 'video/webm');
+        let blob = new Blob(recordedChunksRef.current, { type });
+        // Patch the WebM EBML headers with the actual duration so players show
+        // the timeline / minutes-seconds when the file is opened.
+        if (type.startsWith('video/webm') || type.startsWith('audio/webm')) {
+          try { blob = (await (fixWebmDuration as any)(blob, durMs, { logger: false })) || blob; }
+          catch (e) { console.log('[record] fix-webm-duration failed', e); }
+        }
+        console.log('[record] stop — chunks:', recordedChunksRef.current.length, 'size:', blob.size, 'dur:', durMs, 'ms');
+        setRecordingDurMs(durMs);
         setRecordedUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((t: any) => t.stop());
       };
       mr.onerror = (e: any) => console.log('[record] error', e);
       mediaRecorderRef.current = mr;
+      recordStartRef.current = Date.now();
       mr.start(1000);          // timeslice so chunks are emitted every 1s
       setIsRecording(true);
     } catch (e: any) {
@@ -722,13 +738,55 @@ export default function ChallengeGame() {
     setCallError(null);
   }
 
-  // Incoming offer → answer
-  async function handleOffer(data: any) {
+  // ── Incoming-call "ring" state ──
+  const [incomingOffer, setIncomingOffer] = useState<{ sdp: any; video: boolean } | null>(null);
+  const ringIntervalRef = useRef<any>(null);
+  const ringCtxRef = useRef<any>(null);
+  function startRing() {
     if (typeof window === 'undefined') return;
     try {
-      const video = !!data?.sdp?.sdp?.includes('m=video');
-      console.log('[webrtc] incoming offer (video=', video, ')');
-      setCallKind(video ? 'video' : 'audio');
+      const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      stopRing();
+      ringCtxRef.current = new AC();
+      const playBeep = () => {
+        const ctx = ringCtxRef.current; if (!ctx) return;
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 880;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.15, t + 0.02);
+        gain.gain.setValueAtTime(0.15, t + 0.5); gain.gain.linearRampToValueAtTime(0, t + 0.6);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t); osc.stop(t + 0.7);
+      };
+      playBeep();
+      ringIntervalRef.current = setInterval(playBeep, 1400);
+    } catch (e) { console.log('[ring] failed', e); }
+  }
+  function stopRing() {
+    if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+    ringIntervalRef.current = null;
+    try { ringCtxRef.current?.close?.(); } catch {}
+    ringCtxRef.current = null;
+  }
+
+  // Incoming offer → DON'T auto-accept. Show ringing UI; user clicks Accept/Reject.
+  async function handleOffer(data: any) {
+    if (typeof window === 'undefined') return;
+    const video = !!data?.sdp?.sdp?.includes('m=video');
+    console.log('[webrtc] incoming offer (video=', video, ') — ringing');
+    setIncomingOffer({ sdp: data.sdp, video });
+    setCallKind(video ? 'video' : 'audio');
+    startRing();
+    try { await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
+  }
+
+  async function acceptIncomingCall() {
+    if (!incomingOffer || typeof window === 'undefined') return;
+    stopRing();
+    const { sdp, video } = incomingOffer;
+    setIncomingOffer(null);
+    try {
       setCallActive(true);
       setCallStatus('connecting');
       const pc = createPeer();
@@ -736,7 +794,7 @@ export default function ChallengeGame() {
       pcRef.current = pc;
       const stream = await ensureLocalMedia(video);
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
-      await pc.setRemoteDescription(new (window as any).RTCSessionDescription(data.sdp));
+      await pc.setRemoteDescription(new (window as any).RTCSessionDescription(sdp));
       for (const cand of pendingIceRef.current) {
         try { await pc.addIceCandidate(new (window as any).RTCIceCandidate(cand)); } catch {}
       }
@@ -744,12 +802,16 @@ export default function ChallengeGame() {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socketService.emitWebRTCAnswer(challengeId, answer);
-      console.log('[webrtc] answer sent');
+      console.log('[webrtc] answer sent (accepted)');
     } catch (e: any) {
-      console.log('[webrtc] handleOffer error:', e?.message || e);
       setCallError(String(e?.message || e));
       hangup(false);
     }
+  }
+  function rejectIncomingCall() {
+    stopRing();
+    setIncomingOffer(null);
+    socketService.emitCallEnd(challengeId);
   }
   async function handleAnswer(data: any) {
     try {
@@ -924,42 +986,43 @@ export default function ChallengeGame() {
           </View>
         </View>
 
-        {/* Dual Boards */}
+        {/* Boards stacked vertically with the numpad SANDWICHED between them */}
         <View style={styles.boards}>
+          {/* YOUR board */}
           <View style={styles.boardWrap}>
             <Text style={styles.boardLabel}>{t('yourGrid')}</Text>
             {renderBoard(myBoard, false)}
           </View>
+
+          {/* Numpad + tools (between the two boards so input is fast) */}
+          {!gameOver && !myCompleted && (
+            <View style={styles.midControls}>
+              <View style={styles.numpad}>
+                {[1,2,3,4,5,6,7,8,9].map(num => (
+                  <TouchableOpacity key={num} style={styles.numBtn} onPress={() => handleNumber(num)}>
+                    <Text style={styles.numText}>{num}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.tools}>
+                <TouchableOpacity style={styles.tool} onPress={handleErase}>
+                  <Text style={styles.toolIcon}>🧹</Text>
+                  <Text style={styles.toolLabel}>{t('erase')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.tool, styles.abandonTool]} onPress={() => handleAbandon()}>
+                  <Text style={styles.toolIcon}>🏳️</Text>
+                  <Text style={styles.toolLabel}>{t('abandon')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* OPPONENT board */}
           <View style={styles.boardWrap}>
             <Text style={styles.boardLabel}>{opponent.username}</Text>
             {renderBoard(opponentBoard, true)}
           </View>
         </View>
-
-        {/* Numpad */}
-        {!gameOver && !myCompleted && (
-          <View style={styles.numpad}>
-            {[1,2,3,4,5,6,7,8,9].map(num => (
-              <TouchableOpacity key={num} style={styles.numBtn} onPress={() => handleNumber(num)}>
-                <Text style={styles.numText}>{num}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Tools */}
-        {!gameOver && !myCompleted && (
-          <View style={styles.tools}>
-            <TouchableOpacity style={styles.tool} onPress={handleErase}>
-              <Text style={styles.toolIcon}>🧹</Text>
-              <Text style={styles.toolLabel}>{t('erase')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.tool, styles.abandonTool]} onPress={() => handleAbandon()}>
-              <Text style={styles.toolIcon}>🏳️</Text>
-              <Text style={styles.toolLabel}>{t('abandon')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* Waiting */}
         {myCompleted && !gameOver && (
@@ -1079,7 +1142,10 @@ export default function ChallengeGame() {
           </View>
           {recordedUrl && !isRecording && (
             <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#4ade80' }]} onPress={downloadRecording}>
-              <Text style={styles.recIcon}>⬇️</Text><Text style={styles.recText}>Download last</Text>
+              <Text style={styles.recIcon}>⬇️</Text>
+              <Text style={styles.recText}>
+                Download ({Math.floor(recordingDurMs/60000)}:{String(Math.floor((recordingDurMs%60000)/1000)).padStart(2,'0')})
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1103,6 +1169,27 @@ export default function ChallengeGame() {
       </View>{/* bodyRow */}
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
+
+      {/* ============ INCOMING CALL — ringing modal ============ */}
+      <Modal visible={!!incomingOffer} transparent animationType="fade" onRequestClose={rejectIncomingCall}>
+        <View style={styles.ringOverlay}>
+          <View style={styles.ringCard}>
+            <Text style={styles.ringPulse}>📞</Text>
+            <Text style={styles.ringTitle}>{incomingOffer?.video ? 'Video call' : 'Audio call'}</Text>
+            <Text style={styles.ringSub}>{opponent?.username || 'opponent'} is calling you…</Text>
+            <View style={styles.ringBtns}>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#ef4444' }]} onPress={rejectIncomingCall}>
+                <Text style={styles.ringBtnIcon}>📵</Text>
+                <Text style={styles.ringBtnText}>Reject</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#22c55e' }]} onPress={acceptIncomingCall}>
+                <Text style={styles.ringBtnIcon}>📞</Text>
+                <Text style={styles.ringBtnText}>Accept</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL (legacy — kept hidden) ============ */}
       <Modal visible={false} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
@@ -1245,9 +1332,11 @@ const styles = StyleSheet.create({
   done: { color: '#4ade80', fontSize: 11, marginTop: 3, fontWeight: '600' },
   vsText: { color: '#ef4444', fontWeight: '800', fontSize: 14 },
 
-  // Stacked layout: ONE board after the other (vertical column), centered horizontally.
-  boards: { flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 20 },
+  // Stacked layout: ONE board after the other (vertical column), centered horizontally,
+  // with the numpad SANDWICHED between them.
+  boards: { flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 20 },
   boardWrap: { alignItems: 'center' },
+  midControls: { alignItems: 'center', gap: 10 },
   boardLabel: { color: '#64748b', fontSize: 11, marginBottom: 6 },
   board: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 2 },
   opponentBoard: { opacity: 0.8 },
@@ -1363,9 +1452,20 @@ const styles = StyleSheet.create({
 
   // ============ RECORD BUTTONS ============
   recRow: { flexDirection: 'row', gap: 8 },
-  recBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 11, borderRadius: 12 },
+  recBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 11, borderRadius: 12 },
   recIcon: { fontSize: 18 },
-  recText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  recText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // ============ RINGING MODAL ============
+  ringOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
+  ringCard: { backgroundColor: '#13132c', padding: 32, borderRadius: 22, alignItems: 'center', gap: 12, maxWidth: 360, width: '85%', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)', shadowColor: '#4ade80', shadowOpacity: 0.4, shadowRadius: 30 },
+  ringPulse: { fontSize: 64 },
+  ringTitle: { color: '#4ade80', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
+  ringSub: { color: '#cbd5e1', fontSize: 15, marginBottom: 14, textAlign: 'center' },
+  ringBtns: { flexDirection: 'row', gap: 14, width: '100%', justifyContent: 'center' },
+  ringBtn: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minWidth: 110 },
+  ringBtnIcon: { fontSize: 28 },
+  ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
   deckChatList: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: IS_WEB ? 200 : 130, minHeight: 80, flexGrow: IS_WEB ? 1 : 0 },
