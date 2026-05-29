@@ -55,8 +55,8 @@ import Svg, { Path, Circle, Rect, Defs, LinearGradient as SvgLinearGradient, Sto
 const ICON_SZ = 30;
 function FacebookIcon()  { return (<Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}><Path fill="#fff" d="M13.5 21v-7.5h2.55l.38-2.97H13.5V8.75c0-.86.24-1.45 1.47-1.45H16.5V4.65c-.27-.04-1.18-.12-2.24-.12-2.21 0-3.72 1.35-3.72 3.83v2.17H8v2.97h2.54V21h2.96z"/></Svg>); }
 function InstagramIcon() {
-  // Bolder strokes + bigger inner shapes so IG reads at the same visual weight
-  // as Facebook/YouTube (which have solid filled paths).
+  // VERY bold strokes so the IG glyph reads at the same visual weight as the
+  // solid-fill brands (FB / YT / X / LinkedIn). Matches the official IG app icon.
   return (
     <Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}>
       <Defs>
@@ -65,9 +65,9 @@ function InstagramIcon() {
         </SvgLinearGradient>
       </Defs>
       <Rect x="0" y="0" width="24" height="24" rx="6" fill="url(#ig)"/>
-      <Rect x="3.8" y="3.8" width="16.4" height="16.4" rx="4.8" stroke="#fff" strokeWidth="2.4" fill="none"/>
-      <Circle cx="12" cy="12" r="4.3" stroke="#fff" strokeWidth="2.4" fill="none"/>
-      <Circle cx="17.5" cy="6.5" r="1.6" fill="#fff"/>
+      <Rect x="3" y="3" width="18" height="18" rx="5.5" stroke="#fff" strokeWidth="3" fill="none"/>
+      <Circle cx="12" cy="12" r="4.5" stroke="#fff" strokeWidth="3" fill="none"/>
+      <Circle cx="17.5" cy="6.5" r="1.8" fill="#fff"/>
     </Svg>
   );
 }
