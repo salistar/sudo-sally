@@ -53,10 +53,35 @@ export type GoogleErrorCode =
 export interface GoogleResult {
   ok: boolean;
   idToken?: string;
+  /** Our backend's JWT after we've exchanged the Google idToken for it. */
+  appToken?: string;
+  /** The user record returned by /api/auth/google. */
+  user?: any;
   /** Normalized code for the UI to branch on. */
   code?: GoogleErrorCode;
   /** Raw error message (and original code) for debugging. */
   error?: string;
+}
+
+/**
+ * Exchange a Google ID token for one of OUR JWTs by hitting /api/auth/google.
+ * Used by both the native and the web sign-in flows.
+ */
+export async function exchangeGoogleIdToken(idToken: string): Promise<{ appToken?: string; user?: any; error?: string }> {
+  try {
+    const res = await fetch('https://api.sudoku.gowithsally.com/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.success) {
+      return { error: data?.error || `HTTP ${res.status}` };
+    }
+    return { appToken: data.token, user: data.user };
+  } catch (e: any) {
+    return { error: String(e?.message || e) };
+  }
 }
 
 let configured = false;
@@ -102,8 +127,16 @@ export async function signInWithGoogle(): Promise<GoogleResult> {
     const result: any = await GoogleSignin.signIn();
     const idToken = result?.data?.idToken ?? result?.idToken;
     console.log('[googleAuth] sign-in OK, idToken present:', !!idToken);
-    // TODO: POST idToken to backend /auth/google to create/login a real account.
-    return { ok: true, idToken };
+    if (!idToken) {
+      return { ok: false, code: 'UNKNOWN', error: 'Google returned no idToken' };
+    }
+    // Exchange Google idToken → our JWT (creates/links a real account on the backend).
+    const { appToken, user, error } = await exchangeGoogleIdToken(idToken);
+    if (!appToken) {
+      console.log('[googleAuth] backend exchange failed:', error);
+      return { ok: false, code: 'UNKNOWN', error: `Backend exchange failed: ${error}` };
+    }
+    return { ok: true, idToken, appToken, user };
   } catch (e: any) {
     const raw = e?.code != null ? String(e.code) : '';
     const msg = e?.message ? String(e.message) : String(e);

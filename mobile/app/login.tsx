@@ -7,6 +7,8 @@ import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import * as Haptics from 'expo-haptics';
 import { signInWithGoogle } from '../utils/googleAuth';
+import { storage as storageFull } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Login.tsx]';
 
@@ -32,9 +34,26 @@ export default function Login() {
     const res = await signInWithGoogle();
     console.log(`${FILE_NAME} 🔵 handleGoogle() - result:`, JSON.stringify(res));
 
-    if (res.ok) {
-      await storage.loginAsGuest(); // TODO: exchange Google token for a real session
+    if (res.ok && res.appToken && res.user) {
+      // Store the REAL session under both keys (KEYS.AUTH_TOKEN for isLoggedIn,
+      // 'sudoku_token' for socket.ts) and persist the user record so home/profile
+      // show "name + picture" instead of a Guest_ stub.
+      const u = res.user;
+      const localUser = {
+        id: u.id || u._id, username: u.username, email: u.email,
+        avatar: u.avatar || '🎮', level: u.level ?? 1, xp: u.xp ?? 0,
+        coins: u.coins ?? 100, stars: u.stars ?? 0,
+        createdAt: u.createdAt || new Date().toISOString(),
+      };
+      await storage.setUser(localUser as any);
+      await AsyncStorage.setItem('sudoku_token', res.appToken);
+      await AsyncStorage.setItem('sudoku_auth_token', res.appToken);
       router.replace('/home');
+      return;
+    }
+    if (res.ok && !res.appToken) {
+      // Native sign-in succeeded but we couldn't exchange for our JWT — show the error.
+      setPopup({ type: 'error', title: 'Google sign-in', message: res.error || 'Could not link the Google account to a Sudoku Sally account.' });
       return;
     }
 

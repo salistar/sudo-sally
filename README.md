@@ -410,6 +410,20 @@ docker compose --env-file deploy/.env.prod -f deploy/docker-compose.prod.yml res
 
 ## 🔐 Google sign-in — full prod walkthrough
 
+> **Server side is already wired (v3.2.1):** the backend exposes `POST /api/auth/google`, which verifies the Google ID token via the official `tokeninfo` endpoint, upserts a user (keyed on Google `sub`), and returns one of *our* JWTs. The **mobile native** flow (`@react-native-google-signin`) and the **web** flow (Google Identity Services / GSI) BOTH POST to that same endpoint. If a Google account signs in for the first time, a real Sudoku Sally account is created from the Google profile (username derived from `given_name`, avatar 🎮). If the email is already used by an email/password account, the two are *linked* (no duplicate is created).
+
+### What's in your Google Cloud Console (3 OAuth clients, 1 project)
+
+| Client | Type | Used by | Identifier env / file |
+|---|---|---|---|
+| **Web** | OAuth Web | • Mobile native (Google insists the `webClientId` is passed to `GoogleSignin.configure()` on Android — even though the user picks an Android account) <br>• Web GSI button | `mobile/utils/googleAuth.ts → GOOGLE_CLIENT_IDS.web` <br>`backend GOOGLE_ALLOWED_AUDS` |
+| **Android** | OAuth Android | Implicit — Google matches the app by `(package = com.sudokusally.v3, signing-cert SHA-1)`. NOT passed to `configure()`. | Google Cloud → Credentials |
+| **iOS** | OAuth iOS | Future iOS build | `mobile/utils/googleAuth.ts → GOOGLE_CLIENT_IDS.ios` |
+
+The **single Web client ID is the `aud` claim of every ID token** the app produces (mobile + web). The backend's `GOOGLE_ALLOWED_AUDS` env var whitelists exactly that one (plus the Android one for forward-compatibility). If you spin up a new Web client (e.g. a separate staging project), add its ID to that comma-separated list.
+
+### Testing mode (where you are now)
+
 While the OAuth consent screen is in **Testing**, **only emails listed under *Test users* can sign in** (everyone else gets `403 access_denied`). To open it to every Google account, you publish the consent screen. The app only requests the *basic* scopes (`openid`, `email`, `profile`), so Google **does not require an app verification** — publishing is instant.
 
 ### Step-by-step
@@ -439,6 +453,38 @@ While the OAuth consent screen is in **Testing**, **only emails listed under *Te
    - Back on the **OAuth consent screen** summary, look for **Publishing status: Testing**.
    - Click **PUBLISH APP** → in the dialog **Push to production**, confirm.
    - Status becomes **In production**. ✅ Done — any Google account can now sign in.
+
+### After publishing — verify each surface in 30 seconds
+
+```bash
+# 1. The Web client ID is the only `aud` value the backend accepts.
+#    Confirm by hitting tokeninfo with a token captured from the GSI button:
+curl -s "https://oauth2.googleapis.com/tokeninfo?id_token=$ID_TOKEN" | python -m json.tool | grep -E "aud|iss|email"
+# → aud should be    106972968307-o1m39edcftpo3r77q856o87o29b1ai4u.apps.googleusercontent.com
+# → iss should be    https://accounts.google.com
+# → email_verified   true
+
+# 2. Backend trade-in works:
+curl -s -X POST https://api.sudoku.gowithsally.com/api/auth/google \
+  -H "Content-Type: application/json" \
+  -d "{\"idToken\":\"$ID_TOKEN\"}" | python -m json.tool
+# → { success: true, token: "<our JWT>", user: { username, email, googleId, ... }, provider: "google" }
+
+# 3. Verify the user landed in Mongo (db.sudoku.gowithsally.com or shell):
+docker exec sudoku-mongo mongosh sudoku_sally --quiet \
+  --eval 'db.users.find({googleId:{$exists:true}},{username:1,email:1,googleId:1,createdAt:1}).pretty()'
+```
+
+### Common Testing→Production gotchas
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Web GSI button silently does nothing | Cross-Origin-Opener-Policy blocked the popup | Use the One Tap embed (already default in our `googleAuth.web.ts`) or load the app in a top-level window |
+| `error: bad aud` from backend | Mobile sent the **Android** client ID as `aud` (rare — happens if you put the Android ID in `configure({webClientId})`) | Always pass the **Web** client ID to `configure()`. Native SDK picks the right Android client by `(package, SHA-1)` automatically |
+| New Google users still land as Guest | Mobile build is older than v3.2.1 → no backend trade-in step | Reinstall the v3.2.1 APK (or newer) |
+| `403 access_denied` for non-test Google accounts | Consent screen still in Testing | Run step 5 above (Push to production) |
+| Need to revoke a linked Google session | n/a — app-side | User taps **Logout** → next sign-in re-prompts the picker (we already call `GoogleSignin.signOut()` before every `signIn()`) |
+
 
 ### Checklist — Google sign-in works end-to-end
 

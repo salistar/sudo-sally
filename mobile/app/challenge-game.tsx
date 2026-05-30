@@ -91,19 +91,26 @@ import Svg, { Path, Circle, Rect, Defs, LinearGradient as SvgLinearGradient, Sto
 const ICON_SZ = 30;
 function FacebookIcon()  { return (<Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}><Path fill="#fff" d="M13.5 21v-7.5h2.55l.38-2.97H13.5V8.75c0-.86.24-1.45 1.47-1.45H16.5V4.65c-.27-.04-1.18-.12-2.24-.12-2.21 0-3.72 1.35-3.72 3.83v2.17H8v2.97h2.54V21h2.96z"/></Svg>); }
 function InstagramIcon() {
-  // VERY bold strokes so the IG glyph reads at the same visual weight as the
-  // solid-fill brands (FB / YT / X / LinkedIn). Matches the official IG app icon.
+  // The official simple-icons IG path — a SINGLE filled glyph (rounded frame +
+  // camera lens + corner dot) with the SAME visual weight as the other solid
+  // brand icons (FB / YT / X / LinkedIn). Painted in white on the IG gradient
+  // background, no strokes, no thin lines.
   return (
     <Svg viewBox="0 0 24 24" width={ICON_SZ} height={ICON_SZ}>
       <Defs>
         <SvgLinearGradient id="ig" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor="#feda75"/><Stop offset=".25" stopColor="#fa7e1e"/><Stop offset=".55" stopColor="#d62976"/><Stop offset=".85" stopColor="#962fbf"/><Stop offset="1" stopColor="#4f5bd5"/>
+          <Stop offset="0"   stopColor="#feda75"/>
+          <Stop offset=".25" stopColor="#fa7e1e"/>
+          <Stop offset=".55" stopColor="#d62976"/>
+          <Stop offset=".85" stopColor="#962fbf"/>
+          <Stop offset="1"   stopColor="#4f5bd5"/>
         </SvgLinearGradient>
       </Defs>
       <Rect x="0" y="0" width="24" height="24" rx="6" fill="url(#ig)"/>
-      <Rect x="3" y="3" width="18" height="18" rx="5.5" stroke="#fff" strokeWidth="3" fill="none"/>
-      <Circle cx="12" cy="12" r="4.5" stroke="#fff" strokeWidth="3" fill="none"/>
-      <Circle cx="17.5" cy="6.5" r="1.8" fill="#fff"/>
+      <Path
+        fill="#fff"
+        d="M12 2.16c3.2 0 3.58.02 4.85.07 1.17.06 1.8.25 2.23.42.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.05.41 2.23.06 1.26.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.06 1.17-.26 1.8-.42 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.24.41-1.27.06-1.65.07-4.86.07-3.21 0-3.59-.02-4.86-.07-1.17-.06-1.82-.26-2.24-.42-.57-.22-.96-.48-1.38-.9-.42-.42-.69-.82-.9-1.38-.16-.42-.36-1.07-.42-2.24C2.07 15.58 2.06 15.2 2.06 12s.02-3.59.07-4.86c.06-1.17.26-1.81.42-2.24.21-.57.48-.96.9-1.38.42-.42.81-.69 1.38-.9.42-.17 1.05-.36 2.22-.42 1.28-.05 1.65-.06 4.86-.06zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.31-1.46.72-2.13 1.38C1.34 2.68.94 3.35.63 4.14.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12c0 3.26.01 3.67.07 4.95.06 1.27.26 2.15.56 2.91.31.79.72 1.46 1.38 2.13.67.67 1.34 1.08 2.13 1.38.77.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24c3.26 0 3.67-.01 4.95-.07 1.28-.06 2.15-.26 2.91-.56.79-.31 1.46-.72 2.13-1.38.67-.67 1.08-1.34 1.38-2.13.3-.77.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91-.31-.79-.72-1.46-1.38-2.13C21.32 1.35 20.65.94 19.86.63 19.1.33 18.23.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84c-3.4 0-6.16 2.76-6.16 6.16 0 3.4 2.76 6.16 6.16 6.16 3.4 0 6.16-2.76 6.16-6.16 0-3.4-2.76-6.16-6.16-6.16zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm6.4-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"
+      />
     </Svg>
   );
 }
@@ -974,6 +981,84 @@ export default function ChallengeGame() {
   const shareText = `I'm playing a real-time 1v1 Sudoku duel on Sudoku Sally!`;
   const openExt = (url: string) => Linking.openURL(url).catch(() => {});
 
+  // ── DECK (chat + record) — rendered as the right sidebar on web, INSIDE the
+  //    ScrollView under the boards on native. Factored out so layout is shared.
+  function renderDeck() {
+    return (
+      <>
+        {/* CHAT */}
+        <View style={[styles.deckCol, styles.deckChat]}>
+          <Text style={styles.deckTitle}>💬 Chat</Text>
+          <ScrollView style={styles.deckChatList} contentContainerStyle={{ padding: 10, gap: 6 }}>
+            {chatMessages.length === 0 && <Text style={styles.deckEmpty}>Say hi to {opponent?.username || 'your opponent'}…</Text>}
+            {chatMessages.map((m) => {
+              const mine = m.from === (currentUser?.username || 'You');
+              return (
+                <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
+                  <Text style={styles.chatFrom}>{m.from}</Text>
+                  {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
+                  {!!m.img && <Text style={[styles.chatText, { fontStyle: 'italic', opacity: 0.7 }]}>📷 image</Text>}
+                </View>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.chatInputRow}>
+            <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={styles.chatAttachIcon}>📎</Text></TouchableOpacity>
+            <TextInput
+              value={chatInput}
+              onChangeText={setChatInput}
+              placeholder="Type a message…"
+              placeholderTextColor="#475569"
+              style={styles.chatInput}
+              onSubmitEditing={sendChat}
+              returnKeyType="send"
+            />
+            <TouchableOpacity style={styles.chatSend} onPress={sendChat}>
+              <Text style={styles.chatSendText}>Send</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* RECORD */}
+        <View style={[styles.deckCol, styles.deckRec]}>
+          <Text style={styles.deckTitle}>🎙️ Record</Text>
+          <Text style={styles.deckHint}>
+            {IS_WEB
+              ? 'Capture mic, cam+mic, or the whole screen+mic. Saves as .webm.'
+              : 'Capture mic to .m4a. Cam/screen recording is available in the web build.'}
+          </Text>
+          <View style={styles.recRow}>
+            {!isRecording ? (
+              <>
+                <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#ef4444' }]} onPress={() => startRecording('audio')}>
+                  <Text style={styles.recIcon}>🎙️</Text><Text style={styles.recText}>Mic</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#a855f7' }]} onPress={() => startRecording('cam')}>
+                  <Text style={styles.recIcon}>📹</Text><Text style={styles.recText}>Cam</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#0ea5e9' }]} onPress={() => startRecording('screen')}>
+                  <Text style={styles.recIcon}>🖥️</Text><Text style={styles.recText}>Screen</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#fbbf24', flexBasis: '100%' }]} onPress={stopRecording}>
+                <Text style={styles.recIcon}>⏹️</Text><Text style={styles.recText}>Stop ({recordModeRef.current})</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {recordedUrl && !isRecording && (
+            <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#4ade80', flexBasis: '100%' }]} onPress={downloadRecording}>
+              <Text style={styles.recIcon}>⬇️</Text>
+              <Text style={styles.recText}>
+                {IS_WEB ? 'Download' : 'Save / Share'} ({Math.floor(recordingDurMs / 60000)}:{String(Math.floor((recordingDurMs % 60000) / 1000)).padStart(2, '0')})
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </>
+    );
+  }
+
   const SHARE_LINKS: Record<string, string> = {
     facebook:  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
     twitter:   `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
@@ -1206,6 +1291,15 @@ export default function ChallengeGame() {
             <Text style={styles.waitingText}>{t('waitingForOpponent')} {opponent.username}...</Text>
           </View>
         )}
+
+        {/* On NATIVE, the chat + record cards live INSIDE the scroll so they
+            never hide the boards. On web the same content renders as the
+            right sidebar (below). */}
+        {!IS_WEB && (
+          <View style={styles.deckInline}>
+            {renderDeck()}
+          </View>
+        )}
       </ScrollView>
 
       {/* Result Modal */}
@@ -1266,67 +1360,11 @@ export default function ChallengeGame() {
         </TouchableOpacity>
       )}
 
-      {/* ============ RIGHT SIDEBAR — chat / record / go-live (web), bottom row on mobile ============ */}
-      {(deckOpen || !IS_WEB) && (
-      <View style={styles.deck}>
-        {/* CHAT — left */}
-        <View style={[styles.deckCol, styles.deckChat]}>
-          <Text style={styles.deckTitle}>💬 Chat</Text>
-          <ScrollView style={styles.deckChatList} contentContainerStyle={{ padding: 10, gap: 6 }}>
-            {chatMessages.length === 0 && <Text style={styles.deckEmpty}>Say hi to {opponent?.username || 'your opponent'}…</Text>}
-            {chatMessages.map(m => {
-              const mine = m.from === (currentUser?.username || 'You');
-              return (
-                <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
-                  <Text style={styles.chatFrom}>{m.from}</Text>
-                  {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
-                  {!!m.img && <Text style={[styles.chatText, { fontStyle:'italic', opacity:0.7 }]}>📷 image</Text>}
-                </View>
-              );
-            })}
-          </ScrollView>
-          <View style={styles.chatInputRow}>
-            <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={{ fontSize: 16 }}>📎</Text></TouchableOpacity>
-            <TextInput value={chatInput} onChangeText={setChatInput} placeholder="Type a message…" placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
-            <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700', fontSize:12 }}>Send</Text></TouchableOpacity>
-          </View>
+      {/* ============ DECK — web: right sidebar; native: it's already rendered INSIDE the ScrollView above ============ */}
+      {IS_WEB && deckOpen && (
+        <View style={styles.deck}>
+          {renderDeck()}
         </View>
-
-        {/* RECORD */}
-        <View style={[styles.deckCol, styles.deckRec]}>
-          <Text style={styles.deckTitle}>🎙️ Record</Text>
-          <Text style={styles.deckHint}>Capture mic, cam+mic, or the whole screen+mic. Saves as .webm.</Text>
-          <View style={styles.recRow}>
-            {!isRecording ? (
-              <>
-                <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#ef4444' }]} onPress={() => startRecording('audio')}>
-                  <Text style={styles.recIcon}>🎙️</Text><Text style={styles.recText}>Mic</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#a855f7' }]} onPress={() => startRecording('cam')}>
-                  <Text style={styles.recIcon}>📹</Text><Text style={styles.recText}>Cam</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#0ea5e9' }]} onPress={() => startRecording('screen')}>
-                  <Text style={styles.recIcon}>🖥️</Text><Text style={styles.recText}>Screen</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#fbbf24', flex: 1 }]} onPress={stopRecording}>
-                <Text style={styles.recIcon}>⏹️</Text><Text style={styles.recText}>Stop ({recordModeRef.current})</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {recordedUrl && !isRecording && (
-            <TouchableOpacity style={[styles.recBtn, { backgroundColor:'#4ade80' }]} onPress={downloadRecording}>
-              <Text style={styles.recIcon}>⬇️</Text>
-              <Text style={styles.recText}>
-                Download ({Math.floor(recordingDurMs/60000)}:{String(Math.floor((recordingDurMs%60000)/1000)).padStart(2,'0')})
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Go Live / Share moved to the TOP CALL BAR */}
-      </View>
       )}
       </View>{/* bodyRow */}
 
@@ -1569,10 +1607,20 @@ const styles = StyleSheet.create({
   chatTheirs: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.06)' },
   chatFrom: { color: '#94a3b8', fontSize: 10, fontWeight: '700', marginBottom: 4 },
   chatText: { color: '#fff', fontSize: 14 },
-  chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10 },
-  chatAttach: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
-  chatInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14 },
-  chatSend: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#4ade80' },
+  chatInputRow: IS_WEB
+    ? { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10 }
+    : { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10 },
+  chatAttach: IS_WEB
+    ? { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' }
+    : { width: 38, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)' },
+  chatAttachIcon: { fontSize: 18 },
+  chatInput: IS_WEB
+    ? { flex: 1, minWidth: 0, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14 }
+    : { flex: 1, minWidth: 0, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 22, paddingHorizontal: 14, paddingVertical: 11, color: '#fff', fontSize: 15, minHeight: 44 },
+  chatSend: IS_WEB
+    ? { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#4ade80' }
+    : { paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#4ade80', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  chatSendText: { color: '#000', fontWeight: '800', fontSize: 13 },
 
   // ============ CALL / RECORD ============
   callRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
@@ -1602,14 +1650,14 @@ const styles = StyleSheet.create({
     ? { flex: 1, flexDirection: 'row', alignItems: 'stretch', minHeight: 0 }
     : { flex: 1, flexDirection: 'column' },
 
-  // ============ DECK — chat / record / live ============
-  deck: IS_WEB
-    ? { width: 360, flexDirection: 'column', gap: 16, padding: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.08)' }
-    : { flexDirection: 'row', gap: 12, padding: 12, backgroundColor: 'rgba(0,0,0,0.35)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', minHeight: 220 },
-  deckCol: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', ...(IS_WEB ? {} : { flex: 1 }) },
-  // Chat takes ALL remaining vertical space; record card never shrinks.
-  deckChat: IS_WEB ? { flex: 1, minHeight: 280 } : { flex: 2 },
-  deckRec: IS_WEB ? { flexShrink: 0 } : { },
+  // ============ DECK — web: right sidebar block; native: inline INSIDE scroll ============
+  deck: { width: 360, flexDirection: 'column', gap: 16, padding: 14, backgroundColor: 'rgba(0,0,0,0.35)', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.08)' },
+  // Inline deck under the boards on native — column stack, full width, gap.
+  deckInline: { flexDirection: 'column', gap: 14, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24, width: '100%' },
+  deckCol: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' },
+  // Web sidebar chat grows; record stays compact. Native: both natural height.
+  deckChat: IS_WEB ? { flex: 1, minHeight: 280 } : { width: '100%' },
+  deckRec: IS_WEB ? { flexShrink: 0 } : { width: '100%' },
   deckLive: { },
   deckFootnote: { color: '#64748b', fontSize: 10, lineHeight: 14, fontStyle: 'italic', marginTop: 6 },
 
@@ -1619,10 +1667,16 @@ const styles = StyleSheet.create({
   deckToggleText: { color: '#000', fontSize: 14, fontWeight: '900' },
 
   // ============ RECORD BUTTONS ============
-  recRow: { flexDirection: 'row', gap: 8 },
-  recBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 11, borderRadius: 12 },
-  recIcon: { fontSize: 18 },
-  recText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  // Web: 3 buttons in a row.   Native: grid (flexWrap) so each button is wide
+  // enough to read instead of being squeezed into a vertical "stick".
+  recRow: IS_WEB
+    ? { flexDirection: 'row', gap: 8 }
+    : { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  recBtn: IS_WEB
+    ? { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 11, borderRadius: 12 }
+    : { flexBasis: '48%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 14, borderRadius: 14, minHeight: 52 },
+  recIcon: IS_WEB ? { fontSize: 18 } : { fontSize: 20 },
+  recText: IS_WEB ? { color: '#fff', fontSize: 12, fontWeight: '700' } : { color: '#fff', fontSize: 14, fontWeight: '800' },
 
   // ============ RINGING MODAL ============
   ringOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
@@ -1636,10 +1690,11 @@ const styles = StyleSheet.create({
   ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
-  // No maxHeight on web — let flex:1 fill the chat card. minHeight to prevent collapse on small screens.
+  // Web: chat card grows, list fills it. Native: chat is in the scrollview so
+  // the list can have a generous fixed height; the outer page scrolls beyond.
   deckChatList: IS_WEB
     ? { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, flex: 1, minHeight: 120 }
-    : { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, maxHeight: 130, minHeight: 80 },
+    : { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, height: 220 },
   deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
 
   // ============ SOCIAL GRID ============

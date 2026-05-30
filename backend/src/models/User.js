@@ -8,6 +8,13 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   avatar: { type: String, default: '🎮' },
   role: { type: String, enum: ['user', 'premium', 'admin'], default: 'user' },
+
+  // ============ AUTH PROVIDERS ============
+  // Set when the user signs in with Google. Either platform (mobile native /
+  // web Identity Services) sends us the verified Google `sub` claim.
+  googleId: { type: String, index: true, sparse: true, unique: true },
+  picture: { type: String },          // Google profile picture URL (optional)
+  emailVerified: { type: Boolean, default: false },
   
   // ============ PROGRESSION ============
   level: { type: Number, default: 1 },
