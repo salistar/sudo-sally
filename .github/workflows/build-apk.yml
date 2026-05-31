@@ -67,35 +67,45 @@ jobs:
           fi
           grep -B1 -A1 "abiFilters" "$GRADLE_FILE" | head -5
 
-      # Build the SIGNED RELEASE APK. Release variant:
-      #   • bundles JS automatically via React Gradle plugin (no Metro at runtime)
-      #   • has no dev menu, no localhost:8081 WebSocket, no red box
-      #   • uses Hermes bytecode → faster startup, smaller binary
-      #   • is the artifact you would later upload to Google Play Console
-      - name: Build release APK
+      # Build BOTH the SIGNED RELEASE APK and the SIGNED RELEASE AAB.
+      #
+      # • APK (assembleRelease)  → for sideload (sudoku.gowithsally.com/downloads,
+      #   WhatsApp, etc.). Release variant: JS bundled, Hermes, no Metro, no red
+      #   box. Same artifact you'd hand to a friend over WhatsApp.
+      # • AAB (bundleRelease)    → for Google Play Console upload. Play splits
+      #   it into per-device APKs (saves users ~30% download).
+      #
+      # Both come from the same release variant → identical code, identical
+      # signing key, identical SHA-1. The same OAuth registration covers both.
+      - name: Build release APK + AAB
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Stage APK
+      - name: Stage APK + AAB
         run: |
           mkdir -p ../artifacts
           cp android/app/build/outputs/apk/release/app-release.apk ../artifacts/sudoku-sally.apk
-          ls -lh ../artifacts/sudoku-sally.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab ../artifacts/sudoku-sally.aab
+          ls -lh ../artifacts/
           # Confirm the JS bundle (Hermes .bundle) is inside the APK
           unzip -l ../artifacts/sudoku-sally.apk | grep -E "assets/index.android.bundle|lib/arm64-v8a/" | head -5
 
-      - name: Upload APK artifact
+      - name: Upload APK + AAB artifacts
         uses: actions/upload-artifact@v4
         with:
           name: sudoku-sally-apk
-          path: artifacts/sudoku-sally.apk
+          path: |
+            artifacts/sudoku-sally.apk
+            artifacts/sudoku-sally.aab
           if-no-files-found: error
 
-      - name: Attach APK to GitHub Release (tags only)
+      - name: Attach APK + AAB to GitHub Release (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/sudoku-sally.apk
+          files: |
+            artifacts/sudoku-sally.apk
+            artifacts/sudoku-sally.aab
           fail_on_unmatched_files: true
