@@ -49,6 +49,19 @@ if [ ! -f .env.prod ]; then
 fi
 
 echo "▶ Building & starting containers..."
+
+# Migration aid: the web container used to be deployed by hand (a
+# `sudoku-web` container that compose didn't know about). The new compose
+# now manages it; if a pre-compose container is still hanging around it
+# will block the new one with "name already in use". Remove the legacy one
+# only if it isn't already labelled as part of THIS compose project.
+if docker ps -a --format '{{.Names}}' | grep -qx sudoku-web; then
+  if ! docker inspect sudoku-web --format '{{ index .Config.Labels "com.docker.compose.project" }}' 2>/dev/null | grep -qx sudoku-sally; then
+    echo "▶ Removing legacy sudoku-web container (pre-compose hand-deploy)..."
+    docker rm -f sudoku-web >/dev/null 2>&1 || true
+  fi
+fi
+
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build --remove-orphans
 
 echo "▶ Staging latest APK into the landing container..."
