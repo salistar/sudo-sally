@@ -76,6 +76,23 @@ services:
       - sudoku
       - edge
 
+  # ── Web build of the app (react-native-web via Expo) — app.sudoku.gowithsally.com
+  # Multi-stage Dockerfile.web does `expo export --platform web` inside a
+  # node:18-alpine builder, then copies the static `dist/` into a tiny nginx.
+  # `--build` on `docker compose up` will rebuild this whenever mobile/ changes.
+  web:
+    build:
+      context: ../mobile
+      dockerfile: Dockerfile.web
+    image: sudoku-sally-web:latest
+    container_name: sudoku-web
+    restart: unless-stopped
+    networks:
+      - sudoku
+      - edge          # so Caddy can serve app.sudoku.gowithsally.com
+    expose:
+      - "80"
+
   # ── Admin UIs (own basic-auth, served over HTTPS via Caddy) ──────────────
   mongo-ui:
     image: mongo-express:1.0.2

@@ -1,15 +1,33 @@
-# Web build of the Sudoku Sally app — produced by:
-#   cd mobile && npx expo export --platform web
-# then this image bakes the resulting `dist/` into a tiny nginx container.
+# Web build of the SallySudo app — multi-stage:
+#   Stage 1: install deps + `npx expo export --platform web` → dist/
+#   Stage 2: tiny nginx serving the static export
+# Run from the repo root: docker build -f mobile/Dockerfile.web mobile/ -t sudoku-web
 
+# ─── Stage 1 — build the web export ──────────────────────────────
+FROM node:18-alpine AS web-builder
+
+# Native deps that some Expo plugins reach for during prebuild
+RUN apk add --no-cache python3 make g++ git
+
+WORKDIR /build
+COPY package.json package-lock.json* ./
+# --legacy-peer-deps because react-native-webrtc + expo-av occasionally
+# publish peer ranges newer than what SDK 52 ships (matches CI APK build).
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
+
+# Copy the rest of the mobile source and produce the web bundle.
+COPY . ./
+RUN npx expo export --platform web --output-dir dist
+
+# ─── Stage 2 — nginx serving dist/ ──────────────────────────────
 FROM nginx:1.27-alpine
 
 # Replace the default site config with one that handles expo-router static routes
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx-web.conf /etc/nginx/conf.d/sudoku-web.conf
 
-# Static export
-COPY dist /usr/share/nginx/html
+# Static export from the builder stage
+COPY --from=web-builder /build/dist /usr/share/nginx/html
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=4s --retries=3 \
