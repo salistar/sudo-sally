@@ -96,8 +96,10 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // Update last login
+    // Update last login + lastActive so the lobby's /users/recent surfaces
+    // anyone who has logged in lately, even without a live WebSocket session.
     user.lastLogin = new Date();
+    user.lastActive = new Date();
     await user.save();
     
     const token = generateToken(user._id);
