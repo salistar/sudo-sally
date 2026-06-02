@@ -4,7 +4,7 @@ export type Language = 'en' | 'fr' | 'ar';
 export const translations = {
   en: {
     // App
-    appName: 'Sudoku Sally',
+    appName: 'SallySudo',
     tagline: 'Train your brain',
     
     // Auth
@@ -392,7 +392,7 @@ export const translations = {
 
   fr: {
     // App
-    appName: 'Sudoku Sally',
+    appName: 'SallySudo',
     tagline: 'Entraînez votre cerveau',
     
     // Auth
@@ -780,7 +780,7 @@ export const translations = {
 
   ar: {
     // App
-    appName: 'سودوكو سالي',
+    appName: 'سالي سودو',
     tagline: 'درّب عقلك',
     
     // Auth

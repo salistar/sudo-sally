@@ -978,7 +978,7 @@ export default function ChallengeGame() {
   }
 
   const shareUrl = `https://sudoku.gowithsally.com`;
-  const shareText = `I'm playing a real-time 1v1 Sudoku duel on Sudoku Sally!`;
+  const shareText = `I'm playing a real-time 1v1 Sudoku duel on SallySudo!`;
   const openExt = (url: string) => Linking.openURL(url).catch(() => {});
 
   // ── DECK (chat + record) — rendered as the right sidebar on web, INSIDE the

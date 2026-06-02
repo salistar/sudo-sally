@@ -1,5 +1,5 @@
 /**
- * API Service — connects to the Sudoku Sally backend (VPS prod).
+ * API Service — connects to the SallySudo backend (VPS prod).
  *
  * The shipped APK ALWAYS talks to the production API. There is no dev URL
  * baked into release builds. The commented snippet below is kept as

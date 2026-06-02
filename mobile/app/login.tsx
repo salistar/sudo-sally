@@ -53,7 +53,7 @@ export default function Login() {
     }
     if (res.ok && !res.appToken) {
       // Native sign-in succeeded but we couldn't exchange for our JWT — show the error.
-      setPopup({ type: 'error', title: 'Google sign-in', message: res.error || 'Could not link the Google account to a Sudoku Sally account.' });
+      setPopup({ type: 'error', title: 'Google sign-in', message: res.error || 'Could not link the Google account to a SallySudo account.' });
       return;
     }
 

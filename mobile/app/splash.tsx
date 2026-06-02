@@ -99,7 +99,7 @@ export default function Splash() {
         </Animated.View>
 
         {/* Wordmark */}
-        <Text style={styles.title}>SUDOKU SALLY</Text>
+        <Text style={styles.title}>SALLYSUDO</Text>
         <LinearGradient colors={['#4ade80', '#22c55e']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tagBadge}>
           <Text style={styles.tagText}>{t('trainBrainDaily')}</Text>
         </LinearGradient>

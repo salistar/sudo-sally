@@ -235,7 +235,7 @@ export default function Home() {
               <Text style={styles.logoIcon}>🧩</Text>
               <View style={styles.logoGlow} />
             </View>
-            <Text style={styles.logoText}>SUDOKU SALLY</Text>
+            <Text style={styles.logoText}>SALLYSUDO</Text>
             <View style={styles.versionBadge}>
               <Text style={styles.versionText}>V3.1 - Challenge Update</Text>
             </View>

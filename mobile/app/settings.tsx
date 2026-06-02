@@ -373,9 +373,9 @@ export default function SettingsScreen() {
         {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appLogo}>🧩</Text>
-          <Text style={styles.appName}>Sudoku Sally</Text>
-          <Text style={styles.appVersion}>Version 3.0.0</Text>
-          <Text style={styles.appCopyright}>© 2024 Sally Games</Text>
+          <Text style={styles.appName}>SallySudo</Text>
+          <Text style={styles.appVersion}>Version 3.3.0</Text>
+          <Text style={styles.appCopyright}>© 2026 Sally Suite</Text>
         </View>
 
         {/* Bottom spacing */}
