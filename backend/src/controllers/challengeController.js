@@ -61,34 +61,46 @@ exports.getOnlineUsers = async (req, res) => {
 // Send challenge
 exports.sendChallenge = async (req, res) => {
   try {
-    const { targetUserId, difficulty } = req.body;
-    
-    if (targetUserId === req.user.id) {
-      return res.status(400).json({ error: 'Cannot challenge yourself' });
+    const { targetUserId, targetUsername, difficulty } = req.body;
+
+    // Accept either targetUserId (legacy) OR targetUsername (lobby search).
+    let targetUser;
+    if (targetUsername) {
+      targetUser = await User.findOne({
+        username: { $regex: '^' + targetUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', $options: 'i' },
+      });
+      if (!targetUser) return res.status(404).json({ error: 'User not found' });
+      if (String(targetUser._id) === String(req.user.id)) {
+        return res.status(400).json({ error: 'Cannot challenge yourself' });
+      }
+    } else {
+      if (targetUserId === req.user.id) {
+        return res.status(400).json({ error: 'Cannot challenge yourself' });
+      }
+      targetUser = await User.findById(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
     }
-    
-    const targetUser = await User.findById(targetUserId);
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const resolvedTargetId = targetUser._id;
     
     const existingChallenge = await Challenge.findOne({
       $or: [
-        { challenger: req.user.id, challenged: targetUserId },
-        { challenger: targetUserId, challenged: req.user.id }
+        { challenger: req.user.id, challenged: resolvedTargetId },
+        { challenger: resolvedTargetId, challenged: req.user.id }
       ],
       status: { $in: ['pending', 'accepted', 'playing'] }
     });
-    
+
     if (existingChallenge) {
       return res.status(400).json({ error: 'A challenge already exists with this user' });
     }
-    
+
     const { puzzle, solution } = generateSudokuPuzzle(difficulty || 'medium');
-    
+
     const challenge = await Challenge.create({
       challenger: req.user.id,
-      challenged: targetUserId,
+      challenged: resolvedTargetId,
       puzzle: JSON.stringify(puzzle),
       solution: JSON.stringify(solution),
       difficulty: difficulty || 'medium',

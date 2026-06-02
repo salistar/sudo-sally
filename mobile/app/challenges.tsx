@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  RefreshControl, ActivityIndicator, Modal, Platform
+  RefreshControl, ActivityIndicator, Modal, Platform, TextInput
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +24,8 @@ interface User {
   avatar: string;
   level: number;
   stars: number;
+  isOnline?: boolean;        // populated by search/recent endpoints
+  lastActive?: string;
 }
 
 interface Challenge {
@@ -63,6 +65,11 @@ export default function Challenges() {
   const [selectedTab, setSelectedTab] = useState<'online' | 'received' | 'sent' | 'active' | 'history'>('online');
   const [difficultyModal, setDifficultyModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  // v3.3.0 — search bar + recent users so "No users online" is no longer a dead end.
+  const [searchQ, setSearchQ] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({ 
     challengesWon: 0, 
     challengesLost: 0, 
@@ -162,6 +169,7 @@ export default function Challenges() {
       
       await Promise.all([
         loadOnlineUsers(),
+        loadRecentUsers(),
         loadMyChallenges(),
         loadChallengeStats()
       ]);
@@ -184,6 +192,45 @@ export default function Challenges() {
       console.error('Error loading online users:', error);
     }
   };
+
+  // v3.3.0 — recent users (active in last 24h, even if not socket-connected now).
+  // Closes the "No users online" dead-end UX: there's almost always SOMEONE
+  // recently active to challenge.
+  const loadRecentUsers = async () => {
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      const response = await fetch(`${API_URL}/users/recent`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) setRecentUsers(data.users);
+    } catch (error) {
+      console.error('Error loading recent users:', error);
+    }
+  };
+
+  // v3.3.0 — debounced search by username prefix.
+  const runSearch = useCallback(async (q: string) => {
+    setSearchQ(q);
+    if (!q.trim() || q.trim().length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      const response = await fetch(`${API_URL}/users/search?q=${encodeURIComponent(q.trim())}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) setSearchResults(data.users);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
 
   const loadMyChallenges = async () => {
     try {
@@ -405,29 +452,103 @@ export default function Challenges() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ade80" />}
       >
-        {/* Online Users */}
+        {/* Online + Recent + Search */}
         {selectedTab === 'online' && (
-          onlineUsers.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>👥</Text>
-              <Text style={styles.emptyText}>{t('noUsersOnline')}</Text>
-              <Text style={styles.emptySubtext}>{t('pullToRefresh')}</Text>
+          <>
+            {/* SEARCH BAR — always visible. Search any registered player by name. */}
+            <View style={styles.searchRow}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                value={searchQ}
+                onChangeText={runSearch}
+                placeholder="Search a player by name…"
+                placeholderTextColor="#64748b"
+                autoCapitalize="none"
+              />
+              {searchQ.length > 0 && (
+                <TouchableOpacity onPress={() => runSearch('')} style={styles.searchClear}>
+                  <Text style={styles.searchClearText}>✕</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          ) : (
-            onlineUsers.map(user => (
-              <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
-                <View style={styles.onlineIndicator} />
-                <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
-                <View style={styles.info}>
-                  <Text style={styles.name}>{user.username}</Text>
-                  <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
+
+            {/* If actively searching, show ONLY the search results */}
+            {searchQ.trim().length >= 2 ? (
+              searching ? (
+                <View style={styles.empty}><ActivityIndicator color="#4ade80" /></View>
+              ) : searchResults.length === 0 ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyIcon}>🤷</Text>
+                  <Text style={styles.emptyText}>No player matches "{searchQ}"</Text>
+                  <Text style={styles.emptySubtext}>Try the start of their username.</Text>
                 </View>
-                <View style={styles.challengeBtn}>
-                  <Text style={styles.btnText}>⚔️ {t('challengeBtn')}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          )
+              ) : (
+                searchResults.map(user => (
+                  <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
+                    {user.isOnline && <View style={styles.onlineIndicator} />}
+                    <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
+                    <View style={styles.info}>
+                      <Text style={styles.name}>{user.username}</Text>
+                      <Text style={styles.stats}>{user.isOnline ? '🟢 online' : '⚪ offline'} · ⭐ {user.stars} • Lvl {user.level}</Text>
+                    </View>
+                    <View style={styles.challengeBtn}>
+                      <Text style={styles.btnText}>⚔️ {t('challengeBtn')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )
+            ) : (
+              <>
+                {/* Section 1 — currently online (real-time) */}
+                {onlineUsers.length > 0 && (
+                  <Text style={styles.sectionHead}>🟢 Online now ({onlineUsers.length})</Text>
+                )}
+                {onlineUsers.map(user => (
+                  <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
+                    <View style={styles.onlineIndicator} />
+                    <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
+                    <View style={styles.info}>
+                      <Text style={styles.name}>{user.username}</Text>
+                      <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
+                    </View>
+                    <View style={styles.challengeBtn}>
+                      <Text style={styles.btnText}>⚔️ {t('challengeBtn')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+
+                {/* Section 2 — recently active (last 24h) so the lobby is never empty */}
+                {recentUsers.filter(u => !onlineUsers.find(o => o._id === u._id)).length > 0 && (
+                  <Text style={styles.sectionHead}>⏰ Active in the last 24h</Text>
+                )}
+                {recentUsers
+                  .filter(u => !onlineUsers.find(o => o._id === u._id))
+                  .slice(0, 20)
+                  .map(user => (
+                    <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
+                      <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
+                      <View style={styles.info}>
+                        <Text style={styles.name}>{user.username}</Text>
+                        <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
+                      </View>
+                      <View style={[styles.challengeBtn, { backgroundColor: 'rgba(74,222,128,0.15)' }]}>
+                        <Text style={[styles.btnText, { color: '#4ade80' }]}>⚔️ Challenge</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+
+                {onlineUsers.length === 0 && recentUsers.length === 0 && (
+                  <View style={styles.empty}>
+                    <Text style={styles.emptyIcon}>👥</Text>
+                    <Text style={styles.emptyText}>{t('noUsersOnline')}</Text>
+                    <Text style={styles.emptySubtext}>Search a friend by name above, or invite them to install the app:</Text>
+                    <Text style={styles.inviteLink}>https://sudoku.gowithsally.com</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </>
         )}
 
         {/* Received Challenges */}
@@ -600,8 +721,24 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   empty: { alignItems: 'center', padding: 40 },
   emptyIcon: { fontSize: 50, marginBottom: 10 },
-  emptyText: { color: '#64748b', fontSize: 16 },
-  emptySubtext: { color: '#475569', fontSize: 13, marginTop: 5 },
+  emptyText: { color: '#64748b', fontSize: 16, textAlign: 'center' },
+  emptySubtext: { color: '#475569', fontSize: 13, marginTop: 5, textAlign: 'center' },
+  inviteLink: { color: '#4ade80', fontSize: 14, marginTop: 10, fontWeight: '700' },
+
+  // v3.3.0 — Player search row
+  searchRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 24, paddingHorizontal: 14, paddingVertical: 4,
+    marginBottom: 14,
+  },
+  searchIcon: { fontSize: 16, color: '#94a3b8' },
+  searchInput: { flex: 1, color: '#fff', fontSize: 15, paddingVertical: 10 },
+  searchClear: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)' },
+  searchClearText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  // Section heads inside the lobby list
+  sectionHead: { color: '#94a3b8', fontSize: 12, fontWeight: '700', letterSpacing: 0.8, marginTop: 6, marginBottom: 8, textTransform: 'uppercase' },
   
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 15, borderRadius: 14, marginBottom: 10 },
   activeCard: { borderWidth: 1, borderColor: '#4ade80' },

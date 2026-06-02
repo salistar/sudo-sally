@@ -176,8 +176,10 @@ export default function Home() {
   const menu = [
     { icon: '🎮', label: t('play'), desc: t('startGame'), route: '/levels', colors: ['#4ade80', '#22c55e'] as const },
     { icon: '⏱️', label: t('dailyChallenge'), desc: t('challenge'), route: '/daily', colors: ['#f59e0b', '#d97706'] as const },
-    { icon: '⚔️', label: t('challenge'), desc: t('pvp'), route: '/challenges', colors: ['#ef4444', '#dc2626'] as const, badge: 'NEW' },
-    { icon: '👥', label: t('versus'), desc: t('multiplayer'), route: '/multiplayer', colors: ['#ec4899', '#db2777'] as const },
+    // Single multiplayer entry — both cards used to point to two different
+    // screens (one real, one fake "coming soon"). Unified for v3.3.0.
+    { icon: '⚔️', label: t('challenge'), desc: t('pvp'), route: '/challenges', colors: ['#ef4444', '#dc2626'] as const, badge: 'LIVE' },
+    { icon: '🏆', label: t('versus'), desc: t('multiplayer'), route: '/leaderboard', colors: ['#ec4899', '#db2777'] as const },
     { icon: '🛒', label: t('shop'), desc: t('items'), route: '/shop', colors: ['#8b5cf6', '#7c3aed'] as const },
     { icon: '📊', label: t('stats'), desc: t('progress'), route: '/stats', colors: ['#14b8a6', '#0d9488'] as const },
     { icon: '🏆', label: t('ranking'), desc: t('leaderboard'), route: '/leaderboard', colors: ['#eab308', '#ca8a04'] as const },
