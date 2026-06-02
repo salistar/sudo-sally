@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
+import BottomNav from '../components/BottomNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
@@ -489,7 +490,7 @@ export default function Challenges() {
                     {user.isOnline && <View style={styles.onlineIndicator} />}
                     <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
                     <View style={styles.info}>
-                      <Text style={styles.name}>{user.username}</Text>
+                      <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{user.username}</Text>
                       <Text style={styles.stats}>{user.isOnline ? '🟢 online' : '⚪ offline'} · ⭐ {user.stars} • Lvl {user.level}</Text>
                     </View>
                     <View style={styles.challengeBtn}>
@@ -509,7 +510,7 @@ export default function Challenges() {
                     <View style={styles.onlineIndicator} />
                     <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
                     <View style={styles.info}>
-                      <Text style={styles.name}>{user.username}</Text>
+                      <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{user.username}</Text>
                       <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
                     </View>
                     <View style={styles.challengeBtn}>
@@ -529,7 +530,7 @@ export default function Challenges() {
                     <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
                       <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
                       <View style={styles.info}>
-                        <Text style={styles.name}>{user.username}</Text>
+                        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{user.username}</Text>
                         <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
                       </View>
                       <View style={[styles.challengeBtn, { backgroundColor: 'rgba(74,222,128,0.15)' }]}>
@@ -692,7 +693,8 @@ export default function Challenges() {
       </Modal>
 
       <AppModal popup={popup} onClose={closePopup} buttonLabel={t('gotIt')} />
-    </LinearGradient>
+          <BottomNav active="lobby" />
+      </LinearGradient>
   );
 }
 
@@ -745,7 +747,9 @@ const styles = StyleSheet.create({
   onlineIndicator: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4ade80', marginRight: 10 },
   avatar: { fontSize: 32, marginRight: 12 },
   info: { flex: 1 },
-  name: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  name: { color: '#fff', fontSize: 16, fontWeight: '600' } as any,
+  // v3.6 — name rows that DO use numberOfLines to avoid the 2-line wrap of
+  // long Guest_xxxxxxxx usernames seen in v3.5 audit screenshots.
   stats: { color: '#64748b', fontSize: 12, marginTop: 2 },
   
   challengeBtn: { backgroundColor: '#4ade80', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 15 },

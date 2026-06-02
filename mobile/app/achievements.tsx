@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, Achievement } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import BottomNav from '../components/BottomNav';
 
 const FILE_NAME = '📁 [Achievements.tsx]';
 
@@ -240,7 +241,8 @@ export default function Achievements() {
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="profile" />
+      </LinearGradient>
   );
 }
 

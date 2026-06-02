@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import BottomNav from '../components/BottomNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
@@ -302,7 +303,8 @@ export default function Leaderboard() {
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="lobby" />
+      </LinearGradient>
   );
 }
 

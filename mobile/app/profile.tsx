@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, User } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
+import SallyMascot from '../components/SallyMascot';
 
 const FILE_NAME = '📁 [Profile.tsx]';
 
@@ -150,7 +152,13 @@ export default function Profile() {
                 colors={['rgba(74,222,128,0.3)', 'rgba(74,222,128,0.1)']}
                 style={styles.currentAvatar}
               >
-                <Text style={styles.avatarLarge}>{user?.avatar || '👤'}</Text>
+                {/* v3.6 — Was a generic 🎮/👤 emoji. If the user hasn't picked
+                    a custom avatar yet, show Sally instead so the profile
+                    still looks branded. The user can override via the avatar
+                    picker below as before. */}
+                {!user?.avatar || user.avatar === '🎮' || user.avatar === '👤'
+                  ? <SallyMascot size={80} mode="wink" />
+                  : <Text style={styles.avatarLarge}>{user.avatar}</Text>}
               </LinearGradient>
               <View style={styles.avatarGlow} />
               <View style={styles.levelBadge}>
@@ -337,7 +345,8 @@ export default function Profile() {
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="profile" />
+      </LinearGradient>
   );
 }
 

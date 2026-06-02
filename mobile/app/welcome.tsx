@@ -7,6 +7,7 @@ import { storage } from '../utils/storage';
 import { Language, t } from '../utils/i18n';
 import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
+import SallyMascot from '../components/SallyMascot';
 
 const FILE_NAME = '[Welcome.tsx]';
 const { width, height } = Dimensions.get('window');
@@ -161,7 +162,7 @@ export default function Welcome() {
             style={styles.logoGradient}
           >
             <View style={styles.logoInner}>
-              <Text style={styles.emoji}>🧩</Text>
+              <SallyMascot size={110} mode="default" />{/* v3.6 — was 🧩 emoji */}
             </View>
             {/* Corner Accents */}
             <View style={[styles.cornerAccent, styles.cornerTL]} />

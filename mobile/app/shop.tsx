@@ -8,6 +8,7 @@ import { THEMES, Theme } from '../utils/themes';
 import { POWERUPS, PowerUp } from '../utils/powerups';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
+import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '[Shop.tsx]';
@@ -332,7 +333,8 @@ export default function Shop() {
       </Animated.View>
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
-    </LinearGradient>
+          <BottomNav active="play" />
+      </LinearGradient>
   );
 }
 

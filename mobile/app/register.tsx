@@ -6,6 +6,7 @@ import { storage, User } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import * as Haptics from 'expo-haptics';
+import SallyMascot from '../components/SallyMascot';
 
 const FILE_NAME = '📁 [Register.tsx]';
 
@@ -196,7 +197,7 @@ export default function Register() {
                 colors={['rgba(59,130,246,0.2)', 'rgba(59,130,246,0.05)']}
                 style={styles.logoGradient}
               >
-                <Text style={styles.emoji}>📝</Text>
+                <SallyMascot size={90} mode="thinking" />{/* v3.6 — was 📝 emoji */}
               </LinearGradient>
               <View style={styles.logoGlow} />
             </View>

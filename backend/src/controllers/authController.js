@@ -54,8 +54,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
     
-    // Create user
-    const user = await User.create({ username, email, password });
+    // Create user — auto-unlock the "welcome" achievement so the
+    // Achievements screen reads 1/N instead of a depressing 0/N for a
+    // brand-new account.
+    const user = await User.create({
+      username, email, password,
+      achievements: [{ achievementId: 'welcome', unlockedAt: new Date() }],
+    });
     const token = generateToken(user._id);
     
     res.status(201).json({
@@ -192,6 +197,7 @@ exports.googleAuth = async (req, res) => {
         username,
         email: (email || `${sub}@google.local`).toLowerCase(),
         password: randomPwd,
+        achievements: [{ achievementId: 'welcome', unlockedAt: new Date() }],
         googleId: sub,
         picture,
         emailVerified: email_verified === true,
@@ -233,7 +239,8 @@ exports.guestLogin = async (req, res) => {
       email: guestId + '@guest.local',
       password: guestId,
       role: 'user',
-      coins: 50
+      coins: 50,
+      achievements: [{ achievementId: 'welcome', unlockedAt: new Date() }],
     });
     
     const token = generateToken(user._id);

@@ -6,6 +6,7 @@ import { storage, Settings } from '../utils/storage';
 import { Language } from '../utils/i18n';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
+import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -433,7 +434,8 @@ export default function SettingsScreen() {
         onClose={() => setPopup(null)}
         buttonLabel={popup?.confirmLabel ? t('cancel') : t('ok')}
       />
-    </LinearGradient>
+          <BottomNav active="settings" />
+      </LinearGradient>
   );
 }
 

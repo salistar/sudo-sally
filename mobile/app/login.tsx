@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { signInWithGoogle } from '../utils/googleAuth';
 import { storage as storageFull } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SallyMascot from '../components/SallyMascot';
 
 const FILE_NAME = '📁 [Login.tsx]';
 
@@ -221,7 +222,8 @@ export default function Login() {
                 colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
                 style={styles.logoGradient}
               >
-                <Text style={styles.emoji}>🔐</Text>
+                {/* v3.6 — was 🔐 emoji; replaced with Sally for brand consistency */}
+                <SallyMascot size={90} mode="default" />
               </LinearGradient>
               <View style={styles.logoGlow} />
             </View>

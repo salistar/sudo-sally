@@ -89,6 +89,16 @@ export const generateLevels = (): LevelData[] => {
 
 // Achievements
 export const ACHIEVEMENTS: Achievement[] = [
+  // v3.6 — Auto-unlocked at register so brand-new users see 1/N instead of 0/N.
+  {
+    id: 'welcome',
+    title: { en: 'Welcome to SallySudo!', fr: 'Bienvenue sur SallySudo !', ar: 'مرحباً بك في SallySudo!' },
+    description: { en: 'Created an account', fr: 'Compte créé', ar: 'تم إنشاء الحساب' },
+    icon: '🎮',
+    unlocked: true,
+    progress: 1,
+    target: 1,
+  },
   {
     id: 'first_win',
     title: { en: 'First Victory', fr: 'Première Victoire', ar: 'الفوز الأول' },

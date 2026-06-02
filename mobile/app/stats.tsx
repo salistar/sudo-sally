@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TouchableOpacity } from 'react-native';
 import { storage, GameStats, formatTime } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import BottomNav from '../components/BottomNav';
 
 const FILE_NAME = '[Stats.tsx]';
 const { width } = Dimensions.get('window');
@@ -145,6 +146,28 @@ export default function Stats() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          {/* v3.6 — Cold-start CTA: brand-new account with no games played
+              gets an inviting "Play your first puzzle" card instead of
+              staring at six "0" cards. Hides as soon as the user plays. */}
+          {stats && stats.gamesPlayed === 0 && (
+            <TouchableOpacity
+              onPress={() => router.push('/game?level=1' as any)}
+              activeOpacity={0.85}
+              style={{ marginBottom: 18 }}
+            >
+              <LinearGradient
+                colors={['#4ade80', '#22c55e']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ borderRadius: 20, padding: 22, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.3, shadowRadius: 14 }}
+              >
+                <Text style={{ fontSize: 36, marginBottom: 4 }}>🚀</Text>
+                <Text style={{ color: '#0a0a1a', fontSize: 18, fontWeight: '900' }}>{t('playFirstPuzzleTitle') || 'Play your first puzzle'}</Text>
+                <Text style={{ color: '#0a0a1a', opacity: 0.7, fontSize: 13, marginTop: 4, textAlign: 'center' }}>
+                  {t('playFirstPuzzleSub') || 'These stats fill in as you play'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
           {/* Games Section */}
           <Text style={styles.sectionTitle}>🎯 {t('gamePerformance')}</Text>
           {statItems.filter(item => item.category === 'games').map((item, i) => {
@@ -257,7 +280,8 @@ export default function Stats() {
           <View style={styles.bottomSpacer} />
         </Animated.View>
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="profile" />
+      </LinearGradient>
   );
 }
 

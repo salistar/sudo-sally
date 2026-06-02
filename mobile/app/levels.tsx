@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, LevelData } from '../utils/storage';
+import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '📁 [Levels.tsx]';
@@ -298,7 +299,8 @@ export default function Levels() {
         {/* Bottom spacing */}
         <View style={{ height: 40, width: '100%' }} />
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="play" />
+      </LinearGradient>
   );
 }
 

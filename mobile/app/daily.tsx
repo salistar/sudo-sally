@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDailyChallenge, DailyChallenge } from '../utils/daily';
 import { useLang } from '../utils/LanguageContext';
+import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '📁 [Daily.tsx]';
@@ -214,19 +215,23 @@ export default function Daily() {
               ))}
             </View>
             
+            {/* v3.6 — Was "15 PUZZLES / 10m / 300 MAX XP" — confusing grind framing
+                for a "daily". Top puzzle apps (Sudoku.com, Wordscapes) ship a
+                single rich puzzle per day. We now show: ONE puzzle, free time,
+                fair payoff. */}
             <View style={styles.challengeStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>15</Text>
+                <Text style={styles.statValue}>1</Text>
                 <Text style={styles.statLabel}>{t('puzzles')}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>10m</Text>
+                <Text style={styles.statValue}>∞</Text>
                 <Text style={styles.statLabel}>{t('estTime')}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>300</Text>
+                <Text style={styles.statValue}>50</Text>
                 <Text style={styles.statLabel}>{t('maxXP')}</Text>
               </View>
             </View>
@@ -385,7 +390,8 @@ export default function Daily() {
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </LinearGradient>
+          <BottomNav active="play" />
+      </LinearGradient>
   );
 }
 
