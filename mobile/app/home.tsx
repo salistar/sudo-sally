@@ -237,11 +237,36 @@ export default function Home() {
             </View>
             <Text style={styles.logoText}>SALLYSUDO</Text>
             <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>V3.1 - Challenge Update</Text>
+              <Text style={styles.versionText}>v3.4 · Multiplayer Live</Text>
             </View>
             <Text style={styles.tagline}>{t('trainBrainDaily')}</Text>
           </LinearGradient>
         </View>
+
+        {/* v3.4 — Cold-start hero CTA: when the user has 0 wins / 0 stars
+            we replace the "0/0/0 stats" sadness with a warm invitation to
+            their first puzzle. As soon as they win once, this hides and
+            the stats appear instead. */}
+        {(!stats?.gamesWon && !user?.stars) && (
+          <TouchableOpacity
+            onPress={() => router.push('/game?level=1' as any)}
+            activeOpacity={0.85}
+            style={{ marginHorizontal: 0, marginBottom: 18 }}
+          >
+            <LinearGradient
+              colors={['#4ade80', '#22c55e']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ borderRadius: 22, padding: 22, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
+            >
+              <Text style={{ fontSize: 38, marginBottom: 6 }}>🚀</Text>
+              <Text style={{ color: '#0a0a1a', fontSize: 20, fontWeight: '900', letterSpacing: 0.3 }}>Play your first puzzle</Text>
+              <Text style={{ color: '#0a0a1a', opacity: 0.7, fontSize: 13, marginTop: 4, textAlign: 'center' }}>Win in under 5 minutes — earn your first ⭐</Text>
+              <View style={{ marginTop: 12, backgroundColor: '#0a0a1a', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 16 }}>
+                <Text style={{ color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>START NOW →</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
         {/* Quick Stats */}
         <View style={styles.statsSection}>

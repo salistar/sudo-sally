@@ -9,105 +9,39 @@ import * as Haptics from 'expo-haptics';
 const FILE_NAME = '[Tutorial.tsx]';
 const { width, height } = Dimensions.get('window');
 
-const TUTORIAL_PAGES = [
-  {
-    title: '🎯 Objectif',
-    content: 'Remplissez la grille 9x9 avec les chiffres 1 à 9.',
-    details: [
-      'Chaque ligne doit contenir tous les chiffres de 1 à 9',
-      'Chaque colonne doit contenir tous les chiffres de 1 à 9',
-      'Chaque bloc 3x3 doit contenir tous les chiffres de 1 à 9'
-    ],
-    visual: 'grid',
-    color: '#4ade80'
-  },
-  {
-    title: '📱 Comment jouer',
-    content: 'Touchez une cellule vide pour la sélectionner.',
-    details: [
-      '1. Appuyez sur une cellule vide',
-      '2. La cellule devient bleue (sélectionnée)',
-      '3. Utilisez le pavé numérique pour entrer un chiffre',
-      '4. Les chiffres gris sont fixes et ne peuvent pas être modifiés'
-    ],
-    visual: 'select',
-    color: '#60a5fa'
-  },
-  {
-    title: '📝 Mode Notes',
-    content: 'Activez le mode Notes pour marquer les possibilités.',
-    details: [
-      'Appuyez sur le bouton "Notes" pour activer',
-      'Entrez plusieurs chiffres possibles dans une cellule',
-      'Utile pour les niveaux difficiles',
-      'Réappuyez pour désactiver'
-    ],
-    visual: 'notes',
-    color: '#c084fc'
-  },
-  {
-    title: '💡 Indices',
-    content: 'Utilisez des indices quand vous êtes bloqué.',
-    details: [
-      'Vous avez 3 indices par partie',
-      'Un indice révèle automatiquement une cellule',
-      'Utiliser moins d\'indices = plus d\'étoiles',
-      'Achetez plus d\'indices dans la boutique'
-    ],
-    visual: 'hint',
-    color: '#fbbf24'
-  },
-  {
-    title: '⭐ Système d\'étoiles',
-    content: 'Gagnez jusqu\'à 3 étoiles par niveau.',
-    details: [
-      '⭐⭐⭐ = Terminé rapidement, sans erreur',
-      '⭐⭐ = Terminé avec peu d\'erreurs',
-      '⭐ = Terminé avec des erreurs',
-      'Plus d\'étoiles = plus de récompenses!'
-    ],
-    visual: 'stars',
-    color: '#facc15'
-  },
-  {
-    title: '❌ Erreurs',
-    content: 'Attention aux erreurs!',
-    details: [
-      'Vous avez droit à 3 erreurs maximum',
-      'Les erreurs sont marquées en rouge',
-      '3 erreurs = partie perdue',
-      'Les erreurs réduisent vos étoiles'
-    ],
-    visual: 'errors',
-    color: '#f87171'
-  },
-  {
-    title: '🔧 Outils utiles',
-    content: 'Utilisez les outils pour vous aider.',
-    details: [
-      '↩️ Annuler - Revenir en arrière',
-      '🧹 Effacer - Supprimer un chiffre',
-      '📝 Notes - Marquer les possibilités',
-      '💡 Indice - Révéler une cellule',
-      '⏸️ Pause - Mettre en pause'
-    ],
-    visual: 'tools',
-    color: '#22d3d1'
-  },
-  {
-    title: '🏆 Conseils de pro',
-    content: 'Stratégies pour devenir un maître!',
-    details: [
-      '1. Commencez par les lignes/colonnes presque complètes',
-      '2. Cherchez les "singles cachés"',
-      '3. Utilisez l\'élimination par bloc',
-      '4. Ne devinez jamais - utilisez la logique!',
-      '5. Pratiquez quotidiennement avec le Défi du jour'
-    ],
-    visual: 'tips',
-    color: '#fb923c'
-  }
+// Localized tutorial pages — was hardcoded French before, now pulled from i18n
+// so EN / FR / AR users see the tutorial in their own language. The shape (visual
+// keyword + color) stays language-neutral.
+const VISUALS: Array<{ visual: string; color: string }> = [
+  { visual: 'grid',   color: '#4ade80' },
+  { visual: 'select', color: '#60a5fa' },
+  { visual: 'notes',  color: '#c084fc' },
+  { visual: 'hint',   color: '#fbbf24' },
+  { visual: 'stars',  color: '#facc15' },
+  { visual: 'errors', color: '#f87171' },
+  { visual: 'tools',  color: '#22d3d1' },
+  { visual: 'tips',   color: '#fb923c' },
 ];
+
+function getTutorialPages(t: (k: string) => string) {
+  return VISUALS.map((v, i) => {
+    const n = i + 1;
+    const details: string[] = [];
+    // Each page has up to 5 detail keys: tutP{n}D1..D5 — absent ones are skipped.
+    for (let d = 1; d <= 5; d++) {
+      const key = `tutP${n}D${d}`;
+      const val = t(key);
+      if (val && val !== key) details.push(val);
+    }
+    return {
+      title:   t(`tutP${n}Title`),
+      content: t(`tutP${n}Content`),
+      details,
+      visual:  v.visual,
+      color:   v.color,
+    };
+  });
+}
 
 export default function Tutorial() {
   console.log(`${FILE_NAME} 📖 Component rendering...`);
@@ -115,19 +49,20 @@ export default function Tutorial() {
   const router = useRouter();
   const { t } = useLang();
   const [currentPage, setCurrentPage] = useState(0);
+  const tutorialPages = getTutorialPages(t as any);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  const page = TUTORIAL_PAGES[currentPage];
+  const page = tutorialPages[currentPage];
   
-  console.log(`${FILE_NAME} 📄 Current page: ${currentPage + 1}/${TUTORIAL_PAGES.length} - ${page.title}`);
+  console.log(`${FILE_NAME} 📄 Current page: ${currentPage + 1}/${tutorialPages.length} - ${page.title}`);
 
   useEffect(() => {
     console.log(`${FILE_NAME} 🔄 useEffect triggered - Animating progress bar...`);
     Animated.timing(progressAnim, {
-      toValue: (currentPage + 1) / TUTORIAL_PAGES.length,
+      toValue: (currentPage + 1) / tutorialPages.length,
       duration: 300,
       useNativeDriver: false,
     }).start();
@@ -168,8 +103,8 @@ export default function Tutorial() {
   };
 
   const handleNext = () => {
-    console.log(`${FILE_NAME} ➡️ Next button pressed - Current: ${currentPage}, Max: ${TUTORIAL_PAGES.length - 1}`);
-    if (currentPage < TUTORIAL_PAGES.length - 1) {
+    console.log(`${FILE_NAME} ➡️ Next button pressed - Current: ${currentPage}, Max: ${tutorialPages.length - 1}`);
+    if (currentPage < tutorialPages.length - 1) {
       Haptics.selectionAsync();
       animatePageTransition('next');
       setCurrentPage(p => p + 1);
@@ -346,7 +281,7 @@ export default function Tutorial() {
         </View>
         
         <View style={styles.pageNumBadge}>
-          <Text style={styles.pageNum}>{currentPage + 1}/{TUTORIAL_PAGES.length}</Text>
+          <Text style={styles.pageNum}>{currentPage + 1}/{tutorialPages.length}</Text>
         </View>
       </View>
 
@@ -423,7 +358,7 @@ export default function Tutorial() {
 
           {/* Dots */}
           <View style={styles.dots}>
-            {TUTORIAL_PAGES.map((p, i) => (
+            {tutorialPages.map((p, i) => (
               <TouchableOpacity 
                 key={i} 
                 onPress={() => handleDotPress(i)}
@@ -440,7 +375,7 @@ export default function Tutorial() {
             ))}
           </View>
 
-          {currentPage < TUTORIAL_PAGES.length - 1 ? (
+          {currentPage < tutorialPages.length - 1 ? (
             <TouchableOpacity 
               style={styles.navBtn}
               onPress={handleNext}

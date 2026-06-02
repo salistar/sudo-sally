@@ -190,7 +190,12 @@ export default function SettingsScreen() {
                         />
                       )}
                       <Text style={styles.langFlag}>{lang.flag}</Text>
-                      <Text style={[styles.langText, isSelected && styles.langTextActive]}>
+                      <Text
+                        style={[styles.langText, isSelected && styles.langTextActive]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
                         {lang.name}
                       </Text>
                       {isSelected && (
@@ -481,16 +486,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     gap: 10,
   },
-  langBtn: { 
-    flex: 1, 
-    padding: 16, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
-    borderRadius: 14, 
+  langBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 6,        // narrower so "English" / "Français" / "العربية" never wrap
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative',
     overflow: 'hidden',
+    minWidth: 0,                  // allow flex children to shrink past intrinsic content
   },
   langBtnActive: { 
     borderColor: '#4ade80',
@@ -506,10 +513,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginBottom: 8,
   },
-  langText: { 
-    color: '#94a3b8', 
+  langText: {
+    color: '#94a3b8',
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
   langTextActive: {
     color: '#4ade80',

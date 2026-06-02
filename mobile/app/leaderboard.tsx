@@ -1,44 +1,59 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LEADERBOARD } from '../utils/storage';
+import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
+const API_URL = 'https://api.sudoku.gowithsally.com/api';
+
+interface LbEntry { rank: number; username: string; stars: number; avatar: string; userId?: string; gamesWon?: number; level?: number }
 
 export default function Leaderboard() {
-  console.log(`${FILE_NAME} 🚀 Component mounting...`);
-  
   const router = useRouter();
   const { t } = useLang();
   const [activeTab, setActiveTab] = useState<'global' | 'friends' | 'weekly'>('global');
   const [loading, setLoading] = useState(true);
-
-  console.log(`${FILE_NAME} 📊 Initial state - activeTab: ${activeTab}, loading: ${loading}`);
+  // v3.4.0 — pull real users from /api/leaderboard. If the backend has fewer
+  // than 3 real players, we fall back to a banner that invites the user to
+  // climb the empty leaderboard instead of showing fake "PuzzleMaster" data.
+  const [LEADERBOARD, setLEADERBOARD] = useState<LbEntry[]>([]);
 
   useEffect(() => {
-    console.log(`${FILE_NAME} 🔧 useEffect() - Component mounted, loading leaderboard data...`);
-    
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-      console.log(`${FILE_NAME} ✅ useEffect() - Leaderboard data loaded, ${LEADERBOARD.length} players`);
-      
-      LEADERBOARD.slice(0, 5).forEach((player, index) => {
-        console.log(`${FILE_NAME} 👤 Player[${index}]: rank=#${player.rank}, username="${player.username}", stars=${player.stars}`);
-      });
-      
-      if (LEADERBOARD.length > 5) {
-        console.log(`${FILE_NAME} 📋 ... and ${LEADERBOARD.length - 5} more players`);
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = activeTab === 'weekly' ? `${API_URL}/leaderboard/weekly` : `${API_URL}/leaderboard`;
+        const token = await AsyncStorage.getItem('sudoku_token');
+        const r = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        if (cancelled) return;
+        const raw: any[] = d?.leaderboard || [];
+        const real: LbEntry[] = raw.map((u, i) => ({
+          rank: u.rank ?? i + 1,
+          username: u.username || 'player',
+          stars: u.stars ?? 0,
+          avatar: u.avatar || '🎮',
+          userId: u.userId,
+          gamesWon: u.gamesWon,
+          level: u.level,
+        }));
+        // Fall back to mock ONLY if backend returned nothing — never blend.
+        setLEADERBOARD(real.length > 0 ? real : []);
+      } catch (e) {
+        if (!cancelled) {
+          console.log(`${FILE_NAME} ⚠️ leaderboard fetch failed, falling back to local data`, e);
+          setLEADERBOARD([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }, 300);
-    
-    return () => {
-      console.log(`${FILE_NAME} 🧹 useEffect() cleanup - Component unmounting...`);
-      clearTimeout(timer);
-    };
-  }, []);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab]);
 
   const handleBack = useCallback(() => {
     console.log(`${FILE_NAME} 🔙 handleBack() - Navigating back...`);
@@ -179,7 +194,9 @@ export default function Leaderboard() {
   }, [t]);
 
   // Mock current user rank
-  const currentUserRank = 42;
+  // v3.4.0 — don't hardcode "#42". If we got real data, derive a placeholder
+  // rank from the list length; if empty, just say "—".
+  const currentUserRank = LEADERBOARD.length > 0 ? Math.min(LEADERBOARD.length + 1, 42) : 0;
   const currentUserStars = 380;
 
   console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
@@ -224,12 +241,29 @@ export default function Leaderboard() {
         ))}
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top 3 Podium */}
-        {renderTopThree()}
+        {/* Loading / empty states */}
+        {loading && (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#4ade80" />
+          </View>
+        )}
+        {!loading && LEADERBOARD.length === 0 && (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 48 }}>🏆</Text>
+            <Text style={{ color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 12, textAlign: 'center' }}>The leaderboard is empty.</Text>
+            <Text style={{ color: '#64748b', fontSize: 14, marginTop: 8, textAlign: 'center' }}>Play a few puzzles to become the first champion!</Text>
+            <TouchableOpacity onPress={() => router.replace('/levels')} style={{ marginTop: 20, backgroundColor: '#4ade80', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }}>
+              <Text style={{ color: '#0a0a1a', fontWeight: '800' }}>Play a puzzle</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Top 3 Podium — only if we have at least 3 real entries */}
+        {!loading && LEADERBOARD.length >= 3 && renderTopThree()}
 
         {/* Your Rank Card */}
         <View style={styles.yourRankCard}>

@@ -6,6 +6,7 @@ import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } fro
 import { storage, formatTime, calculateStars, calculateXP } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const FILE_NAME = '📁 [Game.tsx]';
 
@@ -617,6 +618,19 @@ export default function Game() {
         </View>
       </Modal>
 
+      {/* v3.4 — Confetti rain on win. Renders behind the modal card so the
+          ★ ★ ★ stars come through. autoStart=true fires immediately when
+          the modal mounts. */}
+      {result?.type === 'win' && (
+        <ConfettiCannon
+          count={150}
+          origin={{ x: -10, y: 0 }}
+          autoStart
+          fallSpeed={3500}
+          fadeOut
+          colors={['#4ade80', '#22c55e', '#fbbf24', '#60a5fa', '#a855f7', '#f97316']}
+        />
+      )}
       {/* Result Modal — distinct design per type (win / game over) */}
       <Modal visible={!!result} transparent animationType="fade">
         <View style={styles.modalOverlay}>
