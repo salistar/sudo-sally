@@ -17,7 +17,9 @@ mobile/ios/
 **/build/
 **/.gradle/
 **/.cxx/
-artifacts/                       # local APK staging used by `gh release download`
+# local APK staging used by `gh release download`
+artifacts/
+**/artifacts/
 
 # ── Secrets / environment (PUBLIC repo — never commit) ────────
 .env
