@@ -165,6 +165,7 @@ export const translations = {
     tutP8D4: '4. Never guess — always reason!',
     tutP8D5: '5. Practice daily with the Daily Challenge',
     block3x3: '3×3 block',
+    skip: 'SKIP',
     // Menu items
     versus: 'Versus',
     shop: 'Shop',
@@ -604,6 +605,7 @@ export const translations = {
     tutP8D4: '4. Ne devine jamais — utilise la logique !',
     tutP8D5: '5. Pratique chaque jour avec le Défi du jour',
     block3x3: 'Bloc 3×3',
+    skip: 'PASSER',
     // Menu items
     versus: 'Versus',
     shop: 'Boutique',
@@ -1043,6 +1045,7 @@ export const translations = {
     tutP8D4: '٤. لا تخمّن أبداً — استخدم المنطق!',
     tutP8D5: '٥. تدرّب يومياً مع تحدّي اليوم',
     block3x3: 'مربع ٣×٣',
+    skip: 'تخطي',
     // Menu items
     versus: 'مواجهة',
     shop: 'المتجر',

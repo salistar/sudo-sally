@@ -285,6 +285,16 @@ export default function Tutorial() {
         </View>
       </View>
 
+      {/* v3.5 — Skip button: jumps straight to /home for users who've played
+          Sudoku before and don't want to sit through the 8-page tutorial. */}
+      <TouchableOpacity
+        onPress={() => router.replace('/home')}
+        style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14 }}
+        activeOpacity={0.8}
+      >
+        <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '700', letterSpacing: 0.5 }}>{t('skip') || 'SKIP'} ›</Text>
+      </TouchableOpacity>
+
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>

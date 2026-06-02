@@ -7,6 +7,7 @@ import { Language } from '../utils/i18n';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Settings.tsx]';
 
@@ -359,7 +360,7 @@ export default function SettingsScreen() {
             
             <View style={styles.dangerDivider} />
             
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.dangerRow}
               onPress={handleLogout}
               activeOpacity={0.7}
@@ -372,6 +373,46 @@ export default function SettingsScreen() {
                 <Text style={styles.dangerDesc}>Sign out of your account</Text>
               </View>
             </TouchableOpacity>
+
+            <View style={styles.dangerDivider} />
+
+            {/* v3.5 — RGPD / Play Data Safety: a one-tap "delete my account"
+                action is now required by Google Play. Confirms with a popup,
+                then DELETE /api/users/:id, clears local storage, sends the
+                user back to /welcome. */}
+            <TouchableOpacity
+              style={styles.dangerRow}
+              activeOpacity={0.7}
+              onPress={() => {
+                setPopup({
+                  type: 'error', title: 'Delete account?',
+                  message: 'This permanently erases your username, email, stats, games and achievements from our server. This action cannot be undone.',
+                  onConfirm: async () => {
+                    try {
+                      const token = await AsyncStorage.getItem('sudoku_token');
+                      const userStr = await AsyncStorage.getItem('sudoku_user');
+                      const u = userStr ? JSON.parse(userStr) : null;
+                      if (u?.id && token) {
+                        await fetch(`https://api.sudoku.gowithsally.com/api/users/${u.id}`, {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                      }
+                    } catch (e) { console.log('[settings] delete account err', e); }
+                    await AsyncStorage.multiRemove(['sudoku_token', 'sudoku_auth_token', 'sudoku_user']);
+                    router.replace('/welcome');
+                  },
+                });
+              }}
+            >
+              <View style={[styles.accountIconContainer, styles.dangerIconContainer]}>
+                <Text style={styles.accountIcon}>🗑️</Text>
+              </View>
+              <View style={styles.accountInfo}>
+                <Text style={styles.dangerLabel}>Delete my account</Text>
+                <Text style={styles.dangerDesc}>Permanently erase your data (RGPD / Play data safety)</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -379,7 +420,7 @@ export default function SettingsScreen() {
         <View style={styles.appInfo}>
           <Text style={styles.appLogo}>🧩</Text>
           <Text style={styles.appName}>SallySudo</Text>
-          <Text style={styles.appVersion}>Version 3.3.0</Text>
+          <Text style={styles.appVersion}>Version 3.5.0</Text>
           <Text style={styles.appCopyright}>© 2026 Sally Suite</Text>
         </View>
 

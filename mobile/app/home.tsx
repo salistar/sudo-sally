@@ -8,6 +8,9 @@ import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppModal, { PopupData } from '../components/AppModal';
+import SallyMascot from '../components/SallyMascot';
+import DailyChest from '../components/DailyChest';
+import BottomNav from '../components/BottomNav';
 
 // Production API (matches utils/api.ts / utils/socket.ts).
 const API_URL = 'https://api.sudoku.gowithsally.com/api';
@@ -232,16 +235,19 @@ export default function Home() {
             style={styles.logoGradient}
           >
             <View style={styles.logoIconContainer}>
-              <Text style={styles.logoIcon}>🧩</Text>
+              <SallyMascot size={110} mode="wink" />
               <View style={styles.logoGlow} />
             </View>
             <Text style={styles.logoText}>SALLYSUDO</Text>
             <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v3.4 · Multiplayer Live</Text>
+              <Text style={styles.versionText}>v3.5 · Daily rewards</Text>
             </View>
             <Text style={styles.tagline}>{t('trainBrainDaily')}</Text>
           </LinearGradient>
         </View>
+
+        {/* v3.5 — Daily chest: claimable once per day, doubles with streak */}
+        <DailyChest user={user} onClaimed={() => loadData?.()} />
 
         {/* v3.4 — Cold-start hero CTA: when the user has 0 wins / 0 stars
             we replace the "0/0/0 stats" sadness with a warm invitation to
@@ -435,12 +441,15 @@ export default function Home() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Bottom spacing */}
-        <View style={{ height: 30 }} />
+        {/* Bottom spacing — generous so the floating BottomNav doesn't hide content */}
+        <View style={{ height: 110 }} />
       </ScrollView>
 
       {/* Incoming challenge notification (Accept / Decline) */}
       <AppModal popup={popup} onClose={closeChallengePopup} buttonLabel="Decline" />
+
+      {/* v3.5 — Persistent bottom nav */}
+      <BottomNav active="home" />
     </LinearGradient>
   );
 }
