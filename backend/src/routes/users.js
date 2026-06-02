@@ -25,22 +25,25 @@ router.get('/search', auth, async (req, res) => {
   }
 });
 
-// ─── RECENT users — anyone active in the last 24h (online OR recently online) ──
+// ─── RECENT users — anyone active in the last 7 days (online OR recently online) ──
 // Fixes the "No users online" dead-end: even if nobody is connected RIGHT NOW,
-// the mobile/web lobby can still surface plausible opponents.
+// the mobile/web lobby can still surface plausible opponents to challenge.
+// Window is generous (7 days) while the user base is small; tighten to 24h
+// when the app reaches enough daily-actives that a 7-day list is too long.
 // GET /api/users/recent
 router.get('/recent', auth, async (req, res) => {
   try {
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const users = await User.find({
       _id: { $ne: req.user.id },
       $or: [
         { isOnline: true },
-        { lastActive: { $gte: dayAgo } },
+        { lastActive: { $gte: weekAgo } },
+        { lastLogin:  { $gte: weekAgo } },     // also fall back on lastLogin
       ],
     })
-    .select('username avatar level stars isOnline lastActive')
-    .sort({ isOnline: -1, lastActive: -1 })
+    .select('username avatar level stars isOnline lastActive lastLogin')
+    .sort({ isOnline: -1, lastActive: -1, lastLogin: -1 })
     .limit(30);
     res.json({ success: true, users });
   } catch (error) {
