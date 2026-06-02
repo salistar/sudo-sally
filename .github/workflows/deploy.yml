@@ -7,6 +7,7 @@ on:
       - "backend/**"
       - "landing/**"
       - "deploy/**"
+      - "mobile/**"                     # web build of the app lives in mobile/
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
