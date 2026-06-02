@@ -176,7 +176,7 @@ export default function Tutorial() {
                 ))}
               </View>
               <View style={styles.gridLabel}>
-                <Text style={styles.gridLabelText}>Bloc 3x3</Text>
+                <Text style={styles.gridLabelText}>{t('block3x3') || '3×3 block'}</Text>
               </View>
             </LinearGradient>
           </View>

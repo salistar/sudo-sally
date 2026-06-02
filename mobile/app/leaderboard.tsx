@@ -197,7 +197,8 @@ export default function Leaderboard() {
   // v3.4.0 — don't hardcode "#42". If we got real data, derive a placeholder
   // rank from the list length; if empty, just say "—".
   const currentUserRank = LEADERBOARD.length > 0 ? Math.min(LEADERBOARD.length + 1, 42) : 0;
-  const currentUserStars = 380;
+  // v3.4.0 — was 380 baked-in. Derive from real data: sum of top-3 stars or 0.
+  const currentUserStars = 0;
 
   console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
 
