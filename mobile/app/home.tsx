@@ -240,7 +240,7 @@ export default function Home() {
             </View>
             <Text style={styles.logoText}>SALLYSUDO</Text>
             <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v3.5 · Daily rewards</Text>
+              <Text style={styles.versionText}>v3.6 · Sally everywhere</Text>
             </View>
             <Text style={styles.tagline}>{t('trainBrainDaily')}</Text>
           </LinearGradient>

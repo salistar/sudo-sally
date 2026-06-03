@@ -161,9 +161,9 @@ export default function Stats() {
                 style={{ borderRadius: 20, padding: 22, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.3, shadowRadius: 14 }}
               >
                 <Text style={{ fontSize: 36, marginBottom: 4 }}>🚀</Text>
-                <Text style={{ color: '#0a0a1a', fontSize: 18, fontWeight: '900' }}>{t('playFirstPuzzleTitle') || 'Play your first puzzle'}</Text>
+                <Text style={{ color: '#0a0a1a', fontSize: 18, fontWeight: '900' }}>Play your first puzzle</Text>
                 <Text style={{ color: '#0a0a1a', opacity: 0.7, fontSize: 13, marginTop: 4, textAlign: 'center' }}>
-                  {t('playFirstPuzzleSub') || 'These stats fill in as you play'}
+                  These stats fill in as you play
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
