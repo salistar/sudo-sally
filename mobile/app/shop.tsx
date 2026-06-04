@@ -1,6 +1,6 @@
 // Shop Screen - Feature #25
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage } from '../utils/storage';
@@ -12,13 +12,15 @@ import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '[Shop.tsx]';
-const { width } = Dimensions.get('window');
 
 export default function Shop() {
   console.log(`${FILE_NAME} 🏪 Component rendering...`);
-  
+
   const router = useRouter();
   const { t } = useLang();
+  // v3.10.3 — desktop reflow
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
   const [coins, setCoins] = useState(0);
   const [ownedThemes, setOwnedThemes] = useState<string[]>(['default', 'ocean']);
   const [powerups, setPowerups] = useState(POWERUPS);
@@ -218,10 +220,13 @@ export default function Shop() {
 
       {/* Content */}
       <Animated.View style={[styles.contentWrapper, { opacity: fadeAnim }]}>
-        <ScrollView 
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+        {(() => {
+          const Wrapper: any = isDesktopWeb ? View : ScrollView;
+          const wrapperProps: any = isDesktopWeb
+            ? { style: styles.content }
+            : { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false };
+          return (
+        <Wrapper {...wrapperProps}>
           {tab === 'themes' ? (
             <>
               <Text style={styles.sectionTitle}>{t('availableThemes')}</Text>
@@ -331,7 +336,9 @@ export default function Shop() {
           
           {/* Bottom Spacer */}
           <View style={styles.bottomSpacer} />
-        </ScrollView>
+        </Wrapper>
+          );
+        })()}
       </Animated.View>
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />

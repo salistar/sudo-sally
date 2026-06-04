@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
@@ -17,6 +17,9 @@ export default function Leaderboard() {
   const { t } = useLang();
   const [activeTab, setActiveTab] = useState<'global' | 'friends' | 'weekly'>('global');
   const [loading, setLoading] = useState(true);
+  // v3.10.3 — desktop reflow
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
   // v3.4.0 — pull real users from /api/leaderboard. If the backend has fewer
   // than 3 real players, we fall back to a banner that invites the user to
   // climb the empty leaderboard instead of showing fake "PuzzleMaster" data.
@@ -243,10 +246,13 @@ export default function Leaderboard() {
         ))}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {(() => {
+        const Wrapper: any = isDesktopWeb ? View : ScrollView;
+        const wrapperProps: any = isDesktopWeb
+          ? { style: styles.content }
+          : { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false };
+        return (
+      <Wrapper {...wrapperProps}>
         {/* Loading / empty states */}
         {loading && (
           <View style={{ padding: 40, alignItems: 'center' }}>
@@ -302,7 +308,9 @@ export default function Leaderboard() {
 
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </Wrapper>
+        );
+      })()}
           <BottomNav active="lobby" />
       </LinearGradient>
   );

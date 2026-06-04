@@ -1,6 +1,6 @@
 // Daily Challenge Screen - Feature #26
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDailyChallenge, DailyChallenge } from '../utils/daily';
@@ -19,6 +19,9 @@ export default function Daily() {
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState('');
   const [loading, setLoading] = useState(true);
+  // v3.10.3 — desktop reflow
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
 
   console.log(`${FILE_NAME} 📊 Initial state - challenge: ${challenge ? 'loaded' : 'null'}, streak: ${streak}, timeLeft: "${timeLeft}"`);
 
@@ -169,10 +172,13 @@ export default function Daily() {
         </View>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {(() => {
+        const Wrapper: any = isDesktopWeb ? View : ScrollView;
+        const wrapperProps: any = isDesktopWeb
+          ? { style: styles.content }
+          : { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false };
+        return (
+      <Wrapper {...wrapperProps}>
         {/* Date Card */}
         <View style={styles.dateCard}>
           <LinearGradient
@@ -389,7 +395,9 @@ export default function Daily() {
 
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </Wrapper>
+        );
+      })()}
           <BottomNav active="play" />
       </LinearGradient>
   );

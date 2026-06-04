@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, User } from '../utils/storage';
@@ -20,6 +20,9 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  // v3.10.3 — desktop reflow
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
 
   console.log(`${FILE_NAME} 📊 Initial state - user: ${user ? user.username : 'null'}, loading: ${loading}`);
 
@@ -137,10 +140,13 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {(() => {
+        const Wrapper: any = isDesktopWeb ? View : ScrollView;
+        const wrapperProps: any = isDesktopWeb
+          ? { style: styles.content }
+          : { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false };
+        return (
+      <Wrapper {...wrapperProps}>
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
           <LinearGradient
@@ -344,7 +350,9 @@ export default function Profile() {
 
         {/* Bottom spacing */}
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </Wrapper>
+        );
+      })()}
           <BottomNav active="profile" />
       </LinearGradient>
   );

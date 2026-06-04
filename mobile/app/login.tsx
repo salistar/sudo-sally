@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, TEST_USERS } from '../utils/storage';
@@ -23,6 +23,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<'email' | 'password' | null>(null);
+  // v3.10.3 — desktop reflow
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
   const [popup, setPopup] = useState<PopupData | null>(null);
 
   console.log(`${FILE_NAME} 📊 Initial state - email: "${email ? '***' : 'empty'}", loading: ${loading}`);
@@ -194,15 +197,21 @@ export default function Login() {
 
   console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
 
+  // v3.10.3 — desktop: drop the keyboard-avoiding shell (no virtual keyboard
+  // on web) and center the form in a 480 px column inside WebShell.
+  const FormShell: any = isDesktopWeb ? View : KeyboardAvoidingView;
+  const formShellProps: any = isDesktopWeb
+    ? { style: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32 } }
+    : { behavior: Platform.OS === 'ios' ? 'padding' : 'height', style: styles.keyboardView };
+  const ContentShell: any = isDesktopWeb ? View : ScrollView;
+  const contentShellProps: any = isDesktopWeb
+    ? { style: { width: '100%', maxWidth: 480 } as any }
+    : { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false, keyboardShouldPersistTaps: 'handled' };
+
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
-          showsVerticalScrollIndicator={false}
+      <FormShell {...formShellProps}>
+        <ContentShell {...contentShellProps}
           keyboardShouldPersistTaps="handled"
         >
           {/* Back Button */}
@@ -428,8 +437,8 @@ export default function Login() {
 
           {/* Bottom spacing */}
           <View style={{ height: 40 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </ContentShell>
+      </FormShell>
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('ok')} />
     </LinearGradient>
