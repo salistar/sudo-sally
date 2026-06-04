@@ -400,21 +400,21 @@ export default function Game() {
           Mobile/narrow: stays a single column. */}
       <View style={isDesktopWeb ? styles.desktopRow : undefined}>
       <View style={isDesktopWeb ? styles.desktopLeftCol : undefined}>
-      {/* Stats Bar */}
+      {/* Stats Bar — horizontal row on phone, vertical column on desktop right pane */}
       <View style={styles.statsBar}>
         <LinearGradient
           colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)']}
-          style={styles.statsBarGradient}
+          style={[styles.statsBarGradient, isDesktopWeb && styles.statsBarGradientDesktop]}
         >
-          <View style={styles.stat}>
+          <View style={[styles.stat, isDesktopWeb && styles.statDesktop]}>
             <Text style={styles.statIcon}>⏱️</Text>
             <Text style={styles.statValue}>{formatTime(time)}</Text>
             <Text style={styles.statLabel}>{t('time').toUpperCase()}</Text>
           </View>
 
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, isDesktopWeb && styles.statDividerDesktop]} />
 
-          <View style={styles.stat}>
+          <View style={[styles.stat, isDesktopWeb && styles.statDesktop]}>
             <Text style={styles.statIcon}>❌</Text>
             <Text style={[styles.statValue, errors > 0 && styles.statValueError]}>
               {errors}/3
@@ -422,9 +422,9 @@ export default function Game() {
             <Text style={styles.statLabel}>{t('errors').toUpperCase()}</Text>
           </View>
 
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, isDesktopWeb && styles.statDividerDesktop]} />
 
-          <View style={styles.stat}>
+          <View style={[styles.stat, isDesktopWeb && styles.statDesktop]}>
             <Text style={styles.statIcon}>💡</Text>
             <Text style={[styles.statValue, hints === 0 && styles.statValueDisabled]}>
               {hints}
@@ -434,8 +434,13 @@ export default function Game() {
         </LinearGradient>
       </View>
 
-      {/* Board */}
-      <View style={styles.boardContainer}>
+      {/* Board — premium green glow on desktop web */}
+      <View
+        style={[
+          styles.boardContainer,
+          isDesktopWeb && ({ boxShadow: '0 0 32px 0 rgba(74,222,128,0.25), 0 8px 40px -6px rgba(0,0,0,0.6)' } as any),
+        ]}
+      >
         <LinearGradient
           colors={['rgba(74, 222, 128, 0.1)', 'rgba(74, 222, 128, 0.02)']}
           style={styles.boardGradient}
@@ -911,14 +916,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(100, 116, 139, 0.3)',
     backgroundColor: 'rgba(255,255,255,0.02)',
   },
-  cellSelected: { 
-    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+  cellSelected: {
+    // Brighter blue + thin glow ring on the selected cell itself
+    backgroundColor: 'rgba(59, 130, 246, 0.65)',
   },
-  cellHighlight: { 
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  cellHighlight: {
+    // v3.9.1 — bumped 0.15 -> 0.32 so the row/col/box trace is actually visible
+    backgroundColor: 'rgba(59, 130, 246, 0.32)',
   },
   cellSameNumber: {
-    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+    // v3.9.1 — bumped 0.20 -> 0.38 to make matching-number guidance pop
+    backgroundColor: 'rgba(74, 222, 128, 0.38)',
   },
   cellError: { 
     backgroundColor: 'rgba(239, 68, 68, 0.25)',
@@ -1019,6 +1027,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 28,
     marginTop: 4,
+  },
+  // v3.9.1 — vertical stats column inside the right pane (replaces the wide
+  // 3-up row that wasted horizontal room in the narrow right column).
+  statsBarGradientDesktop: {
+    flexDirection: 'column',
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    gap: 14,
+    alignItems: 'stretch',
+  },
+  statDesktop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  statDividerDesktop: {
+    width: '100%',
+    height: 1,
   },
   desktopLeftCol: {
     flexShrink: 0,
