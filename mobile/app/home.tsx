@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage } from '../utils/storage';
@@ -17,12 +17,12 @@ const API_URL = 'https://api.sudoku.gowithsally.com/api';
 
 const FILE_NAME = '📁 [Home.tsx]';
 
-// 3-column grid: fixed pixel card width so cards are always 3 per row, same size, centered.
-const { width: SCREEN_W } = Dimensions.get('window');
+// v3.10.2 — CARD_W is now computed inside the component from useWindowDimensions
+// so the home grid actually reflows when the window resizes (and so the
+// numbers below are based on the CURRENT viewport, not whatever it was at
+// JS-load time). The module-level constant below is the phone fallback.
 const GRID_GAP = 10;
-const GRID_H_PADDING = 20; // matches scroll horizontal padding
-const GRID_COLS = 3;
-const CARD_W = Math.floor((SCREEN_W - GRID_H_PADDING * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS);
+const GRID_H_PADDING = 20;
 
 export default function Home() {
   console.log(`${FILE_NAME} 🚀 Component mounting...`);
@@ -33,6 +33,21 @@ export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
+
+  // v3.10.2 — responsive sizing. The old `const { width: SCREEN_W } =
+  // Dimensions.get('window')` at module scope captured the phone width once
+  // at boot. Inside WebShell at 1440 px the menu cards stayed phone-sized
+  // and stacked 3-per-row with miles of empty space.
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
+  // Available horizontal space inside WebShell (sidebar 260 + paddings ~96).
+  const innerW = isDesktopWeb ? Math.min(winW - 260 - 96, 1180) : winW;
+  // Grid cols: 5 on desktop (so 10 menu cards fit on 2 rows), 3 on phone.
+  const GRID_COLS = isDesktopWeb ? 5 : 3;
+  const CARD_W = Math.floor((innerW - GRID_H_PADDING * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS);
+  // Top stats row keeps its existing 3-up layout — share the CARD_W formula
+  // but with 3 cols regardless of desktop mode so the row stays balanced.
+  const STAT_W = Math.floor((innerW - GRID_H_PADDING * 2 - GRID_GAP * 2) / 3);
   // ── incoming-challenge notification (popup with Accept / Decline) ──
   const [popup, setPopup] = useState<PopupData | null>(null);
   const pendingChallengeId = useRef<string | null>(null);
@@ -193,12 +208,17 @@ export default function Home() {
 
   console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
 
+  // v3.10.2 — on desktop web the WebShell wrapper owns the page scroll.
+  // Nest a ScrollView and you get the wheel-trap bug. Render a plain View
+  // on desktop, ScrollView on phone/native.
+  const ContentWrapper: any = isDesktopWeb ? View : ScrollView;
+  const contentWrapperProps: any = isDesktopWeb
+    ? { style: [styles.scroll, { paddingTop: 0 }] }
+    : { contentContainerStyle: styles.scroll, showsVerticalScrollIndicator: false };
+
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ContentWrapper {...contentWrapperProps}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.avatarContainer} onPress={handleProfilePress} activeOpacity={0.8}>
@@ -238,9 +258,9 @@ export default function Home() {
               <SallyMascot size={110} mode="wink" />
               <View style={styles.logoGlow} />
             </View>
-            <Text style={styles.logoText}>SALLYSUDO</Text>
+            <Text style={styles.logoText}>SallySudo</Text>
             <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v3.6 · Sally everywhere</Text>
+              <Text style={styles.versionText}>v3.10 · Premium web</Text>
             </View>
             <Text style={styles.tagline}>{t('trainBrainDaily')}</Text>
           </LinearGradient>
@@ -278,7 +298,7 @@ export default function Home() {
         <View style={styles.statsSection}>
           <Text style={styles.sectionTitle}>📊 {t('yourProgress')}</Text>
           <View style={styles.statsRow}>
-            <View style={[styles.statBox, { width: CARD_W }]}>
+            <View style={[styles.statBox, { width: STAT_W }]}>
               <LinearGradient
                 colors={['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)']}
                 style={styles.statGradient}
@@ -289,7 +309,7 @@ export default function Home() {
               </LinearGradient>
             </View>
             
-            <View style={[styles.statBox, { width: CARD_W }]}>
+            <View style={[styles.statBox, { width: STAT_W }]}>
               <LinearGradient
                 colors={['rgba(239,68,68,0.15)', 'rgba(239,68,68,0.05)']}
                 style={styles.statGradient}
@@ -300,7 +320,7 @@ export default function Home() {
               </LinearGradient>
             </View>
             
-            <View style={[styles.statBox, { width: CARD_W }]}>
+            <View style={[styles.statBox, { width: STAT_W }]}>
               <LinearGradient
                 colors={['rgba(251,191,36,0.15)', 'rgba(251,191,36,0.05)']}
                 style={styles.statGradient}
@@ -442,8 +462,8 @@ export default function Home() {
         </TouchableOpacity>
 
         {/* Bottom spacing — generous so the floating BottomNav doesn't hide content */}
-        <View style={{ height: 110 }} />
-      </ScrollView>
+        <View style={{ height: isDesktopWeb ? 40 : 110 }} />
+      </ContentWrapper>
 
       {/* Incoming challenge notification (Accept / Decline) */}
       <AppModal popup={popup} onClose={closeChallengePopup} buttonLabel="Decline" />

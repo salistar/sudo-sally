@@ -150,9 +150,12 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 
         <View style={{ flex: 1 }} />
 
-        {user ? (
-          // v3.10.0 — logged in: show user pill + a dedicated Sign-out button.
-          <View style={{ gap: 8 }}>
+        {/* v3.10.2 — sidebar foot. Sign-out is now ALWAYS visible (user asked
+            "ou est bouton deconnexion"). Above it, the user pill shows when
+            signed in. Below it, a thin SallySudo.com link to the landing
+            stays for everyone. */}
+        <View style={{ gap: 8 }}>
+          {user && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
               <Text style={{ fontSize: 28 }}>{user.avatar || '🎮'}</Text>
               <View style={{ flex: 1 }}>
@@ -160,35 +163,29 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
                 <Text style={{ color: '#94a3b8', fontSize: 11 }}>Lvl {user.level ?? 1} · ⭐ {user.stars ?? 0}</Text>
               </View>
             </View>
-            <TouchableOpacity
-              onPress={handleSignOut}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                paddingVertical: 10, borderRadius: 12,
-                borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)',
-                backgroundColor: 'rgba(239,68,68,0.08)',
-              }}
-            >
-              <Text style={{ fontSize: 15 }}>🚪</Text>
-              <Text style={{ color: '#fca5a5', fontWeight: '700', fontSize: 13 }}>{t('signOut')}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          // v3.10.0 — logged out: don't render Sign in / Create account in the
-          // sidebar anymore. Those entry points live on the public landing
-          // page; the sidebar just nudges the visitor back to it.
+          )}
           <TouchableOpacity
-            onPress={() => { if (typeof window !== 'undefined') window.location.href = LANDING_URL; }}
+            onPress={handleSignOut}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
               paddingVertical: 12, borderRadius: 12,
-              backgroundColor: '#4ade80',
+              borderWidth: 1, borderColor: 'rgba(239,68,68,0.45)',
+              backgroundColor: 'rgba(239,68,68,0.12)',
             }}
           >
-            <Text style={{ fontSize: 15 }}>🌐</Text>
-            <Text style={{ color: '#0a0a1a', fontWeight: '800', fontSize: 13 }}>SallySudo.com</Text>
+            <Text style={{ fontSize: 16 }}>🚪</Text>
+            <Text style={{ color: '#fca5a5', fontWeight: '800', fontSize: 14 }}>{t('signOut')}</Text>
           </TouchableOpacity>
-        )}
+          <TouchableOpacity
+            onPress={() => { if (typeof window !== 'undefined') window.location.href = LANDING_URL; }}
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+              paddingVertical: 8,
+            }}
+          >
+            <Text style={{ color: '#64748b', fontSize: 11, fontWeight: '600' }}>🌐 sudoku.gowithsally.com</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* MAIN COLUMN: HEADER + CONTENT */}
