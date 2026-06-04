@@ -27,8 +27,14 @@ export default function Welcome() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  // v3.7.2 — Start fully visible. The pre-v3.7.2 code started fadeAnim=0
+  // and only animated to 1 inside the loadSavedLanguage async callback;
+  // if storage.getSettings() threw silently on web, the welcome screen
+  // stayed at opacity 0 and looked completely blank. Initial value 1
+  // means the screen always paints; the entrance animation now just
+  // overrides briefly to 0 then back to 1 (no visible flicker).
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
   const logoScaleAnim = useRef(new Animated.Value(0.5)).current;
   const logoRotateAnim = useRef(new Animated.Value(0)).current;
   const buttonScaleAnim = useRef(new Animated.Value(0.9)).current;

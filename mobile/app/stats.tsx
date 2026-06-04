@@ -16,10 +16,17 @@ export default function Stats() {
   
   const router = useRouter();
   const { t } = useLang();
-  const [stats, setStats] = useState<GameStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  // v3.7.2 — Initialize with zero stats so the screen ALWAYS has something
+  // to render (cold-start CTA + zero cards) even if storage.getStats()
+  // throws on web. Replace by real stats once loaded.
+  const DEFAULT_STATS: GameStats = {
+    gamesPlayed: 0, gamesWon: 0, totalTime: 0,
+    currentStreak: 0, bestStreak: 0, hintsUsed: 0, perfectGames: 0,
+  };
+  const [stats, setStats] = useState<GameStats | null>(DEFAULT_STATS);
+  const [isLoading, setIsLoading] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   console.log(`${FILE_NAME} 📊 Initial state - stats: ${stats ? 'loaded' : 'null'}, isLoading: ${isLoading}`);
 

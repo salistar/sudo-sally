@@ -14,6 +14,13 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <title>SallySudo — real-time 1v1 Sudoku</title>
+        <meta name="description" content="SallySudo is the modern Sudoku game with daily puzzles, ranked leaderboard and real-time 1v1 multiplayer duels with audio/video calls." />
+        <meta name="theme-color" content="#0a0a1a" />
+        <meta property="og:title" content="SallySudo — real-time 1v1 Sudoku" />
+        <meta property="og:description" content="Daily puzzles, leaderboard, and real-time 1v1 duels with chat and calls." />
+        <meta property="og:url" content="https://app.sudoku.gowithsally.com" />
+        <link rel="icon" href="/favicon.ico" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: webCss }} />
       </head>

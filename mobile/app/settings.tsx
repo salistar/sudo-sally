@@ -121,10 +121,14 @@ export default function SettingsScreen() {
     Alert.alert('Contact Support', 'Email us at support@sudokusally.com');
   }, []);
 
+  // v3.7.2 — Regional indicator emojis (🇬🇧 🇫🇷 🇲🇦) don't render on Chrome
+  // for Linux (the desktop runner that builds the web container and what
+  // most ChromeOS / Linux users see). We fall back to a globe glyph + the
+  // ISO code so every browser shows something readable.
   const languages: { code: Language; name: string; flag: string }[] = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
-    { code: 'fr', name: 'Français', flag: '🇫🇷' },
-    { code: 'ar', name: 'العربية', flag: '🇲🇦' },
+    { code: 'en', name: 'English',  flag: '🌐 EN' },
+    { code: 'fr', name: 'Français', flag: '🌐 FR' },
+    { code: 'ar', name: 'العربية',  flag: '🌐 AR' },
   ];
 
   const preferences = [

@@ -191,10 +191,13 @@ export default function Levels() {
         </LinearGradient>
       </View>
 
-      {/* Difficulty Filter */}
-      <ScrollView 
-        horizontal 
+      {/* Difficulty Filter — explicit height on the horizontal ScrollView so
+          web doesn't collapse it to ~16 px (which was clipping the chips on
+          desktop captures). */}
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0, maxHeight: 56 }}
         contentContainerStyle={styles.filterContainer}
       >
         <TouchableOpacity
@@ -422,8 +425,10 @@ const styles = StyleSheet.create({
   // Filter
   filterContainer: {
     paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 16,
     gap: 8,
+    alignItems: 'center',
   },
   filterChip: {
     flexDirection: 'row',

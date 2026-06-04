@@ -24,7 +24,9 @@ export default function Shop() {
   const [powerups, setPowerups] = useState(POWERUPS);
   const [tab, setTab] = useState<'themes' | 'powerups'>('themes');
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
+  // v3.7.2 — Start visible so the screen renders even if the async user
+  // data fetch silently fails on web. Same root cause as welcome / stats.
+  const [fadeAnim] = useState(new Animated.Value(1));
   const [popup, setPopup] = useState<PopupData | null>(null);
 
   console.log(`${FILE_NAME} 📊 Initial state - coins: ${coins}, tab: ${tab}, ownedThemes: ${ownedThemes.length}`);

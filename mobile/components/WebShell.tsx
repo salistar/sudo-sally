@@ -149,14 +149,20 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
             {labelFor(path)}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => router.replace('/daily' as any)}
-              style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)' }}>
-              <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⏱️ Daily challenge</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/challenges' as any)}
-              style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
-              <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '800' }}>⚔️ Play 1v1</Text>
-            </TouchableOpacity>
+            {/* v3.7.2 — Hide the chip that targets the current route to avoid
+                duplicating an action the sidebar already highlights. */}
+            {path !== '/daily' && (
+              <TouchableOpacity onPress={() => router.replace('/daily' as any)}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)' }}>
+                <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⏱️ Daily challenge</Text>
+              </TouchableOpacity>
+            )}
+            {path !== '/challenges' && (
+              <TouchableOpacity onPress={() => router.replace('/challenges' as any)}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
+                <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '800' }}>⚔️ Play 1v1</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

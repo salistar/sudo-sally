@@ -539,7 +539,17 @@ export default function Challenges() {
                     </TouchableOpacity>
                   ))}
 
-                {onlineUsers.length === 0 && recentUsers.length === 0 && (
+                {onlineUsers.length === 0 && recentUsers.length === 0 && !currentUser && (
+                  <View style={styles.empty}>
+                    <Text style={styles.emptyIcon}>🔑</Text>
+                    <Text style={styles.emptyText}>Sign in to play 1v1</Text>
+                    <Text style={styles.emptySubtext}>Create a free account or use one of the demo logins to search players and send challenges.</Text>
+                    <TouchableOpacity onPress={() => router.replace('/login' as any)} style={[styles.challengeBtn, { marginTop: 16, paddingHorizontal: 28 }]}>
+                      <Text style={styles.btnText}>Sign in →</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {onlineUsers.length === 0 && recentUsers.length === 0 && currentUser && (
                   <View style={styles.empty}>
                     <Text style={styles.emptyIcon}>👥</Text>
                     <Text style={styles.emptyText}>{t('noUsersOnline')}</Text>
