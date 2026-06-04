@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } from '../utils/sudoku';
@@ -10,11 +10,8 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 
 const FILE_NAME = '📁 [Game.tsx]';
 
-// Responsive sizing so the 9x9 board and the 9-button numpad always fit the screen width.
-const { width: SCREEN_W } = Dimensions.get('window');
-const CELL = Math.floor((SCREEN_W - 56) / 9);        // board fits inside container padding + border
-const NUM_GAP = 5;
-const NUM_BTN = Math.floor((SCREEN_W - 36 - NUM_GAP * 8) / 9); // 9 buttons on a single row
+// Gap between numpad buttons (also used inside styles below).
+const NUM_GAP = 6;
 
 export default function Game() {
   console.log(`${FILE_NAME} 🚀 Component mounting...`);
@@ -23,6 +20,22 @@ export default function Game() {
   const router = useRouter();
   const { t } = useLang();
   const levelNum = parseInt(level || '1');
+
+  // v3.9.0 — responsive sizing. The previous Dimensions.get('window') at module
+  // scope froze the cell size at JS-load time. On desktop web that produced a
+  // huge board sized for the FULL window — ignoring the 260 px sidebar — and
+  // never reflowed when the window changed. useWindowDimensions re-renders on
+  // resize, so the board adapts to the actual content area.
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
+  // Effective inner area inside WebShell (sidebar 260 + paddings ~96 px).
+  // Capped to keep the board from dominating a 4K monitor.
+  const BOARD_W = isDesktopWeb
+    ? Math.min(540, Math.max(420, winH - 220))
+    : winW - 32;
+  const CELL = Math.floor((BOARD_W - 16) / 9);
+  // Numpad: 1 row on phone, 3×3 grid on desktop.
+  const NUM_BTN = isDesktopWeb ? 76 : Math.floor((winW - 36 - NUM_GAP * 8) / 9);
   
   console.log(`${FILE_NAME} 📊 Route params - level: ${level}, parsed levelNum: ${levelNum}`);
   
@@ -347,7 +360,10 @@ export default function Game() {
   const difficultyColors = getDifficultyColor(difficulty);
 
   return (
-    <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+    <LinearGradient
+      colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']}
+      style={[styles.container, isDesktopWeb && { paddingTop: 0, paddingHorizontal: 0 }]}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
@@ -359,7 +375,7 @@ export default function Game() {
             <Text style={styles.backIcon}>←</Text>
           </LinearGradient>
         </TouchableOpacity>
-        
+
         <View style={styles.levelContainer}>
           <LinearGradient
             colors={difficultyColors}
@@ -369,7 +385,7 @@ export default function Game() {
           </LinearGradient>
           <Text style={styles.difficultyText}>{t(difficulty as any).toUpperCase()}</Text>
         </View>
-        
+
         <TouchableOpacity onPress={handlePause} style={styles.pauseButton}>
           <LinearGradient
             colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
@@ -380,6 +396,10 @@ export default function Game() {
         </TouchableOpacity>
       </View>
 
+      {/* v3.9.0 — desktop web: 2-col layout (board left, control panel right).
+          Mobile/narrow: stays a single column. */}
+      <View style={isDesktopWeb ? styles.desktopRow : undefined}>
+      <View style={isDesktopWeb ? styles.desktopLeftCol : undefined}>
       {/* Stats Bar */}
       <View style={styles.statsBar}>
         <LinearGradient
@@ -478,8 +498,11 @@ export default function Game() {
         </LinearGradient>
       </View>
 
+      </View>
+      {/* RIGHT column on desktop, in-flow on mobile */}
+      <View style={isDesktopWeb ? styles.desktopRightCol : undefined}>
       {/* Tools */}
-      <View style={styles.toolsContainer}>
+      <View style={[styles.toolsContainer, isDesktopWeb && styles.toolsContainerDesktop]}>
         <TouchableOpacity 
           style={[styles.tool, history.length === 0 && styles.toolDisabled]} 
           onPress={handleUndo}
@@ -536,8 +559,8 @@ export default function Game() {
         </TouchableOpacity>
       </View>
 
-      {/* Numpad */}
-      <View style={styles.numpadContainer}>
+      {/* Numpad — 1 row on phone, 3×3 grid on desktop web */}
+      <View style={[styles.numpadContainer, isDesktopWeb && styles.numpadContainerDesktop]}>
         {[1,2,3,4,5,6,7,8,9].map(num => {
           // Count how many of this number are placed
           const count = board.flat().filter(c => c === num).length;
@@ -561,6 +584,8 @@ export default function Game() {
           );
         })}
       </View>
+      </View>{/* /right column */}
+      </View>{/* /desktop row */}
 
       </ScrollView>
 
@@ -987,6 +1012,36 @@ const styles = StyleSheet.create({
     color: '#60a5fa',
   },
   
+  // v3.9.0 — Desktop web 2-col layout. On phone / narrow web these are no-ops
+  // because the wrapping Views drop the desktop styles entirely.
+  desktopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 28,
+    marginTop: 4,
+  },
+  desktopLeftCol: {
+    flexShrink: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 260,
+    gap: 16,
+  },
+  toolsContainerDesktop: {
+    flexWrap: 'wrap',
+    gap: 14,
+    justifyContent: 'flex-start',
+    marginTop: 0,
+    marginBottom: 8,
+  },
+  numpadContainerDesktop: {
+    flexWrap: 'wrap',
+    maxWidth: 76 * 3 + 6 * 2,  // 3 buttons × 76 px + 2 gaps of 6 px
+    alignSelf: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+
   // Numpad
   numpadContainer: {
     flexDirection: 'row',
