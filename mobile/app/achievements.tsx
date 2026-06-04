@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, Achievement } from '../utils/storage';
@@ -15,6 +15,10 @@ export default function Achievements() {
   const { t, lang } = useLang();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
+  // v3.8.0 — Desktop web grid (2 cols).
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
+  const webGridStyle = { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 12, justifyContent: 'space-between' as const };
 
   console.log(`${FILE_NAME} 📊 Initial state - achievements: ${achievements.length}, loading: ${loading}`);
 
@@ -220,19 +224,34 @@ export default function Achievements() {
           </View>
         ) : (
           <>
+            {/* v3.8.0 — on desktop web each section becomes a 2-column flex
+                grid so the cards stop being a single tall column inside the
+                shell. */}
             {/* Unlocked Section */}
             {unlockedCount > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>🌟 {t('unlockedSection')} ({unlockedCount})</Text>
-                {achievements.filter(a => a.unlocked).map((a, i) => renderAchievementCard(a, i))}
+                <View style={isDesktopWeb ? webGridStyle : undefined}>
+                  {achievements.filter(a => a.unlocked).map((a, i) => (
+                    <View key={a.id} style={isDesktopWeb ? { width: '48%' } : undefined}>
+                      {renderAchievementCard(a, i)}
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
-            
+
             {/* In Progress Section */}
             {achievements.filter(a => !a.unlocked).length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>🔒 {t('inProgress')} ({totalCount - unlockedCount})</Text>
-                {achievements.filter(a => !a.unlocked).map((a, i) => renderAchievementCard(a, i))}
+                <View style={isDesktopWeb ? webGridStyle : undefined}>
+                  {achievements.filter(a => !a.unlocked).map((a, i) => (
+                    <View key={a.id} style={isDesktopWeb ? { width: '48%' } : undefined}>
+                      {renderAchievementCard(a, i)}
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
           </>

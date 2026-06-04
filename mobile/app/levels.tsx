@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, LevelData } from '../utils/storage';
@@ -15,6 +15,11 @@ export default function Levels() {
   const [levels, setLevels] = useState<LevelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  // v3.8.0 — On desktop web, surface 6 levels per row instead of 3 so the
+  // wider canvas is actually used and the cards stop looking like phone
+  // tiles inside a sidebar wrapper.
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
 
   console.log(`${FILE_NAME} 📊 Initial state - levels: ${levels.length}, loading: ${loading}, filter: ${selectedDifficulty}`);
 
@@ -241,7 +246,7 @@ export default function Levels() {
           return (
             <TouchableOpacity 
               key={level.id} 
-              style={styles.levelCard} 
+              style={[styles.levelCard, isDesktopWeb && { width: '15%' }]} 
               onPress={() => handleLevel(level)}
               activeOpacity={level.locked ? 0.5 : 0.8}
             >

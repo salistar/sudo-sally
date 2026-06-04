@@ -41,4 +41,15 @@ const webCss = `
     min-height: 100vh;
   }
   #root { width: 100%; min-height: 100vh; background: transparent; }
+
+  /* v3.8.0 — Visible custom scrollbar (Chrome/Edge/Safari).
+     The default was hidden because react-native-web scroll containers ship
+     overflow:hidden by default and 'overflow:auto' overrides without giving
+     the scrollbar any width on dark themes. */
+  *::-webkit-scrollbar          { width: 12px; height: 12px; }
+  *::-webkit-scrollbar-track    { background: rgba(255,255,255,0.02); }
+  *::-webkit-scrollbar-thumb    { background: rgba(74,222,128,0.35); border-radius: 6px; border: 2px solid #0a0a1a; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(74,222,128,0.6); }
+  /* Firefox */
+  * { scrollbar-width: thin; scrollbar-color: rgba(74,222,128,0.35) rgba(255,255,255,0.02); }
 `;

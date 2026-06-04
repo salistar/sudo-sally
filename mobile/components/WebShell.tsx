@@ -174,11 +174,15 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         <View style={{
           flex: 1,
           alignItems: 'center',
-          paddingVertical: 16, paddingHorizontal: 24,
-          overflow: 'auto',
+          paddingVertical: 24, paddingHorizontal: 32,
+          overflowY: 'auto',
+          overflowX: 'hidden',
           height: 'calc(100vh - 64px)',
         } as any}>
-          <View style={{ width: '100%', maxWidth: 920, minHeight: '100%', flex: 1 } as any}>
+          {/* v3.8.0 — widened from 920 px → 1240 px so the per-screen grids
+              (achievements 2-col, levels 6-col, stats 4-col) have actual
+              horizontal room to breathe. */}
+          <View style={{ width: '100%', maxWidth: 1240, minHeight: '100%' } as any}>
             {children}
           </View>
         </View>

@@ -1,6 +1,6 @@
 // Stats Screen - Feature #24
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TouchableOpacity } from 'react-native';
@@ -27,6 +27,10 @@ export default function Stats() {
   const [isLoading, setIsLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+  // v3.8.0 — wrap each section's cards in a flex row+wrap on desktop web so
+  // 4 stat cards fit per row instead of one per row (~150 px wasted left/right).
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
 
   console.log(`${FILE_NAME} 📊 Initial state - stats: ${stats ? 'loaded' : 'null'}, isLoading: ${isLoading}`);
 
