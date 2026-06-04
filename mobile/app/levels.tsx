@@ -234,11 +234,16 @@ export default function Levels() {
         ))}
       </ScrollView>
 
-      {/* Levels Grid */}
-      <ScrollView 
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Levels Grid — v3.10.1: on desktop web the WebShell wrapper already
+          handles the page scroll. A nested ScrollView captures the wheel
+          and the outer page can't scroll. Use a plain View on desktop web. */}
+      {(() => {
+        const Wrapper: any = isDesktopWeb ? View : ScrollView;
+        const wrapperProps: any = isDesktopWeb
+          ? { style: styles.grid }
+          : { contentContainerStyle: styles.grid, showsVerticalScrollIndicator: false };
+        return (
+      <Wrapper {...wrapperProps}>
         {filteredLevels.map((level) => {
           const color = getDifficultyColor(level.difficulty);
           const gradientColors = getDifficultyGradient(level.difficulty, level.locked);
@@ -306,7 +311,9 @@ export default function Levels() {
         
         {/* Bottom spacing */}
         <View style={{ height: 40, width: '100%' }} />
-      </ScrollView>
+      </Wrapper>
+        );
+      })()}
           <BottomNav active="play" />
       </LinearGradient>
   );

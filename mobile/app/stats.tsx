@@ -151,11 +151,17 @@ export default function Stats() {
         </Animated.View>
       )}
 
-      {/* Stats List */}
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Stats List — v3.10.1: on desktop web the WebShell wrapper already
+          owns the scroll. Nesting another ScrollView captures the wheel
+          events and the outer page can't scroll. Wrap in a plain View
+          on desktop, ScrollView on phone/native. */}
+      {(() => {
+        const Wrapper: any = isDesktopWeb ? View : ScrollView;
+        const wrapperProps: any = isDesktopWeb
+          ? { style: styles.content }
+          : { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false };
+        return (
+      <Wrapper {...wrapperProps}>
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           {/* v3.6 — Cold-start CTA: brand-new account with no games played
               gets an inviting "Play your first puzzle" card instead of
@@ -290,7 +296,9 @@ export default function Stats() {
           {/* Bottom Spacer */}
           <View style={styles.bottomSpacer} />
         </Animated.View>
-      </ScrollView>
+      </Wrapper>
+        );
+      })()}
           <BottomNav active="profile" />
       </LinearGradient>
   );
