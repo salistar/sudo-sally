@@ -31,6 +31,11 @@ export const translations = {
     leaderboard: 'Leaderboard',
     achievements: 'Achievements',
     dailyChallenge: 'Daily Challenge',
+    home: 'Home',
+    daily: 'Daily',
+    lobby: '1v1 Lobby',
+    dashboard: 'Dashboard',
+    signOut: 'Sign out',
     
     // Game
     level: 'Level',
@@ -471,6 +476,11 @@ export const translations = {
     leaderboard: 'Classement',
     achievements: 'Succès',
     dailyChallenge: 'Défi du jour',
+    home: 'Accueil',
+    daily: 'Quotidien',
+    lobby: 'Salon 1v1',
+    dashboard: 'Tableau de bord',
+    signOut: 'Déconnexion',
     
     // Game
     level: 'Niveau',
@@ -911,6 +921,11 @@ export const translations = {
     leaderboard: 'لوحة المتصدرين',
     achievements: 'الإنجازات',
     dailyChallenge: 'تحدي اليوم',
+    home: 'الرئيسية',
+    daily: 'يومي',
+    lobby: 'صالة 1v1',
+    dashboard: 'لوحة التحكم',
+    signOut: 'تسجيل الخروج',
     
     // Game
     level: 'المستوى',

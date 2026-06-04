@@ -44,9 +44,27 @@ export default function Welcome() {
 
   useEffect(() => {
     console.log(`${FILE_NAME} 🔄 useEffect triggered - Loading saved language...`);
-    
+
+    // v3.10.0 — auth gate. /welcome is the language-picker landing screen meant
+    // for first-time visitors only. If a user blob exists in storage they are
+    // already onboarded — skip straight to /home (the dashboard) so refreshing
+    // the page from any authenticated session doesn't bounce back through the
+    // language picker.
+    const checkAuthAndMaybeRedirect = async () => {
+      try {
+        const raw = await (await import('@react-native-async-storage/async-storage')).default.getItem('sudoku_user');
+        if (raw) {
+          console.log(`${FILE_NAME} 👤 Already signed in — redirecting to /home`);
+          router.replace('/home' as any);
+          return true;
+        }
+      } catch {}
+      return false;
+    };
+
     const loadSavedLanguage = async () => {
       try {
+        if (await checkAuthAndMaybeRedirect()) return;
         const settings = await storage.getSettings();
         console.log(`${FILE_NAME} ⚙️ Settings loaded:`, settings ? `language: ${settings.language}` : 'No settings found');
         

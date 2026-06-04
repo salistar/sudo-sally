@@ -17,26 +17,31 @@ import { View, Text, TouchableOpacity, Platform, useWindowDimensions } from 'rea
 import { useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SallyMascot from './SallyMascot';
+import { useLang } from '../utils/LanguageContext';
 
 const SIDEBAR_W = 260;
 const HEADER_H  = 64;
 const BREAKPOINT = 1024;
+const LANDING_URL = 'https://sudoku.gowithsally.com';
 
-type NavItem = { key: string; icon: string; label: string; route: string };
+type NavItem = { key: string; icon: string; tKey: string; route: string };
 
+// v3.10.0 — labels are now translation keys, resolved through useLang() at
+// render time. Hard-coded "Home" / "Play" / "Settings" wouldn't reflect the
+// user's chosen language.
 const PRIMARY: NavItem[] = [
-  { key: 'home',     icon: '🏠', label: 'Home',     route: '/home' },
-  { key: 'play',     icon: '🎮', label: 'Play',     route: '/levels' },
-  { key: 'daily',    icon: '⏱️', label: 'Daily',    route: '/daily' },
-  { key: 'lobby',    icon: '⚔️', label: '1v1 Lobby', route: '/challenges' },
-  { key: 'leader',   icon: '🏆', label: 'Leaderboard', route: '/leaderboard' },
+  { key: 'home',     icon: '🏠', tKey: 'home',          route: '/home' },
+  { key: 'play',     icon: '🎮', tKey: 'play',          route: '/levels' },
+  { key: 'daily',    icon: '⏱️', tKey: 'daily',         route: '/daily' },
+  { key: 'lobby',    icon: '⚔️', tKey: 'lobby',         route: '/challenges' },
+  { key: 'leader',   icon: '🏆', tKey: 'leaderboard',   route: '/leaderboard' },
 ];
 const SECONDARY: NavItem[] = [
-  { key: 'profile',  icon: '👤', label: 'Profile',     route: '/profile' },
-  { key: 'stats',    icon: '📊', label: 'Stats',       route: '/stats' },
-  { key: 'shop',     icon: '🛒', label: 'Shop',        route: '/shop' },
-  { key: 'achv',     icon: '🌟', label: 'Achievements', route: '/achievements' },
-  { key: 'settings', icon: '⚙️', label: 'Settings',    route: '/settings' },
+  { key: 'profile',  icon: '👤', tKey: 'profile',       route: '/profile' },
+  { key: 'stats',    icon: '📊', tKey: 'stats',         route: '/stats' },
+  { key: 'shop',     icon: '🛒', tKey: 'shop',          route: '/shop' },
+  { key: 'achv',     icon: '🌟', tKey: 'achievements',  route: '/achievements' },
+  { key: 'settings', icon: '⚙️', tKey: 'settings',      route: '/settings' },
 ];
 
 export default function WebShell({ children }: { children: React.ReactNode }) {
@@ -51,6 +56,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
 function DesktopShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
+  const { t } = useLang();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -79,10 +85,29 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
       >
         <Text style={{ fontSize: 18 }}>{item.icon}</Text>
         <Text style={{ color: active ? '#4ade80' : '#cbd5e1', fontWeight: active ? '800' : '600', fontSize: 14 }}>
-          {item.label}
+          {t(item.tKey as any)}
         </Text>
       </TouchableOpacity>
     );
+  };
+
+  // v3.10.0 — explicit sign-out clears the auth tokens + user blob, then
+  // sends the visitor to the public landing page (where the Sign in /
+  // Create account flows live).
+  const handleSignOut = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        'sudoku_token',
+        'sudoku_auth_token',
+        'sudoku_user',
+      ]);
+    } catch {}
+    setUser(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = LANDING_URL;
+    } else {
+      router.replace('/home' as any);
+    }
   };
 
   return (
@@ -95,43 +120,74 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         paddingTop: 20, paddingBottom: 20, paddingHorizontal: 14,
         flexDirection: 'column',
       }}>
-        <TouchableOpacity onPress={() => router.replace('/home')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24, paddingHorizontal: 6 }}>
+        <TouchableOpacity
+          onPress={() => {
+            // v3.10.0 — brand mark in sidebar links to the marketing landing,
+            // not the in-app /home. Lets visitors get back to the public site
+            // (where Sign in / Create account / Download live) in one click.
+            if (typeof window !== 'undefined') window.location.href = LANDING_URL;
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24, paddingHorizontal: 6 }}
+        >
           <SallyMascot size={42} mode="wink" />
           <View>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>SallySudo</Text>
-            <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.7 · WEB</Text>
+            <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.10 · WEB</Text>
           </View>
         </TouchableOpacity>
 
-        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>PLAY</Text>
+        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>
+          {t('play').toUpperCase()}
+        </Text>
         {PRIMARY.map((it) => <NavBtn key={it.key} item={it} />)}
 
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginVertical: 14, marginHorizontal: 6 }} />
 
-        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>YOU</Text>
+        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>
+          {t('you').toUpperCase()}
+        </Text>
         {SECONDARY.map((it) => <NavBtn key={it.key} item={it} />)}
 
         <View style={{ flex: 1 }} />
 
         {user ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
-            <Text style={{ fontSize: 28 }}>{user.avatar || '🎮'}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }} numberOfLines={1}>{user.username}</Text>
-              <Text style={{ color: '#94a3b8', fontSize: 11 }}>Lvl {user.level ?? 1} · ⭐ {user.stars ?? 0}</Text>
+          // v3.10.0 — logged in: show user pill + a dedicated Sign-out button.
+          <View style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
+              <Text style={{ fontSize: 28 }}>{user.avatar || '🎮'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }} numberOfLines={1}>{user.username}</Text>
+                <Text style={{ color: '#94a3b8', fontSize: 11 }}>Lvl {user.level ?? 1} · ⭐ {user.stars ?? 0}</Text>
+              </View>
             </View>
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                paddingVertical: 10, borderRadius: 12,
+                borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+              }}
+            >
+              <Text style={{ fontSize: 15 }}>🚪</Text>
+              <Text style={{ color: '#fca5a5', fontWeight: '700', fontSize: 13 }}>{t('signOut')}</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          <View style={{ gap: 8 }}>
-            <TouchableOpacity onPress={() => router.replace('/login' as any)}
-              style={{ backgroundColor: '#4ade80', paddingVertical: 11, borderRadius: 12, alignItems: 'center' }}>
-              <Text style={{ color: '#0a0a1a', fontWeight: '900', fontSize: 14 }}>Sign in</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/register' as any)}
-              style={{ paddingVertical: 11, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-              <Text style={{ color: '#cbd5e1', fontWeight: '700', fontSize: 14 }}>Create account</Text>
-            </TouchableOpacity>
-          </View>
+          // v3.10.0 — logged out: don't render Sign in / Create account in the
+          // sidebar anymore. Those entry points live on the public landing
+          // page; the sidebar just nudges the visitor back to it.
+          <TouchableOpacity
+            onPress={() => { if (typeof window !== 'undefined') window.location.href = LANDING_URL; }}
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              paddingVertical: 12, borderRadius: 12,
+              backgroundColor: '#4ade80',
+            }}
+          >
+            <Text style={{ fontSize: 15 }}>🌐</Text>
+            <Text style={{ color: '#0a0a1a', fontWeight: '800', fontSize: 13 }}>SallySudo.com</Text>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -146,21 +202,19 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
         }}>
           <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '600' }}>
-            {labelFor(path)}
+            {labelFor(path, t)}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            {/* v3.7.2 — Hide the chip that targets the current route to avoid
-                duplicating an action the sidebar already highlights. */}
             {path !== '/daily' && (
               <TouchableOpacity onPress={() => router.replace('/daily' as any)}
                 style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)' }}>
-                <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⏱️ Daily challenge</Text>
+                <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⏱️ {t('daily')}</Text>
               </TouchableOpacity>
             )}
             {path !== '/challenges' && (
               <TouchableOpacity onPress={() => router.replace('/challenges' as any)}
                 style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
-                <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '800' }}>⚔️ Play 1v1</Text>
+                <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '800' }}>⚔️ 1v1</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -179,9 +233,6 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           overflowX: 'hidden',
           height: 'calc(100vh - 64px)',
         } as any}>
-          {/* v3.8.0 — widened from 920 px → 1240 px so the per-screen grids
-              (achievements 2-col, levels 6-col, stats 4-col) have actual
-              horizontal room to breathe. */}
           <View style={{ width: '100%', maxWidth: 1240, minHeight: '100%' } as any}>
             {children}
           </View>
@@ -191,22 +242,22 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function labelFor(path: string) {
+function labelFor(path: string, t: (k: any) => string) {
   if (!path) return '';
   const map: Record<string, string> = {
-    '/home': 'Home',
-    '/levels': 'Levels',
-    '/daily': 'Daily challenge',
-    '/challenges': '1v1 lobby',
-    '/leaderboard': 'Leaderboard',
-    '/profile': 'Profile',
-    '/stats': 'Statistics',
-    '/shop': 'Shop',
-    '/achievements': 'Achievements',
-    '/settings': 'Settings',
-    '/login': 'Sign in',
-    '/register': 'Create account',
-    '/welcome': 'Welcome',
+    '/home': t('home'),
+    '/levels': t('levels'),
+    '/daily': t('dailyChallenge'),
+    '/challenges': t('lobby'),
+    '/leaderboard': t('leaderboard'),
+    '/profile': t('profile'),
+    '/stats': t('stats'),
+    '/shop': t('shop'),
+    '/achievements': t('achievements'),
+    '/settings': t('settings'),
+    '/login': t('login'),
+    '/register': t('createAccount'),
+    '/welcome': t('welcome'),
   };
   return map[path] || '';
 }

@@ -723,12 +723,17 @@ const styles = StyleSheet.create({
   statNum: { color: '#fff', fontSize: 18, fontWeight: '700' },
   statLabel: { color: '#64748b', fontSize: 11, marginTop: 2 },
   
-  tabsScroll: { maxHeight: 52, marginTop: 10 },
-  tabsScrollContent: { paddingHorizontal: 15, paddingRight: 30, alignItems: 'center', gap: 8 },
-  tab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)' },
-  tabActive: { backgroundColor: '#4ade80' },
-  tabText: { color: '#94a3b8', fontWeight: '600' },
-  tabTextActive: { color: '#000' },
+  // v3.10.0 — bigger pill tabs so the segmented control is readable on web.
+  // Pre-3.10 tabs were 14×10 px padding + default 14 px font = the labels
+  // ("Received", "Active", "History" with their counts) felt cramped and
+  // were hard to tap. Bumped padding, font weight, font size, and explicit
+  // minHeight on the scroll row so it doesn't collapse on RNW.
+  tabsScroll: { minHeight: 56, maxHeight: 64, marginTop: 12, flexGrow: 0 },
+  tabsScrollContent: { paddingHorizontal: 16, paddingRight: 32, paddingVertical: 6, alignItems: 'center', gap: 10 },
+  tab: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  tabActive: { backgroundColor: '#4ade80', borderColor: '#4ade80' },
+  tabText: { color: '#cbd5e1', fontWeight: '700', fontSize: 14, letterSpacing: 0.2 },
+  tabTextActive: { color: '#0a0a1a' },
   
   content: { padding: 20, paddingBottom: 40 },
   empty: { alignItems: 'center', padding: 40 },

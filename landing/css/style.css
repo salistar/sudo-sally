@@ -3,6 +3,47 @@
    Design system matched to the app
    ============================================================ */
 
+/* v3.10.0 — language switcher (EN | FR | AR) — sits inside the nav next
+   to the Download CTA. Renders inline on desktop, wraps below on mobile. */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 12px 0 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lang-switcher .lang-chip {
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.lang-switcher .lang-chip:hover {
+  color: #e2e8f0;
+}
+.lang-switcher .lang-chip.active {
+  background: #4ade80;
+  color: #0a0a1a;
+}
+/* RTL — when <html dir="rtl"> is set, lay nav out right-to-left. */
+html[dir="rtl"] body {
+  direction: rtl;
+}
+html[dir="rtl"] .nav,
+html[dir="rtl"] .footer-grid {
+  direction: rtl;
+}
+
+
 /* ---------- Design tokens ---------- */
 :root {
   /* Backgrounds */
