@@ -216,6 +216,29 @@ h2.section-title {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* v3.6.3 — "Play on web" hero button: blue gradient, distinct from the green
+   download CTA so users can scan-pick whichever surface they prefer. */
+.btn-web {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.35);
+}
+.btn-web:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px rgba(59, 130, 246, 0.5);
+}
+
+/* Nav "Play on web" link — subtle blue accent so the in-page nav and the
+   hero CTA visually echo each other without dominating the green Download. */
+.nav-links a.play-web {
+  color: #60a5fa;
+  font-weight: 700;
+}
+.nav-links a.play-web:hover {
+  color: #93c5fd;
+}
+
 .btn-lg {
   padding: 17px 34px;
   font-size: 1.08rem;
