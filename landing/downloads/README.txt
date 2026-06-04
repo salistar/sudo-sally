@@ -1,4 +1,4 @@
-Sudoku Sally — downloads/
+SallySudo — downloads/
 ==========================
 
 This folder is where the release build of the Android app lands.

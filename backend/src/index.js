@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * SUDOKU SALLY V3 - MAIN SERVER
+ * SALLYSUDO V3 - MAIN SERVER
  * ============================================================================
  * Express + Socket.io pour les défis en temps réel
  * ============================================================================
@@ -80,7 +80,7 @@ app.get('/health', (req, res) => {
 // API Documentation
 app.get('/api', (req, res) => {
   res.json({
-    name: 'Sudoku Sally API',
+    name: 'SallySudo API',
     version: '3.1.0',
     endpoints: {
       auth: { 
@@ -220,7 +220,7 @@ mongoose.connect(MONGODB_URI)
     // Use server.listen instead of app.listen for Socket.io
     server.listen(PORT, () => {
       console.log('============================================');
-      console.log('  🎮 SUDOKU SALLY V3 - Server Started');
+      console.log('  🎮 SALLYSUDO V3 - Server Started');
       console.log('============================================');
       console.log(`  📡 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`  🚀 HTTP Server: http://localhost:${PORT}`);

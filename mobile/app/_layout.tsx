@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { AppProvider } from '../utils/context';
 import { LanguageProvider } from '../utils/LanguageContext';
+import WebShell from '../components/WebShell';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -14,6 +15,7 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <LanguageProvider>
+      <WebShell>
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="splash" />
@@ -48,6 +50,7 @@ export default function RootLayout() {
           }} 
         />
       </Stack>
+      </WebShell>
       <StatusBar style="light" />
       </LanguageProvider>
     </AppProvider>

@@ -1,5 +1,5 @@
 /* ============================================================
-   Sudoku Sally — shared vanilla JS
+   SallySudo — shared vanilla JS
    - mobile nav toggle
    - FAQ accordion
    - footer year

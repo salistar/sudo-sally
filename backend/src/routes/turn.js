@@ -1,7 +1,7 @@
 /**
  * GET /api/turn-creds
  * Returns short-lived ICE servers config (STUN + TURN time-limited credentials)
- * for the Sudoku Sally WebRTC calls.
+ * for the SallySudo WebRTC calls.
  *
  * Uses coturn's "use-auth-secret" pattern: username = "<expiry-unix>:<userid>",
  * password = base64(HMAC-SHA1(secret, username)).

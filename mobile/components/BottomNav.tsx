@@ -15,7 +15,7 @@
  *   <BottomNav active="home" />
  */
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -31,6 +31,11 @@ const ITEMS: Array<{ key: NavKey; icon: string; label: string; route: string }> 
 
 export default function BottomNav({ active }: { active?: NavKey }) {
   const router = useRouter();
+  // v3.7 — On desktop-web the WebShell already shows a sidebar with the same
+  // links, so the floating bottom bar would just clutter the bottom of the
+  // viewport. Hide it on web viewports ≥ 1024 px.
+  const { width } = useWindowDimensions();
+  if (Platform.OS === 'web' && width >= 1024) return null;
   return (
     <LinearGradient
       colors={['rgba(10,10,26,0)', 'rgba(10,10,26,0.95)', '#0a0a1a']}
