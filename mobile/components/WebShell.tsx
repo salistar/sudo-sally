@@ -13,7 +13,7 @@
  * Mounted once at the root in app/_layout.tsx.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SallyMascot from './SallyMascot';
@@ -160,13 +160,22 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           </View>
         </View>
 
-        {/* CONTENT — scrollable. Centered with a max width so screens
-            originally designed for ~430 px don't look stretched on a desktop. */}
-        <ScrollView style={{ flex: 1 } as any} contentContainerStyle={{ alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 }}>
-          <View style={{ width: '100%', maxWidth: 920 }}>
+        {/* CONTENT — plain View with overflow:auto (web-only). React Native's
+            ScrollView would collapse children with `flex: 1` to height 0 because
+            its content size is unbounded. A View with calc(100vh - 64px) and
+            overflow:auto gives each route a real bounded height and lets it
+            scroll internally when it overflows. */}
+        <View style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingVertical: 16, paddingHorizontal: 24,
+          overflow: 'auto',
+          height: 'calc(100vh - 64px)',
+        } as any}>
+          <View style={{ width: '100%', maxWidth: 920, minHeight: '100%', flex: 1 } as any}>
             {children}
           </View>
-        </ScrollView>
+        </View>
       </View>
     </View>
   );
