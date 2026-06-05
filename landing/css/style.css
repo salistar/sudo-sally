@@ -4,13 +4,15 @@
    ============================================================ */
 
 /* v3.10.0 — language switcher (EN | FR | AR) — sits inside the nav next
-   to the Download CTA. Renders inline on desktop, wraps below on mobile. */
+   to the Download CTA. Renders inline on desktop, wraps below on mobile.
+   v3.11.2 — tightened chip padding so the switcher takes less horizontal
+   space in the already-crowded nav. */
 .lang-switcher {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin: 0 12px 0 4px;
-  padding: 4px;
+  gap: 2px;
+  margin: 0 8px 0 4px;
+  padding: 3px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -19,10 +21,10 @@
   border: 0;
   background: transparent;
   color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: pointer;
   transition: background-color .15s, color .15s;
@@ -43,38 +45,75 @@ html[dir="rtl"] .footer-grid {
   direction: rtl;
 }
 
-/* v3.11.1 — Nav Sign in link (sits between the FAQ link and the
-   Download CTA on every page). Quiet visually so it doesn't fight
-   with the green Download button. */
+/* v3.11.2 — header & auth refonte
+   ----------------------------------
+   Pre-3.11.2 the nav crammed 7 text links + a language switcher + a
+   Sign in pill + a Download CTA into a 70 px bar; some labels wrapped
+   to two lines on a 1440 px viewport and the green Sign-in pill got
+   lost between two larger buttons. The auth row in the hero looked
+   like 3 small text links instead of a real call to action. This
+   block overrides the tight defaults below with a more breathable
+   layout and proper visual hierarchy. */
+
+/* Bar grows a little so two-row wrap stops happening on narrow desktops. */
+.site-header { height: auto !important; min-height: var(--header-h); padding-block: 10px; }
+.site-header .nav { gap: 20px; flex-wrap: wrap; }
+.brand { gap: 10px; }
+.brand .wordmark {
+  font-size: 1.05rem !important;
+  letter-spacing: 0.04em !important;
+  white-space: nowrap;
+}
+.nav-links { gap: 2px !important; flex-wrap: wrap; justify-content: flex-end; }
+.nav-links > a {
+  padding: 7px 11px !important;
+  font-size: 0.88rem !important;
+  white-space: nowrap;
+}
+.nav-links a.play-web {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.nav-links a.nav-cta { padding: 9px 18px !important; box-shadow: 0 4px 16px rgba(34, 197, 94, 0.32); }
+
+/* Sign in pill — sits right before Download, paired visually. */
 .nav-signin {
   color: #4ade80 !important;
-  font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(74, 222, 128, 0.4);
-  transition: background-color .15s, border-color .15s, color .15s;
+  font-weight: 700 !important;
+  padding: 8px 16px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  margin-left: 6px;
+  transition: background-color .15s, border-color .15s, color .15s, transform .15s;
 }
 .nav-signin:hover {
-  background: rgba(74, 222, 128, 0.12);
-  border-color: rgba(74, 222, 128, 0.8);
+  background: rgba(74, 222, 128, 0.14) !important;
+  border-color: rgba(74, 222, 128, 0.9);
+  transform: translateY(-1px);
 }
 
-/* v3.11.1 — hero auth row. Renders below the main hero CTAs. Hidden
-   when the visitor is already signed in (body.is-authed). */
+/* Hero auth row — now a proper card on the left column. Hidden when
+   the visitor is already signed in (body.is-authed). */
 body.is-authed .auth-row { display: none; }
 .auth-row {
-  margin-top: 28px;
-  max-width: 540px;
+  margin-top: 30px;
+  max-width: 520px;
+  padding: 22px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(74, 222, 128, 0.07), rgba(96, 165, 250, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .auth-divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #64748b;
+  color: #94a3b8;
   font-size: 11px;
-  letter-spacing: 2px;
+  letter-spacing: 2.2px;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .auth-divider::before,
 .auth-divider::after {
@@ -84,46 +123,59 @@ body.is-authed .auth-row { display: none; }
   background: rgba(255, 255, 255, 0.08);
 }
 .auth-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-  align-items: center;
+  align-items: stretch;
 }
 .btn-auth {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 18px;
   border-radius: 12px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background-color .15s, border-color .15s;
+  transition: background-color .15s, border-color .15s, transform .15s;
 }
-.btn-auth .ico { font-size: 16px; }
+.btn-auth:hover { transform: translateY(-1px); }
+.btn-auth .ico { font-size: 17px; }
 .btn-auth-signin {
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.08);
-  border-color: rgba(74, 222, 128, 0.35);
+  color: #06210f;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.28);
 }
-.btn-auth-signin:hover {
-  background: rgba(74, 222, 128, 0.16);
-  border-color: rgba(74, 222, 128, 0.6);
-}
+.btn-auth-signin:hover { box-shadow: 0 10px 28px rgba(34, 197, 94, 0.4); }
 .btn-auth-register {
   color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 .btn-auth-register:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
 }
+/* Google button: full row width, sits below the 2-col grid. The GSI
+   widget renders into the child div; we just make the wrapper full-width
+   and centered. */
 .btn-auth-google {
-  min-width: 220px;
-  display: inline-flex;
+  grid-column: 1 / -1;
+  min-height: 44px;
+  display: flex;
   align-items: center;
+  justify-content: center;
 }
 .btn-auth-google > div { width: 100% !important; }
+
+/* Mobile — the auth card collapses to a single column under the hero. */
+@media (max-width: 720px) {
+  .auth-buttons { grid-template-columns: 1fr; }
+  .nav-signin { margin-left: 0; }
+}
 
 
 /* ---------- Design tokens ---------- */
