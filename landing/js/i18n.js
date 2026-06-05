@@ -32,6 +32,10 @@
       navPlayWeb: '▶ Play on web',
       navDownload: 'Download',
       navDashboard: '▶ My dashboard',
+      navSignIn: 'Sign in',
+      authOr: 'or sign in',
+      authSignIn: 'Sign in',
+      authRegister: 'Create account',
 
       // hero
       heroBadge: 'Available now for Android · iOS coming soon',
@@ -76,6 +80,10 @@
       navPlayWeb: '▶ Jouer en ligne',
       navDownload: 'Télécharger',
       navDashboard: '▶ Mon tableau de bord',
+      navSignIn: 'Connexion',
+      authOr: 'ou connecte-toi',
+      authSignIn: 'Connexion',
+      authRegister: 'Créer un compte',
 
       heroBadge: 'Disponible sur Android · iOS bientôt',
       heroTitle: 'SallySudo',
@@ -114,6 +122,10 @@
       navPlayWeb: '▶ العب على الويب',
       navDownload: 'تنزيل',
       navDashboard: '▶ لوحة التحكم',
+      navSignIn: 'تسجيل الدخول',
+      authOr: 'أو سجل الدخول',
+      authSignIn: 'تسجيل الدخول',
+      authRegister: 'إنشاء حساب',
 
       heroBadge: 'متوفر الآن لأندرويد · iOS قريباً',
       heroTitle: 'ساليسودو',
@@ -238,6 +250,7 @@
       const txt = (a.textContent || '').trim();
       if (NAV_MAP[txt]) a.setAttribute('data-i18n', NAV_MAP[txt]);
       else if (txt === '▶ Play on web') a.setAttribute('data-i18n', 'navPlayWeb');
+      else if (a.classList.contains('nav-signin')) a.setAttribute('data-i18n', 'navSignIn');
     });
     document.querySelectorAll('.footer-col h4').forEach((h) => {
       const txt = (h.textContent || '').trim();
@@ -259,10 +272,54 @@
     });
   }
 
+  /**
+   * v3.11.1 — render the Google Identity Services button into
+   * #g_id_signin_landing on pages that contain it (currently only
+   * index.html). Hides the whole auth row when a session is already
+   * detected (the Dashboard link in the nav takes over).
+   */
+  function setupLandingAuth() {
+    if (isSignedIn()) {
+      document.body.classList.add('is-authed');
+      return;
+    }
+    const slot = document.getElementById('g_id_signin_landing');
+    if (!slot) return;
+    const SA = window.SALLYSUDO_AUTH;
+    if (!SA || !SA.clientId) return;
+
+    function render() {
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) return false;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: SA.clientId,
+          callback: window.handleSallySudoCredential,
+          auto_select: false,
+        });
+        window.google.accounts.id.renderButton(slot, {
+          theme: 'filled_black',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'pill',
+          logo_alignment: 'left',
+        });
+        return true;
+      } catch (_) { return false; }
+    }
+    // gsi/client is loaded async — poll briefly until it appears.
+    if (render()) return;
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (render() || tries > 40) clearInterval(iv);
+    }, 150);
+  }
+
   function init() {
     buildSwitcher();
     autoTag();
     maybeRenderDashboard();
+    setupLandingAuth();
     applyLang(getLang());
   }
 

@@ -14,6 +14,41 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./css/style.css" />
+  <!-- v3.11.1 — Google Identity Services for in-place sign-in.
+       Same web OAuth client ID as the mobile app's web build. The button
+       renders into #g_id_signin_landing in the hero. The credential
+       callback POSTs to /api/auth/google, stores the JWT in localStorage
+       under the same keys the React Native app uses, then jumps the
+       visitor to /home. -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    window.SALLYSUDO_AUTH = {
+      apiBase: 'https://api.sudoku.gowithsally.com/api',
+      appBase: 'https://app.sudoku.gowithsally.com',
+      clientId: '106972968307-2d38675a5rkl8vgkppll7f9ab5fe96oe.apps.googleusercontent.com',
+    };
+    window.handleSallySudoCredential = async function (resp) {
+      try {
+        const r = await fetch(window.SALLYSUDO_AUTH.apiBase + '/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: resp.credential }),
+        });
+        const data = await r.json();
+        if (!r.ok || !data.token) {
+          alert('Google sign-in failed: ' + (data.error || r.status));
+          return;
+        }
+        // Match the keys the RN web bundle reads on next load.
+        localStorage.setItem('sudoku_token', data.token);
+        localStorage.setItem('sudoku_auth_token', data.token);
+        localStorage.setItem('sudoku_user', JSON.stringify(data.user));
+        window.location.href = window.SALLYSUDO_AUTH.appBase + '/home';
+      } catch (e) {
+        alert('Google sign-in error: ' + (e && e.message || e));
+      }
+    };
+  </script>
 </head>
 <body>
 
@@ -46,7 +81,7 @@
         <a href="./screenshots.html">Screenshots</a>
         <a href="https://app.sudoku.gowithsally.com" class="play-web" target="_blank" rel="noopener">▶ Play on web</a>
         <a href="./faq.html">FAQ</a>
-        <a href="./download.html" class="nav-cta">Download</a>
+        <a href="https://app.sudoku.gowithsally.com/login" class="nav-signin">Sign in</a><a href="./download.html" class="nav-cta">Download</a>
       </nav>
     </div>
   </header>
@@ -64,6 +99,26 @@
             <a href="./download.html" class="btn btn-primary btn-lg" data-i18n="heroCtaDownload">⬇ Download APK</a>
             <a href="https://app.sudoku.gowithsally.com" target="_blank" rel="noopener" class="btn btn-web btn-lg" data-i18n="heroCtaWeb">▶ Play on web</a>
             <a href="./how-to-play.html" class="btn btn-ghost btn-lg" data-i18n="heroCtaHow">How to play</a>
+          </div>
+
+          <!-- v3.11.1 — visitor auth section. After sign-out the visitor
+               lands here and needs a way back in. Three options:
+               Sign in (-> /login), Create account (-> /register), Google
+               (rendered by Google Identity Services below). The whole
+               block is hidden once a visitor is signed in (i18n.js
+               detects sudoku_user in localStorage and adds .is-authed
+               on <body>). -->
+          <div class="auth-row" id="auth-row">
+            <div class="auth-divider"><span data-i18n="authOr">or sign in</span></div>
+            <div class="auth-buttons">
+              <a href="https://app.sudoku.gowithsally.com/login" class="btn-auth btn-auth-signin">
+                <span class="ico">🔑</span><span data-i18n="authSignIn">Sign in</span>
+              </a>
+              <a href="https://app.sudoku.gowithsally.com/register" class="btn-auth btn-auth-register">
+                <span class="ico">👤</span><span data-i18n="authRegister">Create account</span>
+              </a>
+              <div id="g_id_signin_landing" class="btn-auth-google"></div>
+            </div>
           </div>
           <div class="hero-stats">
             <div class="stat"><div class="num">5</div><div class="label" data-i18n="statLevels">DIFFICULTY LEVELS</div></div>
