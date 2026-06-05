@@ -91,22 +91,41 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // v3.10.0 — explicit sign-out clears the auth tokens + user blob, then
-  // sends the visitor to the public landing page (where the Sign in /
-  // Create account flows live).
+  // v3.11.0 — explicit sign-out clears EVERY sudoku_* storage key (web cache
+  // sometimes survives a partial purge because RNW's web fallback writes raw
+  // keys to window.localStorage; multiRemove also doesn't wipe sessionStorage)
+  // then hard-redirects to the public landing. The previous version only
+  // removed 3 keys and `setUser(null)` couldn't survive a page refresh, so
+  // refreshing the app after "Sign out" still showed the user signed in.
   const handleSignOut = async () => {
     try {
-      await AsyncStorage.multiRemove([
-        'sudoku_token',
-        'sudoku_auth_token',
-        'sudoku_user',
-      ]);
+      // Drop EVERY sudoku_* AsyncStorage key, not just auth (so stale stats /
+      // levels / achievements from the previous account don't bleed into the
+      // next visitor's session). User language preference is intentionally
+      // kept (sudoku_settings has it nested but we wipe the whole blob — the
+      // landing page reads its own sallysudo_lang anyway).
+      const keys = await AsyncStorage.getAllKeys();
+      const sudoku = keys.filter((k) => k.startsWith('sudoku_'));
+      if (sudoku.length) await AsyncStorage.multiRemove(sudoku);
     } catch {}
+    // Web-only belt-and-braces — clear localStorage / sessionStorage
+    // directly in case AsyncStorage's web layer missed anything.
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = window.localStorage.length - 1; i >= 0; i--) {
+          const k = window.localStorage.key(i);
+          if (k && (k.startsWith('sudoku_') || k.startsWith('@sallysudo_'))) {
+            window.localStorage.removeItem(k);
+          }
+        }
+        window.sessionStorage.clear();
+      } catch {}
+    }
     setUser(null);
     if (typeof window !== 'undefined') {
       window.location.href = LANDING_URL;
     } else {
-      router.replace('/home' as any);
+      router.replace('/welcome' as any);
     }
   };
 

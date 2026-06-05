@@ -7,8 +7,13 @@ import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 import SallyMascot from '../components/SallyMascot';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Profile.tsx]';
+// v3.11.0 — profile edits now persist server-side. Without this the avatar
+// change only updated local cache and was lost on next sign-in because the
+// next /api/auth/me overwrote the local blob with the stale DB value.
+const API_URL = 'https://api.sudoku.gowithsally.com/api';
 
 const AVATARS = ['🎮', '👤', '🎯', '🧩', '🏆', '⭐', '🔥', '💎', '🎪', '🎨', '🦊', '🐱', '🐶', '🦁', '🐼'];
 
@@ -72,27 +77,57 @@ export default function Profile() {
 
   const changeAvatar = useCallback(async (avatar: string) => {
     console.log(`${FILE_NAME} 🎭 changeAvatar() - Changing avatar to: ${avatar}`);
-    
+
     if (!user) {
       console.log(`${FILE_NAME} ⚠️ changeAvatar() - No user loaded`);
       return;
     }
-    
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      console.log(`${FILE_NAME} 📳 changeAvatar() - Haptic feedback triggered`);
-    } catch (error) {
-      console.log(`${FILE_NAME} ⚠️ changeAvatar() - Haptics not available`);
-    }
-    
+
+    try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+
+    // Optimistic UI — flip locally first, roll back if the API rejects.
     setSelectedAvatar(avatar);
-    
     const updatedUser = { ...user, avatar };
-    console.log(`${FILE_NAME} 💾 changeAvatar() - Saving updated user...`);
     await storage.setUser(updatedUser);
     setUser(updatedUser);
-    
-    console.log(`${FILE_NAME} ✅ changeAvatar() - Avatar changed successfully`);
+
+    // v3.11.0 — sync to the backend so the change survives the next sign-in.
+    // Guest users have a synthetic 'guest_' id and no real DB record; skip
+    // the API call for them but keep the local update.
+    if (user.id && !user.id.startsWith('guest_')) {
+      try {
+        const token = await AsyncStorage.getItem('sudoku_token')
+          || await AsyncStorage.getItem('sudoku_auth_token');
+        if (!token) {
+          console.log(`${FILE_NAME} ⚠️ changeAvatar() - no auth token, local-only update`);
+          return;
+        }
+        const r = await fetch(`${API_URL}/users/${user.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ avatar }),
+        });
+        if (!r.ok) {
+          // Roll back local change so what the user sees matches what is stored.
+          console.error(`${FILE_NAME} ❌ changeAvatar() - server rejected (${r.status})`);
+          await storage.setUser(user);
+          setUser(user);
+          setSelectedAvatar(user.avatar);
+          return;
+        }
+        const data = await r.json();
+        // Server may normalize fields — trust its returned user blob.
+        const serverUser = data.user
+          ? { ...updatedUser, ...data.user, id: data.user._id || data.user.id || user.id }
+          : updatedUser;
+        await storage.setUser(serverUser as User);
+        setUser(serverUser as User);
+        console.log(`${FILE_NAME} ✅ changeAvatar() - synced to API`);
+      } catch (e) {
+        console.error(`${FILE_NAME} ❌ changeAvatar() - network error:`, e);
+        // Keep the optimistic local change — the next sign-in will reconcile.
+      }
+    }
   }, [user]);
 
   const calculateLevel = useCallback((xp: number): number => {
