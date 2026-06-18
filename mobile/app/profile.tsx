@@ -6,6 +6,7 @@ import { storage, User } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import ChallengeHistoryList from '../components/ChallengeHistoryList';
+import RatingTrajectoryChart from '../components/RatingTrajectoryChart';
 import * as Haptics from 'expo-haptics';
 import SallyMascot from '../components/SallyMascot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -289,6 +290,7 @@ export default function Profile() {
             Phone profile is already tight on screen real estate; the
             challenge history is just a desktop bonus that fills the empty
             space below the stats grid. */}
+        {isDesktopWeb && <RatingTrajectoryChart />}
         {isDesktopWeb && <ChallengeHistoryList />}
 
         {/* Avatar Picker */}

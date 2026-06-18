@@ -500,6 +500,14 @@ export const translations = {
     legendChamp: 'Legend',
     noChampionsYet: 'No champions yet.',
     beFirst: 'Be the first!',
+
+    // v3.11.6 sprint-11 — Active duels + rating trajectory
+    liveDuels: 'LIVE DUELS',
+    vsOpponent: 'vs',
+    resumeDuel: 'RESUME',
+    ratingTrajectory: 'Star trajectory · 14 days',
+    cumulativeStars: 'Cumulative stars over the last 14 days. Win a 1v1 to push it higher.',
+    noWinYet14d: 'No win in the last 14 days yet. Time to chase that first star.',
   },
 
   fr: {
@@ -1000,6 +1008,14 @@ export const translations = {
     legendChamp: 'Légende',
     noChampionsYet: 'Pas encore de champions.',
     beFirst: 'Sois le premier !',
+
+    // v3.11.6 sprint-11 — Active duels + rating trajectory
+    liveDuels: 'DUELS EN COURS',
+    vsOpponent: 'vs',
+    resumeDuel: 'REPRENDRE',
+    ratingTrajectory: "Trajectoire d'étoiles · 14 jours",
+    cumulativeStars: 'Étoiles cumulées sur les 14 derniers jours. Gagne un 1v1 pour la faire grimper.',
+    noWinYet14d: "Aucune victoire ces 14 derniers jours. C'est le moment de décrocher ta première étoile.",
   },
 
   ar: {
@@ -1500,6 +1516,14 @@ export const translations = {
     legendChamp: 'أسطورة',
     noChampionsYet: 'لا أبطال بعد.',
     beFirst: 'كن الأول!',
+
+    // v3.11.6 sprint-11 — Active duels + rating trajectory
+    liveDuels: 'مبارزات مباشرة',
+    vsOpponent: 'ضد',
+    resumeDuel: 'استئناف',
+    ratingTrajectory: 'مسار النجوم · 14 يومًا',
+    cumulativeStars: 'النجوم المتراكمة خلال آخر 14 يومًا. اربح مباراة 1ضد1 لرفعها أعلى.',
+    noWinYet14d: 'لا انتصارات في آخر 14 يومًا. حان وقت أول نجمة لك.',
   }
 };
 
