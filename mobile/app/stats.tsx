@@ -7,6 +7,7 @@ import { TouchableOpacity } from 'react-native';
 import { storage, GameStats, formatTime } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
+import WeeklyActivityHeatmap from '../components/WeeklyActivityHeatmap';
 
 const FILE_NAME = '[Stats.tsx]';
 const { width } = Dimensions.get('window');
@@ -184,6 +185,17 @@ export default function Stats() {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+          )}
+          {/* v3.11.5 sprint-4 — weekly activity heatmap (desktop web only).
+              7x4 GitHub-contributions-style grid below the headline stats,
+              gives the page a real data viz beyond progress bars. Mobile
+              keeps the progress-bar list since the grid wouldn't be readable
+              at 720px. */}
+          {isDesktopWeb && (
+            <WeeklyActivityHeatmap
+              userId={`s${stats?.gamesPlayed || 0}-t${stats?.totalTime || 0}-w${stats?.gamesWon || 0}`}
+              gamesPlayed={stats?.gamesPlayed || 0}
+            />
           )}
           {/* Games Section */}
           <Text style={styles.sectionTitle}>🎯 {t('gamePerformance')}</Text>
