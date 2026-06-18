@@ -11,7 +11,12 @@ const Challenge = require('../models/Challenge');
 const connectedUsers = new Map(); // socketId -> { odcUserId, username }
 const userSockets = new Map();    // odcUserId -> socketId
 
+// Module-scoped reference to the io instance set once at initializeSocket().
+// Exposed via notifyUser() so REST controllers can push events to a user.
+let _io = null;
+
 function initializeSocket(io) {
+  _io = io;
   
   // ============ AUTHENTICATION MIDDLEWARE ============
   io.use(async (socket, next) => {
@@ -297,11 +302,24 @@ function getOnlineUsersCount() {
   return userSockets.size;
 }
 
-module.exports = { 
-  initializeSocket, 
+// Push a socket event to a specific user from anywhere (REST controllers etc.).
+// Returns true if the user had at least one active socket. Safely no-op'd if io
+// hasn't been initialized yet (e.g. when controllers are required before
+// initializeSocket runs).
+function notifyUser(odcUserId, event, payload) {
+  if (!_io) return false;
+  const sid = userSockets.get(String(odcUserId));
+  if (!sid) return false;
+  _io.to(sid).emit(event, payload);
+  return true;
+}
+
+module.exports = {
+  initializeSocket,
   getSocketForUser,
   isUserOnline,
   getOnlineUsersCount,
+  notifyUser,
   connectedUsers,
   userSockets
 };

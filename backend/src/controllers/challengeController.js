@@ -1,5 +1,6 @@
 const Challenge = require('../models/Challenge');
 const User = require('../models/User');
+const { notifyUser } = require('../services/socketService');
 
 // Generate Sudoku puzzle
 function generateSudokuPuzzle(difficulty = 'medium') {
@@ -112,7 +113,16 @@ exports.sendChallenge = async (req, res) => {
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' }
     ]);
-    
+
+    // Push real-time notification to the challenged user (REST send used to be
+    // silent — the receiver only saw the challenge after polling /pending).
+    notifyUser(resolvedTargetId, 'challenge:received', {
+      challengeId: challenge._id,
+      challenger: challenge.challenger,
+      difficulty: challenge.difficulty,
+      createdAt: challenge.createdAt
+    });
+
     res.status(201).json({ success: true, challenge });
   } catch (error) {
     res.status(500).json({ error: error.message });
