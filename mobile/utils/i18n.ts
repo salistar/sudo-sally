@@ -567,6 +567,25 @@ export const translations = {
     shopShort: 'Need',
     owned: 'OWNED',
     buy: 'BUY',
+
+    // v3.11.11 sprint-16 — /challenges lobby desktop refresh
+    rankedTag: 'RANKED · BO1',
+    onlineNow: 'ONLINE NOW',
+    lobbyTitle: 'Ranked 1v1 Lobby',
+    lobbyHint: 'Pick an online rival, choose a difficulty, fight live. Win to climb the global leaderboard.',
+    wlRatio: 'W / L RATIO',
+    quickMatch: 'QUICK MATCH',
+    quickMatchBtn: 'INSTANT DUEL',
+    lobbyEmpty: 'No one online yet',
+    lobbyEmptyHint: 'Tell a friend to log in or wait for the lobby to fill up. The first opponent that joins will appear here.',
+    receivedEmpty: 'No incoming challenges. Your inbox is clean.',
+    sentEmpty: 'No outgoing challenges right now.',
+    activeEmpty: 'No live matches yet — start one to see it here.',
+    historyEmpty: 'No finished duels yet.',
+    challengedYouShort: 'sent you a challenge',
+    challenge: 'CHALLENGE',
+    accept: 'ACCEPT',
+    decline: 'DECLINE',
   },
 
   fr: {
@@ -1134,6 +1153,25 @@ export const translations = {
     shopShort: 'Manque',
     owned: 'POSSÉDÉ',
     buy: 'ACHAT',
+
+    // v3.11.11 sprint-16 — /challenges lobby desktop refresh
+    rankedTag: 'CLASSÉ · BO1',
+    onlineNow: 'EN LIGNE',
+    lobbyTitle: 'Lobby 1v1 classé',
+    lobbyHint: 'Choisis un rival connecté, fixe une difficulté, combats en direct. Gagne pour grimper au classement mondial.',
+    wlRatio: 'RATIO V / D',
+    quickMatch: 'MATCH RAPIDE',
+    quickMatchBtn: 'DUEL INSTANTANÉ',
+    lobbyEmpty: 'Personne en ligne',
+    lobbyEmptyHint: 'Invite un ami à se connecter ou attends que le lobby se remplisse. Le premier adversaire à rejoindre apparaîtra ici.',
+    receivedEmpty: 'Aucun défi reçu. Ta boîte est vide.',
+    sentEmpty: 'Aucun défi envoyé pour le moment.',
+    activeEmpty: 'Aucun match en cours — lance-en un pour le voir ici.',
+    historyEmpty: 'Aucun duel terminé pour le moment.',
+    challengedYouShort: "t'a envoyé un défi",
+    challenge: 'DÉFIER',
+    accept: 'ACCEPTER',
+    decline: 'REFUSER',
   },
 
   ar: {
@@ -1701,6 +1739,25 @@ export const translations = {
     shopShort: 'ينقصك',
     owned: 'مملوك',
     buy: 'شراء',
+
+    // v3.11.11 sprint-16 — /challenges lobby desktop refresh
+    rankedTag: 'مصنّفة · أفضل 1',
+    onlineNow: 'متصلون الآن',
+    lobbyTitle: 'ردهة 1ضد1 مصنّفة',
+    lobbyHint: 'اختر منافسًا متصلًا، حدّد الصعوبة، قاتل مباشرة. الفوز يصعد بك في الترتيب العالمي.',
+    wlRatio: 'نسبة الفوز/الخسارة',
+    quickMatch: 'مباراة سريعة',
+    quickMatchBtn: 'مبارزة فورية',
+    lobbyEmpty: 'لا أحد متصل',
+    lobbyEmptyHint: 'ادع صديقًا للدخول أو انتظر امتلاء الردهة. أول خصم ينضم سيظهر هنا.',
+    receivedEmpty: 'لا تحديات واردة. صندوقك فارغ.',
+    sentEmpty: 'لا تحديات مرسلة حاليًا.',
+    activeEmpty: 'لا مباريات جارية — ابدأ واحدة لتظهر هنا.',
+    historyEmpty: 'لا مبارزات منتهية بعد.',
+    challengedYouShort: 'أرسل لك تحديًا',
+    challenge: 'تحدِّ',
+    accept: 'قبول',
+    decline: 'رفض',
   }
 };
 

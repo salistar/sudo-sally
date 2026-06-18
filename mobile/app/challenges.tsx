@@ -14,6 +14,8 @@ import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import BottomNav from '../components/BottomNav';
+import LobbyDesktopLayout from '../components/LobbyDesktopLayout';
+import { useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
@@ -51,6 +53,8 @@ const API_URL = 'https://api.sallysudo.com/api';
 export default function Challenges() {
   const router = useRouter();
   const { t } = useLang();
+  const { width: winW } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
 
   // ============ STATE ============
   const [loading, setLoading] = useState(true);
@@ -392,6 +396,57 @@ export default function Challenges() {
   }
 
   // ============ RENDER ============
+  // v3.11.11 sprint-16 — desktop takeover: hero banner + tab pills +
+  // online player grid using Midnight Atlas tokens. Phone keeps the
+  // original tabs+vertical list below.
+  if (isDesktopWeb) {
+    return (
+      <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+        <LobbyDesktopLayout
+          currentUser={currentUser}
+          onlineUsers={onlineUsers}
+          receivedChallenges={receivedChallenges}
+          sentChallenges={sentChallenges}
+          activeChallenges={activeChallenges}
+          history={history}
+          stats={stats}
+          selectedTab={selectedTab}
+          onTab={setSelectedTab}
+          onChallenge={openChallenge}
+          onAccept={acceptChallenge}
+          onDecline={declineChallenge}
+          onResume={(id) => router.push(`/challenge-game?id=${id}` as any)}
+        />
+        {/* Difficulty modal — reuses the same styles + diff config as mobile. */}
+        <Modal visible={difficultyModal} transparent animationType="fade" onRequestClose={() => setDifficultyModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>⚔️ {t('challengeBtn')} {selectedUser?.username}</Text>
+              <Text style={styles.modalSubtitle}>{t('selectDifficulty')}</Text>
+              {[
+                { key: 'easy', emoji: '😊', label: t('easy'), color: '#4ade80' },
+                { key: 'medium', emoji: '😐', label: t('medium'), color: '#fbbf24' },
+                { key: 'hard', emoji: '😈', label: t('hard'), color: '#ef4444' },
+              ].map(diff => (
+                <TouchableOpacity
+                  key={diff.key}
+                  style={[styles.diffBtn, { borderColor: diff.color, backgroundColor: `${diff.color}20` }]}
+                  onPress={() => sendChallenge(diff.key)}
+                >
+                  <Text style={styles.diffText}>{diff.emoji} {diff.label}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setDifficultyModal(false)}>
+                <Text style={styles.cancelModalText}>{t('cancel')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <AppModal popup={popup} onClose={() => { setPopup(null); if (pendingNav) { router.push(pendingNav as any); setPendingNav(null); } }} buttonLabel={t('gotIt')} />
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
       {/* Header */}
