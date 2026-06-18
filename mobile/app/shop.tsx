@@ -9,6 +9,7 @@ import { POWERUPS, PowerUp } from '../utils/powerups';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import BottomNav from '../components/BottomNav';
+import ShopDesktopLayout from '../components/ShopDesktopLayout';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '[Shop.tsx]';
@@ -177,7 +178,26 @@ export default function Shop() {
         </LinearGradient>
       </View>
 
+      {/* v3.11.10 sprint-15 — desktop takeover: featured hero + grid layout
+          using Midnight Atlas tokens. Phone falls through to the original
+          tabs+vertical list below. */}
+      {isDesktopWeb && (
+        <Animated.View style={[styles.contentWrapper, { opacity: fadeAnim, paddingHorizontal: 0, paddingTop: 12 }]}>
+          <ShopDesktopLayout
+            coins={coins}
+            themes={THEMES}
+            ownedThemes={ownedThemes}
+            powerups={powerups}
+            tab={tab}
+            onTab={handleTabChange}
+            onBuyTheme={buyTheme}
+            onBuyPowerup={buyPowerup}
+          />
+        </Animated.View>
+      )}
+
       {/* Tabs */}
+      {!isDesktopWeb && (
       <View style={styles.tabsContainer}>
         <LinearGradient colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)']} style={styles.tabs}>
           <TouchableOpacity 
@@ -217,8 +237,10 @@ export default function Shop() {
           </TouchableOpacity>
         </LinearGradient>
       </View>
+      )}
 
-      {/* Content */}
+      {/* Content — phone only */}
+      {!isDesktopWeb && (
       <Animated.View style={[styles.contentWrapper, { opacity: fadeAnim }]}>
         {(() => {
           const Wrapper: any = isDesktopWeb ? View : ScrollView;
@@ -340,9 +362,10 @@ export default function Shop() {
           );
         })()}
       </Animated.View>
+      )}
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
-          <BottomNav active="play" />
+          {!isDesktopWeb && <BottomNav active="play" />}
       </LinearGradient>
   );
 }

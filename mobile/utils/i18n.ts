@@ -555,6 +555,18 @@ export const translations = {
     tierLegend: 'LEGEND',
     tierChampion: 'CHAMPION',
     tierRising: 'RISING',
+
+    // v3.11.10 sprint-15 — /shop desktop refresh
+    shopFeaturedTag: 'BUNDLE OF THE WEEK',
+    shopSale: 'SALE',
+    shopFeaturedDesc: "Unlock this season's headline theme and a stack of power-ups. The board, the pad and the pencil notes — every surface takes on the bundle palette.",
+    shopBuyNow: 'BUY NOW',
+    shopExpires: 'Ends in 4d 12h',
+    shopThemeDesc: 'Repaint the board, pad and pencil notes in this palette.',
+    shopPowerupDesc: 'Stack uses to deploy mid-puzzle when the heat is on.',
+    shopShort: 'Need',
+    owned: 'OWNED',
+    buy: 'BUY',
   },
 
   fr: {
@@ -1110,6 +1122,18 @@ export const translations = {
     tierLegend: 'LÉGENDE',
     tierChampion: 'CHAMPION',
     tierRising: 'EN MONTÉE',
+
+    // v3.11.10 sprint-15 — /shop desktop refresh
+    shopFeaturedTag: 'BUNDLE DE LA SEMAINE',
+    shopSale: 'PROMO',
+    shopFeaturedDesc: "Débloque le thème vedette de la saison et un stock de power-ups. Le plateau, le pavé et les notes prennent tous la palette du bundle.",
+    shopBuyNow: 'ACHETER',
+    shopExpires: 'Fini dans 4j 12h',
+    shopThemeDesc: 'Repeint plateau, pavé et notes dans cette palette.',
+    shopPowerupDesc: "Cumule les usages à déployer en pleine grille quand ça chauffe.",
+    shopShort: 'Manque',
+    owned: 'POSSÉDÉ',
+    buy: 'ACHAT',
   },
 
   ar: {
@@ -1665,6 +1689,18 @@ export const translations = {
     tierLegend: 'أسطورة',
     tierChampion: 'بطل',
     tierRising: 'صاعد',
+
+    // v3.11.10 sprint-15 — /shop desktop refresh
+    shopFeaturedTag: 'باقة الأسبوع',
+    shopSale: 'تخفيض',
+    shopFeaturedDesc: 'افتح ثيم الموسم البارز ومجموعة قدرات. اللوحة والأرقام والملاحظات كلها تأخذ ألوان الباقة.',
+    shopBuyNow: 'اشتر الآن',
+    shopExpires: 'ينتهي خلال 4ي 12س',
+    shopThemeDesc: 'يصبغ اللوحة والأرقام والملاحظات بهذه الألوان.',
+    shopPowerupDesc: 'كدّس الاستخدامات لتطلقها في خضم اللغز عند الحاجة.',
+    shopShort: 'ينقصك',
+    owned: 'مملوك',
+    buy: 'شراء',
   }
 };
 
