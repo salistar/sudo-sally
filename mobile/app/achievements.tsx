@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { storage, Achievement } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
+import AchievementsCategoryGrid from '../components/AchievementsCategoryGrid';
 
 const FILE_NAME = '📁 [Achievements.tsx]';
 
@@ -224,9 +225,14 @@ export default function Achievements() {
           </View>
         ) : (
           <>
-            {/* v3.8.0 — on desktop web each section becomes a 2-column flex
-                grid so the cards stop being a single tall column inside the
-                shell. */}
+            {/* v3.11.5 sprint-8 — category-bucketed Steam-style grid on
+                desktop. Replaces the unlocked/in-progress split with 4
+                themed sections (Combat / Régularité / Maîtrise / Découverte)
+                so the desktop user can scan by interest. The legacy split
+                remains underneath for completeness. */}
+            {isDesktopWeb && (
+              <AchievementsCategoryGrid achievements={achievements} />
+            )}
             {/* Unlocked Section */}
             {unlockedCount > 0 && (
               <View style={styles.section}>
