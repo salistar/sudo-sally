@@ -8,6 +8,7 @@ import { storage, GameStats, formatTime } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import WeeklyActivityHeatmap from '../components/WeeklyActivityHeatmap';
+import SkillRadarChart from '../components/SkillRadarChart';
 
 const FILE_NAME = '[Stats.tsx]';
 const { width } = Dimensions.get('window');
@@ -196,6 +197,9 @@ export default function Stats() {
               userId={`s${stats?.gamesPlayed || 0}-t${stats?.totalTime || 0}-w${stats?.gamesWon || 0}`}
               gamesPlayed={stats?.gamesPlayed || 0}
             />
+          )}
+          {isDesktopWeb && (
+            <SkillRadarChart stats={stats as any} dailyStreak={(stats as any)?.currentStreak || 0} />
           )}
           {/* Games Section */}
           <Text style={styles.sectionTitle}>🎯 {t('gamePerformance')}</Text>

@@ -508,6 +508,22 @@ export const translations = {
     ratingTrajectory: 'Star trajectory · 14 days',
     cumulativeStars: 'Cumulative stars over the last 14 days. Win a 1v1 to push it higher.',
     noWinYet14d: 'No win in the last 14 days yet. Time to chase that first star.',
+
+    // v3.11.7 sprint-12 — Notifications bell + Skill radar
+    inbox: 'INBOX',
+    newCount: 'NEW',
+    inboxEmpty: 'No notifications. Win a duel to fill it up.',
+    challengedYou: 'challenged you',
+    tapToOpenLobby: 'Tap to open the 1v1 lobby',
+    youBeat: 'You beat',
+    victoryEarnedStar: 'Victory · +1 ⭐',
+    skillRadar: 'Skill radar',
+    skillRadarHint: 'Your shape across speed, accuracy, streak, volume and daily play.',
+    axisSpeed: 'Speed',
+    axisAccuracy: 'Accuracy',
+    axisStreak: 'Streak',
+    axisVolume: 'Volume',
+    axisDaily: 'Daily',
   },
 
   fr: {
@@ -1016,6 +1032,22 @@ export const translations = {
     ratingTrajectory: "Trajectoire d'étoiles · 14 jours",
     cumulativeStars: 'Étoiles cumulées sur les 14 derniers jours. Gagne un 1v1 pour la faire grimper.',
     noWinYet14d: "Aucune victoire ces 14 derniers jours. C'est le moment de décrocher ta première étoile.",
+
+    // v3.11.7 sprint-12 — Notifications bell + Skill radar
+    inbox: 'BOÎTE DE RÉCEPTION',
+    newCount: 'NOUVEAU',
+    inboxEmpty: 'Aucune notification. Gagne un duel pour la remplir.',
+    challengedYou: "t'a défié",
+    tapToOpenLobby: 'Touche pour ouvrir le lobby 1v1',
+    youBeat: 'Tu as battu',
+    victoryEarnedStar: 'Victoire · +1 ⭐',
+    skillRadar: 'Radar de compétences',
+    skillRadarHint: 'Ta forme sur vitesse, précision, série, volume et défi quotidien.',
+    axisSpeed: 'Vitesse',
+    axisAccuracy: 'Précision',
+    axisStreak: 'Série',
+    axisVolume: 'Volume',
+    axisDaily: 'Quotidien',
   },
 
   ar: {
@@ -1524,6 +1556,22 @@ export const translations = {
     ratingTrajectory: 'مسار النجوم · 14 يومًا',
     cumulativeStars: 'النجوم المتراكمة خلال آخر 14 يومًا. اربح مباراة 1ضد1 لرفعها أعلى.',
     noWinYet14d: 'لا انتصارات في آخر 14 يومًا. حان وقت أول نجمة لك.',
+
+    // v3.11.7 sprint-12 — Notifications bell + Skill radar
+    inbox: 'البريد الوارد',
+    newCount: 'جديد',
+    inboxEmpty: 'لا إشعارات. اربح مبارزة لملئه.',
+    challengedYou: 'تحدّاك',
+    tapToOpenLobby: 'اضغط لفتح ردهة 1ضد1',
+    youBeat: 'هزمت',
+    victoryEarnedStar: 'نصر · +1 ⭐',
+    skillRadar: 'رادار المهارات',
+    skillRadarHint: 'شكل أدائك عبر السرعة والدقة والسلسلة والحجم واليومي.',
+    axisSpeed: 'السرعة',
+    axisAccuracy: 'الدقة',
+    axisStreak: 'السلسلة',
+    axisVolume: 'الحجم',
+    axisDaily: 'يومي',
   }
 };
 

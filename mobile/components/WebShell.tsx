@@ -17,6 +17,7 @@ import { View, Text, TouchableOpacity, Platform, useWindowDimensions } from 'rea
 import { useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SallyMascot from './SallyMascot';
+import NotificationsBell from './NotificationsBell';
 import { useLang } from '../utils/LanguageContext';
 
 const SIDEBAR_W = 260;
@@ -258,6 +259,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
                 <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '800' }}>⚔️ 1v1</Text>
               </TouchableOpacity>
             )}
+            {user && <NotificationsBell />}
           </View>
         </View>
 
