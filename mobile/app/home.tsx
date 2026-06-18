@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppModal, { PopupData } from '../components/AppModal';
 import SallyMascot from '../components/SallyMascot';
 import DailyChest from '../components/DailyChest';
+import LiveCommunityWidget from '../components/LiveCommunityWidget';
 import BottomNav from '../components/BottomNav';
 
 // Pulled from app.json at build time so the badge always matches the
@@ -275,6 +276,13 @@ export default function Home() {
 
         {/* v3.5 — Daily chest: claimable once per day, doubles with streak */}
         <DailyChest user={user} onClaimed={() => loadData?.()} />
+
+        {/* v3.11.5 sprint-3 — live community pulse (desktop web only).
+            3-card row showing online users + active matches + freshness,
+            refreshes every 15s, gives the home a "the lobby is alive" feel
+            instead of looking static. Mobile already has the lobby tab
+            badge for this and phone width can't afford a 3-card row. */}
+        {isDesktopWeb && <LiveCommunityWidget />}
 
         {/* v3.4 — Cold-start hero CTA: when the user has 0 wins / 0 stars
             we replace the "0/0/0 stats" sadness with a warm invitation to
