@@ -398,7 +398,7 @@ export default function SettingsScreen() {
                       const userStr = await AsyncStorage.getItem('sudoku_user');
                       const u = userStr ? JSON.parse(userStr) : null;
                       if (u?.id && token) {
-                        await fetch(`https://api.sudoku.gowithsally.com/api/users/${u.id}`, {
+                        await fetch(`https://api.sallysudo.com/api/users/${u.id}`, {
                           method: 'DELETE',
                           headers: { Authorization: `Bearer ${token}` },
                         });

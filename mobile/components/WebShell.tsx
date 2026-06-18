@@ -22,7 +22,7 @@ import { useLang } from '../utils/LanguageContext';
 const SIDEBAR_W = 260;
 const HEADER_H  = 64;
 const BREAKPOINT = 1024;
-const LANDING_URL = 'https://sudoku.gowithsally.com';
+const LANDING_URL = 'https://sallysudo.com';
 
 type NavItem = { key: string; icon: string; tKey: string; route: string };
 
@@ -202,7 +202,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
               paddingVertical: 8,
             }}
           >
-            <Text style={{ color: '#64748b', fontSize: 11, fontWeight: '600' }}>🌐 sudoku.gowithsally.com</Text>
+            <Text style={{ color: '#64748b', fontSize: 11, fontWeight: '600' }}>🌐 sallysudo.com</Text>
           </TouchableOpacity>
         </View>
       </View>

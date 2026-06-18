@@ -13,7 +13,7 @@ const FILE_NAME = '📁 [Profile.tsx]';
 // v3.11.0 — profile edits now persist server-side. Without this the avatar
 // change only updated local cache and was lost on next sign-in because the
 // next /api/auth/me overwrote the local blob with the stale DB value.
-const API_URL = 'https://api.sudoku.gowithsally.com/api';
+const API_URL = 'https://api.sallysudo.com/api';
 
 const AVATARS = ['🎮', '👤', '🎯', '🧩', '🏆', '⭐', '🔥', '💎', '🎪', '🎨', '🦊', '🐱', '🐶', '🦁', '🐼'];
 

@@ -72,7 +72,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date(), 
-    version: '3.1.0',
+    version: '3.11.3',
     uptime: process.uptime()
   });
 });
@@ -81,7 +81,7 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'SallySudo API',
-    version: '3.1.0',
+    version: '3.11.3',
     endpoints: {
       auth: { 
         login: 'POST /api/auth/login', 

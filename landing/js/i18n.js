@@ -19,7 +19,7 @@
   'use strict';
 
   const STORAGE_KEY = 'sallysudo_lang';
-  const APP_BASE    = 'https://app.sudoku.gowithsally.com';
+  const APP_BASE    = 'https://app.sallysudo.com';
 
   const T = {
     en: {

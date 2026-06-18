@@ -13,7 +13,7 @@ import DailyChest from '../components/DailyChest';
 import BottomNav from '../components/BottomNav';
 
 // Production API (matches utils/api.ts / utils/socket.ts).
-const API_URL = 'https://api.sudoku.gowithsally.com/api';
+const API_URL = 'https://api.sallysudo.com/api';
 
 const FILE_NAME = '📁 [Home.tsx]';
 

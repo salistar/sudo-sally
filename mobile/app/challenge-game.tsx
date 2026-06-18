@@ -79,7 +79,7 @@ interface Challenge {
 
 // Release builds always hit the production API. The dev override below is
 // kept as documentation only and is unreachable in shipped APKs.
-const API_URL = 'https://api.sudoku.gowithsally.com/api';
+const API_URL = 'https://api.sallysudo.com/api';
 // const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 // const USE_LOCAL_BACKEND = __DEV__ && false;
 // if (USE_LOCAL_BACKEND && devHost) API_URL = `http://${devHost}:3101/api`;
@@ -771,7 +771,7 @@ export default function ChallengeGame() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('https://api.sudoku.gowithsally.com/api/turn-creds');
+        const r = await fetch('https://api.sallysudo.com/api/turn-creds');
         if (r.ok) {
           const d = await r.json();
           if (Array.isArray(d?.iceServers) && d.iceServers.length) {
@@ -977,7 +977,7 @@ export default function ChallengeGame() {
     } catch (e) { console.log('ice err', e); }
   }
 
-  const shareUrl = `https://sudoku.gowithsally.com`;
+  const shareUrl = `https://sallysudo.com`;
   const shareText = `I'm playing a real-time 1v1 Sudoku duel on SallySudo!`;
   const openExt = (url: string) => Linking.openURL(url).catch(() => {});
 

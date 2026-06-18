@@ -25,7 +25,7 @@ services:
       - mongo
     networks:
       - sudoku
-      - edge          # so Caddy can serve api.sudoku.gowithsally.com
+      - edge          # so Caddy can serve api.sallysudo.com
     expose:
       - "3001"
     healthcheck:
@@ -76,7 +76,7 @@ services:
       - sudoku
       - edge
 
-  # ── Web build of the app (react-native-web via Expo) — app.sudoku.gowithsally.com
+  # ── Web build of the app (react-native-web via Expo) — app.sallysudo.com
   # Multi-stage Dockerfile.web does `expo export --platform web` inside a
   # node:18-alpine builder, then copies the static `dist/` into a tiny nginx.
   # `--build` on `docker compose up` will rebuild this whenever mobile/ changes.
@@ -89,7 +89,7 @@ services:
     restart: unless-stopped
     networks:
       - sudoku
-      - edge          # so Caddy can serve app.sudoku.gowithsally.com
+      - edge          # so Caddy can serve app.sallysudo.com
     expose:
       - "80"
 

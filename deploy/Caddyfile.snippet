@@ -1,22 +1,24 @@
 # ────────────────────────────────────────────────────────────────────────
-# Add these blocks to the box's Caddyfile (server 2 / gowithsally-prod):
-#   ~/apps/go-with-sally-backoffice/Caddyfile
+# Add these blocks to the box's Caddyfile (server 3 / salorie-sallysudo):
+#   ~/apps/sudo-sally/deploy/Caddyfile
 # then reload Caddy:
-#   docker exec gws-caddy caddy reload --config /etc/caddy/Caddyfile
+#   docker exec sudoku-caddy caddy reload --config /etc/caddy/Caddyfile
 #
-# DNS: each hostname needs a record → 88.198.205.229. The api/db/cache hosts
-# are 2-level subdomains (api.sudoku.gowithsally.com) which Cloudflare's
-# universal cert does NOT cover, so keep them "DNS only" (grey cloud) — Caddy
-# then issues a per-host Let's Encrypt cert and serves them directly.
-# (sudoku.gowithsally.com itself is 1-level and may be Proxied/orange.)
+# DNS: each hostname needs an A record → 46.225.77.64 (server 3). The
+# api/db/cache hosts are 2-level subdomains (api.sallysudo.com) which
+# Cloudflare's universal cert does NOT cover, so keep them "DNS only"
+# (grey cloud) — Caddy then issues a per-host Let's Encrypt cert and
+# serves them directly. (sallysudo.com itself is 1-level and may be
+# Proxied/orange via Cloudflare if desired, but DNS-only is safer for
+# certificate issuance the first time.)
 # ────────────────────────────────────────────────────────────────────────
 
-sudoku.gowithsally.com {
+sallysudo.com {
 	encode gzip zstd
 	reverse_proxy sudoku-landing:80
 }
 
-api.sudoku.gowithsally.com {
+api.sallysudo.com {
 	encode gzip zstd
 	reverse_proxy sudoku-api:3001 {
 		header_up X-Forwarded-Proto https
@@ -24,7 +26,7 @@ api.sudoku.gowithsally.com {
 }
 
 # Admin UIs — protected by each tool's own basic auth (UI_USER / UI_PASS).
-db.sudoku.gowithsally.com {
+db.sallysudo.com {
 	encode gzip zstd
 	reverse_proxy sudoku-mongo-ui:8081
 }
@@ -33,7 +35,7 @@ db.sudoku.gowithsally.com {
 # Generate the hash:  docker exec sudoku-api node -e "console.log(require('bcryptjs').hashSync('<UI_PASS>',12))"
 # NOTE: after adding/changing basic_auth, RESTART caddy (a plain reload may not
 # re-init the auth handler):  docker restart gws-caddy
-cache.sudoku.gowithsally.com {
+cache.sallysudo.com {
 	encode gzip zstd
 	basic_auth {
 		sally <bcrypt-hash-of-UI_PASS>

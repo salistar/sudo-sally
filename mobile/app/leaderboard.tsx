@@ -8,7 +8,7 @@ import BottomNav from '../components/BottomNav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
-const API_URL = 'https://api.sudoku.gowithsally.com/api';
+const API_URL = 'https://api.sallysudo.com/api';
 
 interface LbEntry { rank: number; username: string; stars: number; avatar: string; userId?: string; gamesWon?: number; level?: number }
 

@@ -3,20 +3,20 @@
 [![Build APK](https://github.com/salistar/sudo-sally/actions/workflows/build-apk.yml/badge.svg)](https://github.com/salistar/sudo-sally/actions/workflows/build-apk.yml)
 [![Deploy](https://github.com/salistar/sudo-sally/actions/workflows/deploy.yml/badge.svg)](https://github.com/salistar/sudo-sally/actions/workflows/deploy.yml)
 [![Latest release](https://img.shields.io/github/v/release/salistar/sudo-sally?display_name=tag&sort=semver)](https://github.com/salistar/sudo-sally/releases/latest)
-[![Live site](https://img.shields.io/website?url=https%3A%2F%2Fsudoku.gowithsally.com&label=site&up_message=live&down_message=down)](https://sudoku.gowithsally.com)
-[![API health](https://img.shields.io/website?url=https%3A%2F%2Fapi.sudoku.gowithsally.com%2Fhealth&label=API&up_message=ok)](https://api.sudoku.gowithsally.com/health)
+[![Live site](https://img.shields.io/website?url=https%3A%2F%2Fsallysudo.com&label=site&up_message=live&down_message=down)](https://sallysudo.com)
+[![API health](https://img.shields.io/website?url=https%3A%2F%2Fapi.sallysudo.com%2Fhealth&label=API&up_message=ok)](https://api.sallysudo.com/health)
 
 Beautiful, modern **Sudoku** game (mobile) + realtime backend + marketing/download site — all in one repo, with full CI/CD to the cloud.
 
-**Live site:** https://sudoku.gowithsally.com · **Web app:** https://app.sudoku.gowithsally.com · **API:** https://api.sudoku.gowithsally.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
+**Live site:** https://sallysudo.com · **Web app:** https://app.sallysudo.com · **API:** https://api.sallysudo.com · **Download APK:** [latest release](https://github.com/salistar/sudo-sally/releases/latest)
 
 ## ⚡ TL;DR — install the APK and it just works
 ```
-1. Tap https://sudoku.gowithsally.com/downloads/sudoku-sally.apk on your Android phone.
+1. Tap https://sallysudo.com/downloads/sudoku-sally.apk on your Android phone.
 2. Open the downloaded file → "Install" (allow "Install unknown apps" once).
 3. Open Sudoku Sally → tap idriss1 / idriss2 / idrissmobile, or register.
    Everything (chat, audio/video calls, recording, leaderboard, daily) hits
-   prod api.sudoku.gowithsally.com — works on Wi-Fi AND 4G, no Metro,
+   prod api.sallysudo.com — works on Wi-Fi AND 4G, no Metro,
    no dev server, no localhost involved.
 ```
 The APK is a **release-signed, Hermes-bytecoded, ABI-trimmed** build (~80 MB). It is the **same artifact** you would later upload to the Google Play Console.
@@ -78,11 +78,11 @@ All 21 screens live in [`docs/screenshots/`](./docs/screenshots).
                           │  gws-caddy        │  auto-HTTPS (Let's Encrypt)
                           │  :80 / :443       │  shared net: gowithsally_gws-net
                           └────────┬──────────┘
-       sudoku.gowithsally.com  ───►│──► sudoku-landing (nginx :80) ── /api,/socket.io ─┐
-       app.sudoku.gowithsally.com ►│──► sudoku-web (Expo Web build) ──────────────────┐│
-       api.sudoku.gowithsally.com ►│──► sudoku-api (:3001) ◄───────────────────────────┴┘
-       db.sudoku.gowithsally.com  ►│──► sudoku-mongo-ui (mongo-express, basic-auth)
-       cache.sudoku.gowithsally.com►│─► sudoku-redis-ui (redis-commander, basic-auth)
+       sallysudo.com  ───►│──► sudoku-landing (nginx :80) ── /api,/socket.io ─┐
+       app.sallysudo.com ►│──► sudoku-web (Expo Web build) ──────────────────┐│
+       api.sallysudo.com ►│──► sudoku-api (:3001) ◄───────────────────────────┴┘
+       db.sallysudo.com  ►│──► sudoku-mongo-ui (mongo-express, basic-auth)
+       cache.sallysudo.com►│─► sudoku-redis-ui (redis-commander, basic-auth)
                                     │
                        sudoku-api ──┴──► sudoku-mongo · sudoku-redis  (private net: sudoku_net)
 ```
@@ -119,18 +119,18 @@ Every piece of the stack — mobile app, web app, landing page, backoffice (admi
    └─────────┬───────────┘                       │   (api · landing · web ·    │
              │                                   │    mongo · redis · admin UIs)│
              ▼                                   └─────────────┬───────────────┘
-   sudoku.gowithsally.com/downloads/                           │
+   sallysudo.com/downloads/                           │
    sudoku-sally.apk                                            ▼
                                               ┌─────────────────────────────┐
                                               │ Caddy reverse-proxy + Let's │
                                               │ Encrypt → 5 public domains: │
-                                              │  • sudoku.gowithsally.com    │
+                                              │  • sallysudo.com    │
                                               │    (landing + APK download)  │
-                                              │  • app.sudoku.gowithsally.com│
+                                              │  • app.sallysudo.com│
                                               │    (Expo Web build = SAME    │
                                               │     React Native code)       │
-                                              │  • api.sudoku.gowithsally.com│
-                                              │  • db.sudoku.gowithsally.com │
+                                              │  • api.sallysudo.com│
+                                              │  • db.sallysudo.com │
                                               │    (Mongo Express admin)    │
                                               │  • cache.sudoku.gowithsally  │
                                               │    .com (Redis Commander)    │
@@ -140,14 +140,14 @@ Every piece of the stack — mobile app, web app, landing page, backoffice (admi
 ### Mobile app  ↔  Web app  ↔  Backend — one codebase, three surfaces
 - **`mobile/`** is a single React Native code-base. The Expo CLI exports it three ways:
   - **APK** (`gradlew assembleRelease` in CI) → users install on Android
-  - **Web bundle** (`npx expo export --platform web`) → served at `app.sudoku.gowithsally.com`
+  - **Web bundle** (`npx expo export --platform web`) → served at `app.sallysudo.com`
   - **Expo Go dev** (`npx expo start`) → for live-edit on your laptop
-- All three hit **the same backend** (`api.sudoku.gowithsally.com`) — same accounts, same challenges, same leaderboard.
+- All three hit **the same backend** (`api.sallysudo.com`) — same accounts, same challenges, same leaderboard.
 - **idriss1 / idriss2 / idrissmobile** demo accounts work identically on web and APK.
 
 ### Backoffice = Mongo Express + Redis Commander, fronted by Caddy basic-auth
-- `db.sudoku.gowithsally.com` (Mongo Express) — browse collections, run queries, edit docs.
-- `cache.sudoku.gowithsally.com` (Redis Commander) — inspect keys, TTLs, pub/sub.
+- `db.sallysudo.com` (Mongo Express) — browse collections, run queries, edit docs.
+- `cache.sallysudo.com` (Redis Commander) — inspect keys, TTLs, pub/sub.
 - Both protected by the same `UI_USER` / `UI_PASS` GitHub Secrets.
 
 ### Database changes
@@ -191,7 +191,7 @@ docker compose logs -f api      # tail logs
 docker compose down             # stop (add -v to wipe the mongo volume)
 ```
 
-The mobile app is **hard-wired to the production API** (`https://api.sudoku.gowithsally.com`) in every shipped build — there is no runtime dev toggle and no `localhost` URL reachable from the APK. To develop against this local backend instead, uncomment the dev block at the top of `mobile/utils/api.ts`, `mobile/utils/socket.ts`, `mobile/app/challenges.tsx` and `mobile/app/challenge-game.tsx` (it's guarded by `__DEV__` so it can never leak into a release APK).
+The mobile app is **hard-wired to the production API** (`https://api.sallysudo.com`) in every shipped build — there is no runtime dev toggle and no `localhost` URL reachable from the APK. To develop against this local backend instead, uncomment the dev block at the top of `mobile/utils/api.ts`, `mobile/utils/socket.ts`, `mobile/app/challenges.tsx` and `mobile/app/challenge-game.tsx` (it's guarded by `__DEV__` so it can never leak into a release APK).
 
 ---
 
@@ -214,12 +214,12 @@ ssh -i ~/.ssh/gowithsally deploy@88.198.205.229 '
   docker rm -f sudoku-web 2>/dev/null
   docker run -d --name sudoku-web --restart unless-stopped --network gowithsally_gws-net sudoku-sally-web:latest'
 
-# 3) Caddy block (idempotent) + DNS record  app.sudoku.gowithsally.com → 88.198.205.229 (grey cloud)
+# 3) Caddy block (idempotent) + DNS record  app.sallysudo.com → 88.198.205.229 (grey cloud)
 #    see the existing pattern in deploy/Caddyfile.snippet — same shape:
-#    app.sudoku.gowithsally.com { encode gzip zstd; reverse_proxy sudoku-web:80 }
+#    app.sallysudo.com { encode gzip zstd; reverse_proxy sudoku-web:80 }
 ```
 
-Live at https://app.sudoku.gowithsally.com.
+Live at https://app.sallysudo.com.
 
 ---
 
@@ -310,7 +310,7 @@ gh run watch "$rid" --repo salistar/sudo-sally --exit-status
 gh release view v3.1.3 --repo salistar/sudo-sally --json assets \
   --jq '.assets[] | {name, size}'
 ```
-The download page (`/download.html`) links to `releases/latest`, and `deploy.sh` also self-hosts the latest APK at `https://sudoku.gowithsally.com/downloads/sudoku-sally.apk`. To refresh the self-hosted copy after a new release:
+The download page (`/download.html`) links to `releases/latest`, and `deploy.sh` also self-hosts the latest APK at `https://sallysudo.com/downloads/sudoku-sally.apk`. To refresh the self-hosted copy after a new release:
 ```bash
 ssh -i ~/.ssh/gowithsally deploy@88.198.205.229 '
   tmp=$(mktemp)
@@ -366,7 +366,7 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" \
   --data '{"type":"A","name":"sudoku","content":"88.198.205.229","proxied":true}'
 
 # 2-level hosts (api/db/cache.sudoku) → DNS-only (grey): Cloudflare's universal cert
-# does NOT cover *.sudoku.gowithsally.com, so let Caddy issue per-host certs instead.
+# does NOT cover *.sallysudo.com, so let Caddy issue per-host certs instead.
 for h in api.sudoku db.sudoku cache.sudoku; do
   curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" \
     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
@@ -377,10 +377,10 @@ done
 ### 4. Wire the sub-domains to the containers (Caddy reverse proxy)
 Append the blocks from [`deploy/Caddyfile.snippet`](./deploy/Caddyfile.snippet) to the box's Caddyfile (`~/apps/go-with-sally-backoffice/Caddyfile`):
 ```caddy
-sudoku.gowithsally.com      { encode gzip zstd; reverse_proxy sudoku-landing:80 }
-api.sudoku.gowithsally.com  { encode gzip zstd; reverse_proxy sudoku-api:3001 { header_up X-Forwarded-Proto https } }
-db.sudoku.gowithsally.com   { encode gzip zstd; reverse_proxy sudoku-mongo-ui:8081 }
-cache.sudoku.gowithsally.com{ encode gzip zstd; basic_auth { sally <bcrypt-hash> }; reverse_proxy sudoku-redis-ui:8081 }
+sallysudo.com      { encode gzip zstd; reverse_proxy sudoku-landing:80 }
+api.sallysudo.com  { encode gzip zstd; reverse_proxy sudoku-api:3001 { header_up X-Forwarded-Proto https } }
+db.sallysudo.com   { encode gzip zstd; reverse_proxy sudoku-mongo-ui:8081 }
+cache.sallysudo.com{ encode gzip zstd; basic_auth { sally <bcrypt-hash> }; reverse_proxy sudoku-redis-ui:8081 }
 ```
 Then validate & apply (a **restart** reliably re-issues certs for new hosts; a plain reload may not):
 ```bash
@@ -393,9 +393,9 @@ Caddy automatically obtains Let's Encrypt certificates over HTTP-01 once the DNS
 
 ### 5. Verify the live services
 ```bash
-curl -sI https://sudoku.gowithsally.com/                       # 200 (CDN: server: cloudflare)
-curl -s  https://api.sudoku.gowithsally.com/health             # {"status":"ok"} → 200
-curl -X POST https://api.sudoku.gowithsally.com/api/auth/guest  # { success, token }
+curl -sI https://sallysudo.com/                       # 200 (CDN: server: cloudflare)
+curl -s  https://api.sallysudo.com/health             # {"status":"ok"} → 200
+curl -X POST https://api.sallysudo.com/api/auth/guest  # { success, token }
 # db/cache UIs prompt for basic auth (UI_USER / UI_PASS)
 ```
 
@@ -439,8 +439,8 @@ While the OAuth consent screen is in **Testing**, **only emails listed under *Te
    - **App name**: `Sudoku Sally`
    - **User support email**: your Gmail (e.g. `salistarcompany@gmail.com`)
    - **App logo**: optional in basic mode (recommended: a 120 × 120 PNG).
-   - **Application home page**: `https://sudoku.gowithsally.com`
-   - **Application privacy policy**: `https://sudoku.gowithsally.com/privacy.html` ✅ (already live)
+   - **Application home page**: `https://sallysudo.com`
+   - **Application privacy policy**: `https://sallysudo.com/privacy.html` ✅ (already live)
    - **Application terms of service**: optional.
    - **Authorized domains**: add `gowithsally.com`.
    - **Developer contact information**: your email.
@@ -465,12 +465,12 @@ curl -s "https://oauth2.googleapis.com/tokeninfo?id_token=$ID_TOKEN" | python -m
 # → email_verified   true
 
 # 2. Backend trade-in works:
-curl -s -X POST https://api.sudoku.gowithsally.com/api/auth/google \
+curl -s -X POST https://api.sallysudo.com/api/auth/google \
   -H "Content-Type: application/json" \
   -d "{\"idToken\":\"$ID_TOKEN\"}" | python -m json.tool
 # → { success: true, token: "<our JWT>", user: { username, email, googleId, ... }, provider: "google" }
 
-# 3. Verify the user landed in Mongo (db.sudoku.gowithsally.com or shell):
+# 3. Verify the user landed in Mongo (db.sallysudo.com or shell):
 docker exec sudoku-mongo mongosh sudoku_sally --quiet \
   --eval 'db.users.find({googleId:{$exists:true}},{username:1,email:1,googleId:1,createdAt:1}).pretty()'
 ```
@@ -517,15 +517,15 @@ docker exec sudoku-mongo mongosh sudoku_sally --quiet \
 
 ### Tier 1 — Uptime (5 min to wire, recommended next)
 - **External pings every minute** on the public URLs from anywhere on the planet.
-  - https://sudoku.gowithsally.com/ (HTTP 200 + content match "Sudoku Sally")
-  - https://api.sudoku.gowithsally.com/health (HTTP 200 + JSON match `"status":"ok"`)
+  - https://sallysudo.com/ (HTTP 200 + content match "Sudoku Sally")
+  - https://api.sallysudo.com/health (HTTP 200 + JSON match `"status":"ok"`)
 - Free options:
   - **UptimeRobot** — 50 monitors free, e-mail/Slack alerts.
   - **Better Stack / Better Uptime** — nicer UI, status page, free tier.
-  - Self-hosted: **Uptime-Kuma** as a single container next to the existing stack — beautiful status page at `status.sudoku.gowithsally.com`.
+  - Self-hosted: **Uptime-Kuma** as a single container next to the existing stack — beautiful status page at `status.sallysudo.com`.
 
 ### Tier 2 — Metrics & dashboards
-- **Prometheus + Grafana** as two extra containers on `gowithsally_gws-net`, plus a `prom-client` middleware in `backend/` to expose `/metrics` (request rate, latency p50/p95/p99, error rate, socket connections, Mongo/Redis pool health). Mirror the pattern the GoWithSally backoffice already uses on the same VPS. A new sub-domain `grafana.sudoku.gowithsally.com` (DNS-only, Caddy basic-auth) would host the dashboard.
+- **Prometheus + Grafana** as two extra containers on `gowithsally_gws-net`, plus a `prom-client` middleware in `backend/` to expose `/metrics` (request rate, latency p50/p95/p99, error rate, socket connections, Mongo/Redis pool health). Mirror the pattern the GoWithSally backoffice already uses on the same VPS. A new sub-domain `grafana.sallysudo.com` (DNS-only, Caddy basic-auth) would host the dashboard.
 
 ### Tier 3 — Centralized logs
 - Add **Loki + Promtail** (or **Filebeat → Logstash → Elasticsearch + Kibana** — already used by GoWithSally). All container stdout/stderr ends up searchable, with retention rules. Query: "all 5xx in the last hour on `sudoku-api`".

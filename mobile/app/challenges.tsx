@@ -43,7 +43,7 @@ interface Challenge {
 
 // Release builds always hit the production API. The dev override below is
 // kept as documentation only and is unreachable in shipped APKs.
-const API_URL = 'https://api.sudoku.gowithsally.com/api';
+const API_URL = 'https://api.sallysudo.com/api';
 // const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 // const USE_LOCAL_BACKEND = __DEV__ && false;
 // if (USE_LOCAL_BACKEND && devHost) API_URL = `http://${devHost}:3101/api`;
@@ -554,7 +554,7 @@ export default function Challenges() {
                     <Text style={styles.emptyIcon}>👥</Text>
                     <Text style={styles.emptyText}>{t('noUsersOnline')}</Text>
                     <Text style={styles.emptySubtext}>Search a friend by name above, or invite them to install the app:</Text>
-                    <Text style={styles.inviteLink}>https://sudoku.gowithsally.com</Text>
+                    <Text style={styles.inviteLink}>https://sallysudo.com</Text>
                   </View>
                 )}
               </>

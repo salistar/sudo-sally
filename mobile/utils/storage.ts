@@ -316,7 +316,7 @@ export const storage = {
   async login(email: string, password: string): Promise<User | null> {
     // 1) Real backend login (any user registered via the prod API — idriss1, idriss2, ...)
     try {
-      const res = await fetch('https://api.sudoku.gowithsally.com/api/auth/login', {
+      const res = await fetch('https://api.sallysudo.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

@@ -8,7 +8,7 @@
  */
 // import Constants from 'expo-constants';   // re-enable if you uncomment the dev block below
 
-const SERVER_URL = 'https://api.sudoku.gowithsally.com';
+const SERVER_URL = 'https://api.sallysudo.com';
 
 // ── Dev-only override (kept for reference, NEVER reached in release APK) ──
 // const devHost = Constants.expoConfig?.hostUri?.split(':')[0];

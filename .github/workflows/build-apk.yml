@@ -69,7 +69,7 @@ jobs:
 
       # Build BOTH the SIGNED RELEASE APK and the SIGNED RELEASE AAB.
       #
-      # • APK (assembleRelease)  → for sideload (sudoku.gowithsally.com/downloads,
+      # • APK (assembleRelease)  → for sideload (sallysudo.com/downloads,
       #   WhatsApp, etc.). Release variant: JS bundled, Hermes, no Metro, no red
       #   box. Same artifact you'd hand to a friend over WhatsApp.
       # • AAB (bundleRelease)    → for Google Play Console upload. Play splits

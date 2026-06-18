@@ -75,7 +75,7 @@ function loadGsi(): Promise<void> {
 /** Same helper as the native build — exchange Google idToken → our JWT. */
 export async function exchangeGoogleIdToken(idToken: string): Promise<{ appToken?: string; user?: any; error?: string }> {
   try {
-    const res = await fetch('https://api.sudoku.gowithsally.com/api/auth/google', {
+    const res = await fetch('https://api.sallysudo.com/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),

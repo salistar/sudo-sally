@@ -19,7 +19,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="theme-color" content="#0a0a1a" />
         <meta property="og:title" content="SallySudo — real-time 1v1 Sudoku" />
         <meta property="og:description" content="Daily puzzles, leaderboard, and real-time 1v1 duels with chat and calls." />
-        <meta property="og:url" content="https://app.sudoku.gowithsally.com" />
+        <meta property="og:url" content="https://app.sallysudo.com" />
         <link rel="icon" href="/favicon.ico" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: webCss }} />
