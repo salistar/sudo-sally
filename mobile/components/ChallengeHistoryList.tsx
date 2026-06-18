@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLang } from '../utils/LanguageContext';
 
 const API = 'https://api.sallysudo.com/api';
 
@@ -54,6 +55,7 @@ function fmtTime(seconds: number): string {
 
 export default function ChallengeHistoryList() {
   const router = useRouter();
+  const { t } = useLang();
   const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
@@ -109,34 +111,34 @@ export default function ChallengeHistoryList() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={{ fontSize: 16 }}>⚔️</Text>
-          <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>Tes 10 derniers défis</Text>
+          <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>{t('yourLastDuels')}</Text>
         </View>
         {rows && rows.length > 0 && (
           <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>
-            {rows.filter(r => r.outcome === 'win').length} V · {rows.filter(r => r.outcome === 'loss').length} D · {rows.filter(r => r.outcome === 'draw').length} N
+            {rows.filter(r => r.outcome === 'win').length} {t('aggW')} · {rows.filter(r => r.outcome === 'loss').length} {t('aggD')} · {rows.filter(r => r.outcome === 'draw').length} {t('aggDraw')}
           </Text>
         )}
       </View>
 
       {loading ? (
-        <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>Chargement…</Text>
+        <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>{t('loading')}</Text>
       ) : rows.length === 0 ? (
         <View style={{ paddingVertical: 18, alignItems: 'center' }}>
           <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 12 }}>
-            Aucun défi joué pour le moment.{'\n'}
-            <Text style={{ color: '#4ade80', fontWeight: '700' }}>Lance ton premier 1v1 maintenant.</Text>
+            {t('noDuelPlayed')}{'\n'}
+            <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('startFirst1v1')}</Text>
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/challenges' as any)}
             style={{ paddingHorizontal: 18, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.14)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' }}
           >
-            <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⚔️ Ouvrir le lobby 1v1</Text>
+            <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>{t('open1v1Lobby')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         rows.map(r => {
           const colour = r.outcome === 'win' ? '#4ade80' : r.outcome === 'draw' ? '#94a3b8' : '#ef4444';
-          const tag = r.outcome === 'win' ? 'VICTOIRE' : r.outcome === 'draw' ? 'ÉGALITÉ' : 'DÉFAITE';
+          const tag = r.outcome === 'win' ? t('victoryTag') : r.outcome === 'draw' ? t('drawTag') : t('defeatTag');
           return (
             <View
               key={r.id}

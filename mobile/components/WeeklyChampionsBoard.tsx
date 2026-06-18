@@ -14,6 +14,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLang } from '../utils/LanguageContext';
 
 const API = 'https://api.sallysudo.com/api';
 
@@ -37,15 +38,15 @@ async function fetchBoard(url: string): Promise<Row[]> {
   }
 }
 
-const PANELS = [
-  { key: 'today', icon: '🌅', label: "Aujourd'hui", color: '#fbbf24', url: `${API}/leaderboard/weekly` },
-  { key: 'week',  icon: '📅', label: 'Cette semaine', color: '#4ade80', url: `${API}/leaderboard/weekly` },
-  { key: 'all',   icon: '🏆', label: 'Légende',       color: '#a855f7', url: `${API}/leaderboard` },
-];
-
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function WeeklyChampionsBoard() {
+  const { t } = useLang();
+  const PANELS = [
+    { key: 'today', icon: '🌅', label: t('todayChamp'),    color: '#fbbf24', url: `${API}/leaderboard/weekly` },
+    { key: 'week',  icon: '📅', label: t('thisWeekChamp'), color: '#4ade80', url: `${API}/leaderboard/weekly` },
+    { key: 'all',   icon: '🏆', label: t('legendChamp'),   color: '#a855f7', url: `${API}/leaderboard` },
+  ];
   const [boards, setBoards] = useState<Record<string, Row[]>>({});
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function WeeklyChampionsBoard() {
       setBoards(m);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   return (
     <View style={{ flexDirection: 'row', gap: 14, marginTop: 14, marginBottom: 4 }}>
@@ -86,8 +87,8 @@ export default function WeeklyChampionsBoard() {
             {rows.length === 0 ? (
               <View style={{ paddingVertical: 14, alignItems: 'center' }}>
                 <Text style={{ color: '#64748b', fontSize: 11, textAlign: 'center', lineHeight: 16 }}>
-                  Pas encore de champions.{'\n'}
-                  <Text style={{ color: panel.color, fontWeight: '700' }}>Sois le premier !</Text>
+                  {t('noChampionsYet')}{'\n'}
+                  <Text style={{ color: panel.color, fontWeight: '700' }}>{t('beFirst')}</Text>
                 </Text>
               </View>
             ) : (

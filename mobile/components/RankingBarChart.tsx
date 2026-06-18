@@ -18,6 +18,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { View, Text, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLang } from '../utils/LanguageContext';
 
 export type RankRow = {
   rank: number;
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export default function RankingBarChart({ rows, currentUserId }: Props) {
+  const { t } = useLang();
   const top = useMemo(() => rows.slice(0, 10), [rows]);
   const max = useMemo(() => Math.max(1, ...top.map(r => r.stars)), [top]);
   const fill = useRef(new Animated.Value(0)).current;
@@ -53,10 +55,10 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
     return (
       <View style={{ marginTop: 18, padding: 22, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
         <Text style={{ fontSize: 28, marginBottom: 8 }}>🏆</Text>
-        <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', marginBottom: 4 }}>Classement à conquérir</Text>
+        <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', marginBottom: 4 }}>{t('leaderboardEmpty')}</Text>
         <Text style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
-          Personne n'a encore gagné d'étoiles cette période.{'\n'}
-          <Text style={{ color: '#4ade80', fontWeight: '700' }}>Joue une partie pour ouvrir le bal !</Text>
+          {t('nobodyEarnedStars')}{'\n'}
+          <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('playToOpenBall')}</Text>
         </Text>
       </View>
     );
@@ -67,9 +69,9 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={{ fontSize: 16 }}>📊</Text>
-          <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>Top {top.length} par étoiles</Text>
+          <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>{t('topByStars').replace('{0}', String(top.length))}</Text>
         </View>
-        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>{max} ⭐ MAX</Text>
+        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>{max} {t('maxStars')}</Text>
       </View>
 
       {top.map((r, i) => {
@@ -117,7 +119,7 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
             <View style={{ width: 120 }}>
               <Text style={{ color: '#f9fafb', fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
                 {r.username}
-                {isYou && <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '800' }}>  · TOI</Text>}
+                {isYou && <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '800' }}>  · {t('you')}</Text>}
               </Text>
             </View>
             {/* Bar */}

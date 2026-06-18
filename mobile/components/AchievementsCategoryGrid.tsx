@@ -14,6 +14,7 @@
  */
 import { useMemo } from 'react';
 import { View, Text } from 'react-native';
+import { useLang } from '../utils/LanguageContext';
 
 type Achievement = {
   id: string;
@@ -33,41 +34,43 @@ type Category = {
   match: (id: string) => boolean;
 };
 
-const CATEGORIES: Category[] = [
-  {
-    key: 'combat',
-    label: 'Combat 1v1',
-    icon: '⚔️',
-    color: '#ef4444',
-    match: (id) => /challenge|duel|1v1|versus|win.*challenge|opponent/i.test(id),
-  },
-  {
-    key: 'streak',
-    label: 'Régularité',
-    icon: '🔥',
-    color: '#f59e0b',
-    match: (id) => /streak|daily|consecutive|week|month/i.test(id),
-  },
-  {
-    key: 'mastery',
-    label: 'Maîtrise',
-    icon: '🧠',
-    color: '#a855f7',
-    match: (id) => /perfect|speed|expert|master|hard|hint|no_hint|hint_free|flawless|no_error/i.test(id),
-  },
-  {
-    key: 'discovery',
-    label: 'Découverte',
-    icon: '✨',
-    color: '#4ade80',
-    match: () => true, // fallback bucket — welcome, first_win, etc.
-  },
-];
+function buildCategories(t: (k: string) => string): Category[] {
+  return [
+    {
+      key: 'combat',
+      label: t('catCombat'),
+      icon: '⚔️',
+      color: '#ef4444',
+      match: (id) => /challenge|duel|1v1|versus|win.*challenge|opponent/i.test(id),
+    },
+    {
+      key: 'streak',
+      label: t('catStreak'),
+      icon: '🔥',
+      color: '#f59e0b',
+      match: (id) => /streak|daily|consecutive|week|month/i.test(id),
+    },
+    {
+      key: 'mastery',
+      label: t('catMastery'),
+      icon: '🧠',
+      color: '#a855f7',
+      match: (id) => /perfect|speed|expert|master|hard|hint|no_hint|hint_free|flawless|no_error/i.test(id),
+    },
+    {
+      key: 'discovery',
+      label: t('catDiscovery'),
+      icon: '✨',
+      color: '#4ade80',
+      match: () => true,
+    },
+  ];
+}
 
-function rarity(target: number): { label: string; color: string } {
-  if (target <= 1) return { label: 'COMMON', color: '#94a3b8' };
-  if (target <= 5) return { label: 'RARE', color: '#3b82f6' };
-  return { label: 'EPIC', color: '#a855f7' };
+function rarity(target: number, t: (k: string) => string): { label: string; color: string } {
+  if (target <= 1) return { label: t('rarityCommon'), color: '#94a3b8' };
+  if (target <= 5) return { label: t('rarityRare'), color: '#3b82f6' };
+  return { label: t('rarityEpic'), color: '#a855f7' };
 }
 
 function pickLang(field: any, lang: 'fr' | 'en' | 'ar' = 'fr'): string {
@@ -82,7 +85,9 @@ type Props = {
 };
 
 export default function AchievementsCategoryGrid({ achievements, lang = 'fr' }: Props) {
-  // Bucket each achievement into the first matching category (mutually exclusive).
+  const { t } = useLang();
+  const CATEGORIES = useMemo(() => buildCategories(t), [t]);
+
   const buckets = useMemo(() => {
     const map: Record<string, Achievement[]> = {};
     CATEGORIES.forEach(c => { map[c.key] = []; });
@@ -98,14 +103,14 @@ export default function AchievementsCategoryGrid({ achievements, lang = 'fr' }: 
       }
     }
     return map;
-  }, [achievements]);
+  }, [achievements, CATEGORIES]);
 
   if (achievements.length === 0) {
     return (
       <View style={{ marginTop: 18, padding: 22, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
         <Text style={{ fontSize: 28, marginBottom: 8 }}>🏅</Text>
-        <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', marginBottom: 4 }}>Pas encore de succès</Text>
-        <Text style={{ color: '#94a3b8', fontSize: 12 }}>Joue une partie pour débloquer ton premier badge.</Text>
+        <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', marginBottom: 4 }}>{t('noAchievementsYetCat')}</Text>
+        <Text style={{ color: '#94a3b8', fontSize: 12 }}>{t('playToUnlock')}</Text>
       </View>
     );
   }
@@ -134,7 +139,7 @@ export default function AchievementsCategoryGrid({ achievements, lang = 'fr' }: 
             {/* Grid 2-col on desktop */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {list.map(a => {
-                const r = rarity(a.target);
+                const r = rarity(a.target, t);
                 const pct = a.target > 0 ? Math.min(100, (a.progress / a.target) * 100) : 0;
                 return (
                   <View
@@ -168,7 +173,7 @@ export default function AchievementsCategoryGrid({ achievements, lang = 'fr' }: 
                         </View>
                         <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', marginTop: 4 }}>
                           {a.progress}/{a.target}
-                          {a.unlocked && <Text style={{ color: cat.color, fontWeight: '900' }}>  · DÉBLOQUÉ</Text>}
+                          {a.unlocked && <Text style={{ color: cat.color, fontWeight: '900' }}>  · {t('unlocked')}</Text>}
                         </Text>
                       </View>
                     </View>

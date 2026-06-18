@@ -14,6 +14,7 @@ import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLang } from '../utils/LanguageContext';
 
 const API = 'https://api.sallysudo.com/api';
 const REFRESH_MS = 15_000;
@@ -101,6 +102,7 @@ async function fetchStats(): Promise<Stats | null> {
 
 export default function LiveCommunityWidget() {
   const router = useRouter();
+  const { t } = useLang();
   const [stats, setStats] = useState<Stats | null>(null);
   const [age, setAge] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
@@ -156,31 +158,31 @@ export default function LiveCommunityWidget() {
     {
       key: 'online',
       icon: '🟢',
-      label: 'JOUEURS EN LIGNE',
+      label: t('playersOnline'),
       value: stats?.online ?? '—',
       hint: stats?.recentUsernames?.length
         ? stats.recentUsernames.join(' · ').slice(0, 60)
-        : 'Personne pour le moment — sois le premier !',
+        : t('nobodyYetBeFirst'),
       color: '#4ade80',
       onPress: () => router.push('/challenges' as any),
     },
     {
       key: 'active',
       icon: '⚔️',
-      label: 'MATCHES EN COURS',
+      label: t('matchesInProgress'),
       value: stats?.active ?? '—',
       hint: stats?.active
-        ? `${stats.active} défi${stats.active === 1 ? '' : 's'} en cours`
-        : 'Démarre un défi 1v1 maintenant',
+        ? `${stats.active} ${t('challengesInProgress')}`
+        : t('startA1v1Now'),
       color: '#f59e0b',
       onPress: () => router.push('/challenges' as any),
     },
     {
       key: 'freshness',
       icon: '📡',
-      label: 'MISE À JOUR',
+      label: t('lastUpdate'),
       value: stats ? `${age}s` : '—',
-      hint: 'Refresh auto toutes les 15s',
+      hint: t('refreshEvery15s'),
       color: '#3b82f6',
       onPress: () => undefined,
     },
@@ -192,7 +194,7 @@ export default function LiveCommunityWidget() {
         <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#4ade80', justifyContent: 'center', alignItems: 'center' }}>
           <Animated.View style={{ position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: '#4ade80', transform: [{ scale: dotScale }], opacity: dotOpacity }} />
         </View>
-        <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>LIVE COMMUNITY</Text>
+        <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>{t('liveCommunity')}</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 14 }}>
         {cards.map(c => (
@@ -261,18 +263,18 @@ export default function LiveCommunityWidget() {
       <View style={{ marginTop: 16, padding: 18, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Text style={{ fontSize: 14 }}>📜</Text>
-          <Text style={{ color: '#f9fafb', fontSize: 13, fontWeight: '800', letterSpacing: 0.4 }}>Dernières parties</Text>
+          <Text style={{ color: '#f9fafb', fontSize: 13, fontWeight: '800', letterSpacing: 0.4 }}>{t('recentGames')}</Text>
           {stats?.feed && stats.feed.length > 0 && (
             <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginLeft: 'auto' }}>
-              {stats.feed.length} RÉSULTAT{stats.feed.length === 1 ? '' : 'S'}
+              {stats.feed.length} {t('resultsCount')}
             </Text>
           )}
         </View>
         {(!stats || stats.feed.length === 0) ? (
           <View style={{ paddingVertical: 18, alignItems: 'center' }}>
             <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
-              Aucune partie terminée pour le moment.{'\n'}
-              <Text style={{ color: '#4ade80', fontWeight: '700' }}>Sois le premier à apparaître ici !</Text>
+              {t('noGameFinished')}{'\n'}
+              <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('beFirstToAppear')}</Text>
             </Text>
           </View>
         ) : (

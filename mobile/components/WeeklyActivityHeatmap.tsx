@@ -14,6 +14,8 @@
  * width can't afford a 7×4 grid that stays readable).
  */
 import { View, Text } from 'react-native';
+import { useLang } from '../utils/LanguageContext';
+import { translations } from '../utils/i18n';
 
 type Props = {
   userId?: string;
@@ -47,11 +49,12 @@ const COLORS = [
   '#4ade80',  // 4 — heavy
 ];
 
-const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const SLOTS = ['Nuit', 'Matin', 'Midi', 'Soir'];
-
 export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props) {
-  // scale 0..1 — capped at 6 games for "full" engagement.
+  const { lang, t } = useLang();
+  const dRaw = (translations[lang] as any).days || (translations.en as any).days || {};
+  const sRaw = (translations[lang] as any).slots || (translations.en as any).slots || {};
+  const DAYS = [dRaw.mon, dRaw.tue, dRaw.wed, dRaw.thu, dRaw.fri, dRaw.sat, dRaw.sun];
+  const SLOTS = [sRaw.night, sRaw.morning, sRaw.noon, sRaw.evening];
   const scale = Math.min(1, gamesPlayed / 6);
   const seed = userId || 'anonymous';
 
@@ -73,16 +76,14 @@ export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={{ fontSize: 16 }}>📅</Text>
-          <Text style={{ color: '#f9fafb', fontSize: 15, fontWeight: '800', letterSpacing: 0.4 }}>Activité · 7 derniers jours</Text>
+          <Text style={{ color: '#f9fafb', fontSize: 15, fontWeight: '800', letterSpacing: 0.4 }}>{t('weeklyActivity')}</Text>
         </View>
         <Text style={{ color: '#64748b', fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>
-          {activeCells > 0 ? `${activeCells}/28 PLAGES` : 'AUCUNE ACTIVITÉ'}
+          {activeCells > 0 ? `${activeCells} ${t('activeSlots')}` : t('noActivity')}
         </Text>
       </View>
       <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 16 }}>
-        {gamesPlayed > 0
-          ? 'Tes plages de jeu sur la semaine. Plus c\'est vert vif, plus tu as joué.'
-          : 'Joue quelques parties pour voir cette grille s\'illuminer.'}
+        {gamesPlayed > 0 ? t('activityHint') : t('activityEmpty')}
       </Text>
 
       {/* Header row — day labels */}
@@ -118,11 +119,11 @@ export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props
 
       {/* Legend */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 14, gap: 6 }}>
-        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginRight: 4 }}>Moins</Text>
+        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginRight: 4 }}>{t('less')}</Text>
         {COLORS.map((c, i) => (
           <View key={i} style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: c, borderWidth: 1, borderColor: i === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(74,222,128,0.25)' }} />
         ))}
-        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginLeft: 4 }}>Plus</Text>
+        <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginLeft: 4 }}>{t('more')}</Text>
       </View>
     </View>
   );
