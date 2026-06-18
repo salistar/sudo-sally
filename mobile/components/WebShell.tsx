@@ -151,9 +151,17 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           <SallyMascot size={42} mode="wink" />
           <View>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>SallySudo</Text>
-            <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.10 · WEB</Text>
+            <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.11.5 · WEB</Text>
           </View>
         </TouchableOpacity>
+
+        {/* v3.11.5 — Sally mascot hero card at top of sidebar nav (was: missing
+            entirely on the web build, brand identity carried by emojis only).
+            Greets the player and is the primary brand touchpoint on desktop. */}
+        <View style={{ alignItems: 'center', paddingVertical: 14, marginBottom: 14, backgroundColor: 'rgba(74,222,128,0.06)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(74,222,128,0.18)' }}>
+          <SallyMascot size={84} mode="wink" />
+          <Text style={{ color: '#4ade80', fontSize: 11, fontWeight: '800', marginTop: 6, letterSpacing: 1 }}>SALLY</Text>
+        </View>
 
         <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>
           {t('play').toUpperCase()}
@@ -209,7 +217,12 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 
       {/* MAIN COLUMN: HEADER + CONTENT */}
       <View style={{ flex: 1, flexDirection: 'column' }}>
-        {/* HEADER */}
+        {/* HEADER — v3.11.5 redesigned to the SaaS gaming pattern: route
+            breadcrumb on the left, then a player wallet pill (coins/streak),
+            then quick-action pills (Daily / 1v1), then the avatar.
+            Previously this row only had the breadcrumb + 2 CTA buttons, which
+            wasted ~900px of header space and left the user with no at-a-glance
+            wallet/level info. */}
         <View style={{
           height: HEADER_H,
           flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -220,7 +233,21 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '600' }}>
             {labelFor(path, t)}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {/* Wallet pill — coins + streak. Only shown when signed in. */}
+            {user && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 14 }}>🪙</Text>
+                  <Text style={{ color: '#fbbf24', fontSize: 13, fontWeight: '800' }}>{user.coins ?? 0}</Text>
+                </View>
+                <View style={{ width: 1, height: 14, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 14 }}>⭐</Text>
+                  <Text style={{ color: '#4ade80', fontSize: 13, fontWeight: '800' }}>{user.stars ?? 0}</Text>
+                </View>
+              </View>
+            )}
             {path !== '/daily' && (
               <TouchableOpacity onPress={() => router.replace('/daily' as any)}
                 style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)' }}>
