@@ -209,13 +209,17 @@ exports.acceptChallenge = async (req, res) => {
     
     challenge.status = 'accepted';
     challenge.acceptedAt = new Date();
+    // Extend TTL so the Mongo TTL index doesn't auto-delete the doc 5 minutes
+    // after creation — the 5-min default is for unanswered pending challenges;
+    // accepted/playing games need room (30 min) to actually be played.
+    challenge.expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     await challenge.save();
-    
+
     await challenge.populate([
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' }
     ]);
-    
+
     res.json({ success: true, challenge });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -266,13 +270,18 @@ exports.startChallenge = async (req, res) => {
     
     challenge.status = 'playing';
     challenge.startedAt = new Date();
+    // Reset TTL when actually playing so the game doesn't get TTL-evicted
+    // mid-match. Defensive even if acceptChallenge already pushed it forward —
+    // direct /start calls (web bypasses /accept on auto-accepted flows) need
+    // the same protection.
+    challenge.expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     await challenge.save();
-    
+
     await challenge.populate([
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' }
     ]);
-    
+
     res.json({ success: true, challenge });
   } catch (error) {
     res.status(500).json({ error: error.message });
