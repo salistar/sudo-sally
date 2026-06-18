@@ -543,6 +543,18 @@ export const translations = {
     rematchEmpty: 'No opponents yet',
     rematchEmptyHint: 'Play your first 1v1 to fill this rematch list.',
     findOpponent: 'Find an opponent',
+
+    // v3.11.9 sprint-14 — Streak flame + Hall of fame
+    startStreak: 'START',
+    atRisk: 'AT RISK',
+    legend: 'LEGEND',
+    hallOfFame: 'HALL OF FAME',
+    allTimeTop3: 'ALL-TIME TOP 3',
+    hallOfFameHint: 'The three players who shaped this leaderboard. Beat them and your name lands here.',
+    hallOfFameEmpty: 'No champions yet — the hall awaits its first inductee.',
+    tierLegend: 'LEGEND',
+    tierChampion: 'CHAMPION',
+    tierRising: 'RISING',
   },
 
   fr: {
@@ -1086,6 +1098,18 @@ export const translations = {
     rematchEmpty: 'Aucun adversaire pour le moment',
     rematchEmptyHint: 'Joue ton premier 1v1 pour remplir cette liste de revanches.',
     findOpponent: 'Trouver un adversaire',
+
+    // v3.11.9 sprint-14 — Streak flame + Hall of fame
+    startStreak: 'DÉMARRER',
+    atRisk: 'EN RISQUE',
+    legend: 'LÉGENDE',
+    hallOfFame: 'TEMPLE DE LA RENOMMÉE',
+    allTimeTop3: 'TOP 3 DE TOUS LES TEMPS',
+    hallOfFameHint: "Les trois joueurs qui ont façonné ce classement. Bats-les et ton nom s'inscrit ici.",
+    hallOfFameEmpty: 'Aucun champion encore — le temple attend sa première légende.',
+    tierLegend: 'LÉGENDE',
+    tierChampion: 'CHAMPION',
+    tierRising: 'EN MONTÉE',
   },
 
   ar: {
@@ -1629,6 +1653,18 @@ export const translations = {
     rematchEmpty: 'لا خصوم بعد',
     rematchEmptyHint: 'العب أول 1ضد1 لملء قائمة المبارزات.',
     findOpponent: 'ابحث عن خصم',
+
+    // v3.11.9 sprint-14 — Streak flame + Hall of fame
+    startStreak: 'ابدأ',
+    atRisk: 'مهدّد',
+    legend: 'أسطورة',
+    hallOfFame: 'قاعة المشاهير',
+    allTimeTop3: 'أفضل 3 على الإطلاق',
+    hallOfFameHint: 'الثلاثة الذين شكّلوا هذا الترتيب. اهزمهم ويُدوَّن اسمك هنا.',
+    hallOfFameEmpty: 'لا أبطال بعد — القاعة تنتظر أول أسطورة لها.',
+    tierLegend: 'أسطورة',
+    tierChampion: 'بطل',
+    tierRising: 'صاعد',
   }
 };
 

@@ -18,6 +18,7 @@ import { useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SallyMascot from './SallyMascot';
 import NotificationsBell from './NotificationsBell';
+import StreakFlameMeter from './StreakFlameMeter';
 import { useLang } from '../utils/LanguageContext';
 
 const SIDEBAR_W = 260;
@@ -233,6 +234,10 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
             {labelFor(path, t)}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {/* v3.11.9 sprint-14 — Duolingo-style streak flame, visible
+                on every page so the user always sees their day count.
+                Pulses red when at risk after 18h local. */}
+            {user && <StreakFlameMeter />}
             {/* Wallet pill — coins + streak. Only shown when signed in. */}
             {user && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>

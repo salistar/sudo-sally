@@ -7,6 +7,7 @@ import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import RankingBarChart from '../components/RankingBarChart';
 import WeeklyChampionsBoard from '../components/WeeklyChampionsBoard';
+import HallOfFameWidget from '../components/HallOfFameWidget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
@@ -316,6 +317,8 @@ export default function Leaderboard() {
             currentUserId={undefined}
           />
         )}
+
+        {isDesktopWeb && <HallOfFameWidget />}
 
         {/* Rankings List */}
         <View style={styles.listSection}>
