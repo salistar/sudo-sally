@@ -43,16 +43,22 @@ function generateSudokuPuzzle(difficulty = 'medium') {
 exports.getOnlineUsers = async (req, res) => {
   try {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
-    const users = await User.find({
-      _id: { $ne: req.user.id },
+    const selfId = req.user._id;
+
+    let users = await User.find({
+      _id: { $ne: selfId },
       lastActive: { $gte: fiveMinutesAgo },
       isOnline: true
     })
     .select('username avatar level stars isOnline')
     .sort({ stars: -1 })
     .limit(50);
-    
+
+    // Defensive: never leak self into the "online" list even if the $ne
+    // comparison silently misses (e.g. legacy docs with string _id).
+    const selfStr = String(selfId);
+    users = users.filter(u => String(u._id) !== selfStr);
+
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ error: error.message });

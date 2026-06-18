@@ -34,8 +34,11 @@ router.get('/search', auth, async (req, res) => {
 router.get('/recent', auth, async (req, res) => {
   try {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const users = await User.find({
-      _id: { $ne: req.user.id },
+    // Use req.user._id (ObjectId) — req.user.id is a Mongoose virtual that
+    // can drift in $ne comparisons against the ObjectId stored on disk.
+    const selfId = req.user._id;
+    let users = await User.find({
+      _id: { $ne: selfId },
       $or: [
         { isOnline: true },
         { lastActive: { $gte: weekAgo } },
@@ -45,6 +48,10 @@ router.get('/recent', auth, async (req, res) => {
     .select('username avatar level stars isOnline lastActive lastLogin')
     .sort({ isOnline: -1, lastActive: -1, lastLogin: -1 })
     .limit(30);
+    // Belt-and-suspenders: string-compare self _id post-fetch so a Mongoose
+    // cast quirk never leaks self into the lobby ("can challenge yourself" bug).
+    const selfStr = String(selfId);
+    users = users.filter(u => String(u._id) !== selfStr);
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ error: error.message });

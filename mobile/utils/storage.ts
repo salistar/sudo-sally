@@ -371,9 +371,53 @@ export const storage = {
   },
   
   async loginAsGuest(): Promise<User> {
+    // Register a real anonymous user on the backend so we get a real JWT —
+    // this lets multiplayer / lobby / challenge-game work for Guests (they
+    // can be challenged, send challenges, and the API auth middleware
+    // accepts their requests). Previously we wrote a fake 'guest_token'
+    // string and any subsequent fetch with `Authorization: Bearer guest_token`
+    // returned 401, leaving the challenge-game board empty.
+    const handle = 'Guest_' + Math.random().toString(36).substr(2, 9);
+    const password = 'g_' + Math.random().toString(36).substr(2, 16);
+    try {
+      const resp = await fetch('https://api.sallysudo.com/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: handle,
+          email: handle.toLowerCase() + '@guest.local',
+          password,
+        }),
+      });
+      const data = await resp.json();
+      if (data?.success && data.token && data.user) {
+        const u = data.user;
+        const user: User = {
+          id: u.id || u._id,
+          username: u.username,
+          email: u.email,
+          avatar: u.avatar ?? '👤',
+          level: u.level ?? 1,
+          xp: u.xp ?? 0,
+          coins: u.coins ?? 50,
+          stars: u.stars ?? 0,
+          createdAt: u.createdAt || new Date().toISOString(),
+        };
+        await this.setUser(user);
+        // Match the keys signIn uses — challenge-game.tsx reads 'sudoku_token'
+        // and utils/socket / utils/api also expect that exact key.
+        await AsyncStorage.setItem('sudoku_token', data.token);
+        await AsyncStorage.setItem(KEYS.AUTH_TOKEN, data.token);
+        return user;
+      }
+    } catch (e) {
+      console.log('[storage] Guest backend register failed:', String(e));
+    }
+    // Last-resort offline guest — purely local, multiplayer features will
+    // gracefully no-op rather than 401-loop.
     const user: User = {
       id: 'guest_' + Math.random().toString(36).substr(2, 9),
-      username: 'Guest',
+      username: handle,
       email: '',
       avatar: '👤',
       level: 1,
