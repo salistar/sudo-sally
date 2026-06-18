@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
 import { useLang } from '../utils/LanguageContext';
 
 const { width } = Dimensions.get('window');
@@ -113,7 +114,7 @@ export default function Splash() {
           <View style={[styles.loaderDot, { backgroundColor: '#f472b6' }]} />
         </View>
         <Text style={styles.loadingText}>{t('loading').replace('...', '')}{dots}</Text>
-        <Text style={styles.version}>v3.1</Text>
+        <Text style={styles.version}>v{Constants.expoConfig?.version ?? '?'}</Text>
       </Animated.View>
     </LinearGradient>
   );
