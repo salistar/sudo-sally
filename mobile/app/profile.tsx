@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { storage, User } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
+import ChallengeHistoryList from '../components/ChallengeHistoryList';
 import * as Haptics from 'expo-haptics';
 import SallyMascot from '../components/SallyMascot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -283,6 +284,12 @@ export default function Profile() {
             </View>
           </View>
         </View>
+
+        {/* v3.11.5 sprint-7 — recent challenge history (desktop only).
+            Phone profile is already tight on screen real estate; the
+            challenge history is just a desktop bonus that fills the empty
+            space below the stats grid. */}
+        {isDesktopWeb && <ChallengeHistoryList />}
 
         {/* Avatar Picker */}
         <View style={styles.avatarPicker}>
