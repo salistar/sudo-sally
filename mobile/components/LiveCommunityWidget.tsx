@@ -137,6 +137,21 @@ export default function LiveCommunityWidget() {
   const dotScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.55] });
   const dotOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0.35] });
 
+  // Sprint-6 — skeleton shimmer while the first fetch is in-flight.
+  // Animated opacity loop on a flat grey block so the cards don't snap from
+  // "—" to a real number on first render.
+  const shimmer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (stats) return; // only loop while loading
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+  }, [shimmer, stats]);
+  const shimmerOpacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.55] });
+
   const cards = [
     {
       key: 'online',
@@ -196,9 +211,14 @@ export default function LiveCommunityWidget() {
                 <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }}>{c.label}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ color: c.color, fontSize: 32, fontWeight: '900', letterSpacing: -0.5 }}>
-                  {c.value}
-                </Text>
+                {stats ? (
+                  <Text style={{ color: c.color, fontSize: 32, fontWeight: '900', letterSpacing: -0.5 }}>
+                    {c.value}
+                  </Text>
+                ) : (
+                  // Sprint-6 — shimmer placeholder for the value
+                  <Animated.View style={{ width: 70, height: 32, borderRadius: 8, backgroundColor: c.color, opacity: shimmerOpacity }} />
+                )}
                 {/* v3.11.5 sprint-5 — avatar stack on the "online" card so
                     the card shows WHO is playing right now, not just the
                     count. Up to 4 stacked emojis with -8px overlap. */}

@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
+import RankingBarChart from '../components/RankingBarChart';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
@@ -299,6 +300,15 @@ export default function Leaderboard() {
             </View>
           </LinearGradient>
         </View>
+
+        {/* v3.11.5 sprint-6 — animated horizontal bar chart of the top 10
+            by stars. Desktop only — phone keeps the vertical list. */}
+        {isDesktopWeb && LEADERBOARD.length > 0 && (
+          <RankingBarChart
+            rows={LEADERBOARD.map(p => ({ rank: p.rank, username: p.username, avatar: p.avatar, stars: p.stars, level: p.level, userId: p.userId }))}
+            currentUserId={undefined}
+          />
+        )}
 
         {/* Rankings List */}
         <View style={styles.listSection}>
