@@ -7,6 +7,7 @@ import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import ChallengeHistoryList from '../components/ChallengeHistoryList';
 import RatingTrajectoryChart from '../components/RatingTrajectoryChart';
+import RematchPanel from '../components/RematchPanel';
 import * as Haptics from 'expo-haptics';
 import SallyMascot from '../components/SallyMascot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -292,6 +293,7 @@ export default function Profile() {
             space below the stats grid. */}
         {isDesktopWeb && <RatingTrajectoryChart />}
         {isDesktopWeb && <ChallengeHistoryList />}
+        {isDesktopWeb && <RematchPanel />}
 
         {/* Avatar Picker */}
         <View style={styles.avatarPicker}>

@@ -524,6 +524,25 @@ export const translations = {
     axisStreak: 'Streak',
     axisVolume: 'Volume',
     axisDaily: 'Daily',
+
+    // v3.11.8 sprint-13 — Daily quests + Rematch
+    dailyQuests: 'DAILY QUESTS',
+    completed: 'COMPLETED',
+    questDone: 'COMPLETE',
+    questInProgress: 'IN PROGRESS',
+    questTodo: 'TO DO',
+    questDuelTitle: 'Win a duel',
+    questDuelDesc: 'Beat one opponent in a ranked 1v1 today.',
+    questPuzzlesTitle: 'Play 3 puzzles',
+    questPuzzlesDesc: 'Solve any three puzzles in solo mode.',
+    questDailyTitle: 'Claim the daily',
+    questDailyDesc: 'Open the daily challenge and grab your reward.',
+    rematchTitle: 'Last opponents · play them again',
+    opponentsCount: 'OPPONENTS',
+    rematchBtn: 'REMATCH',
+    rematchEmpty: 'No opponents yet',
+    rematchEmptyHint: 'Play your first 1v1 to fill this rematch list.',
+    findOpponent: 'Find an opponent',
   },
 
   fr: {
@@ -1048,6 +1067,25 @@ export const translations = {
     axisStreak: 'Série',
     axisVolume: 'Volume',
     axisDaily: 'Quotidien',
+
+    // v3.11.8 sprint-13 — Daily quests + Rematch
+    dailyQuests: 'QUÊTES DU JOUR',
+    completed: 'TERMINÉ',
+    questDone: 'FAIT',
+    questInProgress: 'EN COURS',
+    questTodo: 'À FAIRE',
+    questDuelTitle: 'Gagne un duel',
+    questDuelDesc: 'Bats un adversaire en 1v1 classé aujourd\'hui.',
+    questPuzzlesTitle: 'Joue 3 grilles',
+    questPuzzlesDesc: 'Résous trois grilles en mode solo.',
+    questDailyTitle: 'Récupère le quotidien',
+    questDailyDesc: 'Ouvre le défi quotidien et récupère ta récompense.',
+    rematchTitle: 'Derniers adversaires · joue-les à nouveau',
+    opponentsCount: 'ADVERSAIRES',
+    rematchBtn: 'REVANCHE',
+    rematchEmpty: 'Aucun adversaire pour le moment',
+    rematchEmptyHint: 'Joue ton premier 1v1 pour remplir cette liste de revanches.',
+    findOpponent: 'Trouver un adversaire',
   },
 
   ar: {
@@ -1572,6 +1610,25 @@ export const translations = {
     axisStreak: 'السلسلة',
     axisVolume: 'الحجم',
     axisDaily: 'يومي',
+
+    // v3.11.8 sprint-13 — Daily quests + Rematch
+    dailyQuests: 'مهام اليوم',
+    completed: 'مكتملة',
+    questDone: 'تم',
+    questInProgress: 'جاري',
+    questTodo: 'مطلوب',
+    questDuelTitle: 'اربح مبارزة',
+    questDuelDesc: 'اهزم خصمًا واحدًا في 1ضد1 مصنّفة اليوم.',
+    questPuzzlesTitle: 'العب 3 ألغاز',
+    questPuzzlesDesc: 'حلّ ثلاثة ألغاز في الوضع الفردي.',
+    questDailyTitle: 'احصد اليومي',
+    questDailyDesc: 'افتح التحدّي اليومي واحصد مكافأتك.',
+    rematchTitle: 'آخر الخصوم · العب معهم مجددًا',
+    opponentsCount: 'خصوم',
+    rematchBtn: 'مبارزة جديدة',
+    rematchEmpty: 'لا خصوم بعد',
+    rematchEmptyHint: 'العب أول 1ضد1 لملء قائمة المبارزات.',
+    findOpponent: 'ابحث عن خصم',
   }
 };
 

@@ -13,6 +13,7 @@ import SallyMascot from '../components/SallyMascot';
 import DailyChest from '../components/DailyChest';
 import LiveCommunityWidget from '../components/LiveCommunityWidget';
 import ActiveDuelsWidget from '../components/ActiveDuelsWidget';
+import DailyQuestsPanel from '../components/DailyQuestsPanel';
 import BottomNav from '../components/BottomNav';
 
 // Pulled from app.json at build time so the badge always matches the
@@ -283,6 +284,7 @@ export default function Home() {
             refreshes every 15s, gives the home a "the lobby is alive" feel
             instead of looking static. Mobile already has the lobby tab
             badge for this and phone width can't afford a 3-card row. */}
+        {isDesktopWeb && <DailyQuestsPanel />}
         {isDesktopWeb && <ActiveDuelsWidget />}
         {isDesktopWeb && <LiveCommunityWidget />}
 
