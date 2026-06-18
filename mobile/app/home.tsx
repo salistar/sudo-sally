@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
 import { storage } from '../utils/storage';
 import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
@@ -11,6 +12,12 @@ import AppModal, { PopupData } from '../components/AppModal';
 import SallyMascot from '../components/SallyMascot';
 import DailyChest from '../components/DailyChest';
 import BottomNav from '../components/BottomNav';
+
+// Pulled from app.json at build time so the badge always matches the
+// shipped build (previously: hardcoded "v3.10 · Premium web" drifted from
+// the real semver as we bumped through 3.11.x).
+const APP_VERSION = Constants.expoConfig?.version ?? '?';
+const VERSION_LABEL = Platform.OS === 'web' ? `v${APP_VERSION} · Web` : `v${APP_VERSION}`;
 
 // Production API (matches utils/api.ts / utils/socket.ts).
 const API_URL = 'https://api.sallysudo.com/api';
@@ -260,7 +267,7 @@ export default function Home() {
             </View>
             <Text style={styles.logoText}>SallySudo</Text>
             <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v3.10 · Premium web</Text>
+              <Text style={styles.versionText}>{VERSION_LABEL}</Text>
             </View>
             <Text style={styles.tagline}>{t('trainBrainDaily')}</Text>
           </LinearGradient>

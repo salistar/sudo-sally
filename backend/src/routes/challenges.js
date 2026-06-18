@@ -22,6 +22,21 @@ router.get('/users/online', auth, getOnlineUsers);
 // Get all my challenges (sent, received, active, history)
 router.get('/my', auth, getMyChallenges);
 
+// Aliases that return one slice of /my — defined BEFORE /:challengeId so the
+// param route doesn't eat them as an ObjectId (previously: /pending → 500
+// "Cast to ObjectId failed for value pending").
+const slice = (key) => async (req, res, next) => {
+  res.json = (orig => function (body) {
+    if (body && body.success && body[key]) return orig.call(this, { success: true, [key]: body[key] });
+    return orig.call(this, body);
+  })(res.json);
+  return getMyChallenges(req, res, next);
+};
+router.get('/pending', auth, slice('received'));
+router.get('/sent',    auth, slice('sent'));
+router.get('/active',  auth, slice('active'));
+router.get('/history', auth, slice('history'));
+
 // Get challenge stats
 router.get('/stats', auth, getChallengeStats);
 

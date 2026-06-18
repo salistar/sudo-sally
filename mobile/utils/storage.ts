@@ -55,12 +55,14 @@ export interface Settings {
 
 // ============ MOCK DATA ============
 
-// Test accounts
-export const TEST_USERS = [
+// Demo accounts — DEV ONLY. In production builds (__DEV__ === false) the
+// array is empty so login can't bypass to fake credentials. The signIn
+// fallback below already iterates this list, so an empty array = no fallback.
+export const TEST_USERS = __DEV__ ? [
   { email: 'test@test.com', password: 'test123', username: 'TestPlayer' },
   { email: 'admin@sally.com', password: 'admin123', username: 'SallyAdmin' },
   { email: 'demo@demo.com', password: 'demo', username: 'DemoUser' },
-];
+] : [];
 
 // Generate 30 levels with progressive difficulty
 export const generateLevels = (): LevelData[] => {
