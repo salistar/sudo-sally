@@ -114,10 +114,20 @@ exports.sendChallenge = async (req, res) => {
       { path: 'challenged', select: 'username avatar level stars' }
     ]);
 
-    // Push real-time notification to the challenged user (REST send used to be
-    // silent — the receiver only saw the challenge after polling /pending).
+    // Push real-time notification to the challenged user. Payload mirrors the
+    // shape the socketService emits for legacy `challenge:send` (challengerName
+    // / challengerAvatar / challengerLevel) — the mobile modal reads those
+    // exact keys, so the populated `challenger` object alone produced
+    // "undefined veut te défier" before. Both shapes are included so any
+    // newer client that reads `challenger` directly still works.
+    const ch = challenge.challenger || {};
     notifyUser(resolvedTargetId, 'challenge:received', {
       challengeId: challenge._id,
+      odcChallengerId: String(ch._id || req.user.id),
+      challengerName: ch.username,
+      challengerAvatar: ch.avatar,
+      challengerLevel: ch.level,
+      challengerStars: ch.stars,
       challenger: challenge.challenger,
       difficulty: challenge.difficulty,
       createdAt: challenge.createdAt
