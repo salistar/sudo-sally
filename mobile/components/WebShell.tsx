@@ -155,13 +155,11 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           </View>
         </TouchableOpacity>
 
-        {/* v3.11.5 — Sally mascot hero card at top of sidebar nav (was: missing
-            entirely on the web build, brand identity carried by emojis only).
-            Greets the player and is the primary brand touchpoint on desktop. */}
-        <View style={{ alignItems: 'center', paddingVertical: 14, marginBottom: 14, backgroundColor: 'rgba(74,222,128,0.06)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(74,222,128,0.18)' }}>
-          <SallyMascot size={84} mode="wink" />
-          <Text style={{ color: '#4ade80', fontSize: 11, fontWeight: '800', marginTop: 6, letterSpacing: 1 }}>SALLY</Text>
-        </View>
+        {/* v3.11.5 sprint-2 — removed the sidebar mascot hero card: it was
+            duplicating the in-page hero (home shows a big SallySudo logo +
+            mascot in the main column) and bloating the sidebar height. The
+            42px wink mascot in the brand row above is enough sidebar brand
+            presence. The home page owns the big mascot. */}
 
         <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginLeft: 14, marginBottom: 8 }}>
           {t('play').toUpperCase()}
