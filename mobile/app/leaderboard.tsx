@@ -6,6 +6,7 @@ import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import RankingBarChart from '../components/RankingBarChart';
+import WeeklyChampionsBoard from '../components/WeeklyChampionsBoard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
@@ -273,6 +274,12 @@ export default function Leaderboard() {
 
         {/* Top 3 Podium — only if we have at least 3 real entries */}
         {!loading && LEADERBOARD.length >= 3 && renderTopThree()}
+
+        {/* v3.11.5 sprint-9 — 3-window champions board (today/week/all-time).
+            Sits between the top-3 podium and YOUR RANK so the page reads:
+            'top-3 podium → champions by window → where am I → bar chart →
+            full list'. Desktop only. */}
+        {isDesktopWeb && <WeeklyChampionsBoard />}
 
         {/* Your Rank Card */}
         <View style={styles.yourRankCard}>
