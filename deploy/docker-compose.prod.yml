@@ -136,5 +136,8 @@ networks:
   sudoku:
     name: sudoku_net
   edge:
-    name: gowithsally_gws-net
+    # srv3 fronts every vhost with the `caddy` container on a shared external
+    # network literally named `edge` (the srv2-era `gowithsally_gws-net` was
+    # cleaned up during the sallysudo.com migration — this repo is srv3-only).
+    name: edge
     external: true
