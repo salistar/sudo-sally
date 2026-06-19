@@ -4,6 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, LevelData } from '../utils/storage';
 import BottomNav from '../components/BottomNav';
+import LevelsDesktopLayout from '../components/LevelsDesktopLayout';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '📁 [Levels.tsx]';
@@ -134,6 +135,23 @@ export default function Levels() {
   const maxStars = levels.length * 3;
 
   console.log(`${FILE_NAME} 🖼️ Rendering - filteredLevels: ${filteredLevels.length}`);
+
+  // v3.11.12 sprint-17 — desktop takeover: hero + difficulty chips + tile grid
+  // using Midnight Atlas tokens. Phone keeps the original list below.
+  if (isDesktopWeb) {
+    return (
+      <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+        <ScrollView contentContainerStyle={{ padding: 32, maxWidth: 1240, alignSelf: 'center', width: '100%' }}>
+          <LevelsDesktopLayout
+            levels={levels}
+            selectedDifficulty={selectedDifficulty}
+            onFilter={handleDifficultyFilter}
+            onLevel={handleLevel}
+          />
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>

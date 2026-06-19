@@ -586,6 +586,24 @@ export const translations = {
     challenge: 'CHALLENGE',
     accept: 'ACCEPT',
     decline: 'DECLINE',
+
+    // v3.11.12 sprint-17 — /levels desktop refresh
+    levelsTag: 'SOLO CAMPAIGN',
+    levelsTitle: 'Resume your journey',
+    levelsHint: 'Pick a difficulty, claim three stars per puzzle, climb from Beginner to Master. Best times sync to your profile.',
+    levelsResume: 'RESUME LEVEL',
+    nextLevel: 'NEXT LEVEL',
+    progress: 'PROGRESS',
+    allLevels: 'ALL',
+    diffBeginner: 'BEGINNER',
+    diffEasy: 'EASY',
+    diffMedium: 'MEDIUM',
+    diffHard: 'HARD',
+    diffExpert: 'EXPERT',
+    diffMaster: 'MASTER',
+    noLevelMatch: 'No level in this difficulty',
+    noLevelMatchHint: 'Try another filter or clear the filter to see all levels.',
+    noRecord: 'No record yet',
   },
 
   fr: {
@@ -1172,6 +1190,24 @@ export const translations = {
     challenge: 'DÉFIER',
     accept: 'ACCEPTER',
     decline: 'REFUSER',
+
+    // v3.11.12 sprint-17 — /levels desktop refresh
+    levelsTag: 'CAMPAGNE SOLO',
+    levelsTitle: 'Reprends ton parcours',
+    levelsHint: 'Choisis une difficulté, décroche trois étoiles par grille, grimpe de Débutant à Maître. Tes meilleurs temps se synchronisent avec ton profil.',
+    levelsResume: 'REPRENDRE',
+    nextLevel: 'PROCHAIN NIVEAU',
+    progress: 'PROGRESSION',
+    allLevels: 'TOUS',
+    diffBeginner: 'DÉBUTANT',
+    diffEasy: 'FACILE',
+    diffMedium: 'MOYEN',
+    diffHard: 'DIFFICILE',
+    diffExpert: 'EXPERT',
+    diffMaster: 'MAÎTRE',
+    noLevelMatch: 'Aucun niveau dans cette difficulté',
+    noLevelMatchHint: 'Essaie un autre filtre ou retire-le pour voir tous les niveaux.',
+    noRecord: 'Aucun record',
   },
 
   ar: {
@@ -1758,6 +1794,24 @@ export const translations = {
     challenge: 'تحدِّ',
     accept: 'قبول',
     decline: 'رفض',
+
+    // v3.11.12 sprint-17 — /levels desktop refresh
+    levelsTag: 'حملة فردية',
+    levelsTitle: 'تابع رحلتك',
+    levelsHint: 'اختر صعوبة، اربح ثلاث نجوم في كل لغز، اصعد من مبتدئ إلى أسطورة. أفضل الأوقات تُزامن مع ملفك.',
+    levelsResume: 'استئناف',
+    nextLevel: 'المرحلة التالية',
+    progress: 'التقدم',
+    allLevels: 'الكل',
+    diffBeginner: 'مبتدئ',
+    diffEasy: 'سهل',
+    diffMedium: 'متوسط',
+    diffHard: 'صعب',
+    diffExpert: 'خبير',
+    diffMaster: 'أسطورة',
+    noLevelMatch: 'لا مرحلة في هذه الصعوبة',
+    noLevelMatchHint: 'جرّب فلترًا آخر أو امسح الفلتر لعرض جميع المراحل.',
+    noRecord: 'لا قياسي بعد',
   }
 };
 
