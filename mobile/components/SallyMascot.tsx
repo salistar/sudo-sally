@@ -40,8 +40,8 @@ export default function SallyMascot({
           <Stop offset="1" stopColor="#2dd4db" />
         </LinearGradient>
         <LinearGradient id="sallyBelly" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#dcfce7" />
-          <Stop offset="1" stopColor="#bbf7d0" />
+          <Stop offset="0" stopColor="#ede9ff" />
+          <Stop offset="1" stopColor="#d4c9ff" />
         </LinearGradient>
         <RadialGradient id="sallyHighlight" cx="0.35" cy="0.35" r="0.7">
           <Stop offset="0" stopColor="#ffffff" stopOpacity="0.45" />
@@ -72,7 +72,7 @@ export default function SallyMascot({
       <Path d="M 145 60 Q 150 30 130 38 Q 130 52 135 70 Z" fill="url(#sallyBody)" />
 
       {/* Face mask (lighter green ring around eyes) */}
-      <Ellipse cx="100" cy="92" rx="48" ry="38" fill="#bbf7d0" opacity="0.55" />
+      <Ellipse cx="100" cy="92" rx="48" ry="38" fill="#d4c9ff" opacity="0.55" />
 
       {/* Eyes */}
       <Eyes mode={mode} />
