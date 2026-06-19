@@ -212,7 +212,7 @@ export default function SettingsScreen() {
                     >
                       {isSelected && (
                         <LinearGradient
-                          colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
+                          colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']}
                           style={styles.langBtnGradient}
                         />
                       )}
@@ -263,8 +263,8 @@ export default function SettingsScreen() {
                     <Switch 
                       value={isEnabled} 
                       onValueChange={(v) => update(item.key as keyof Settings, v)} 
-                      trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(74,222,128,0.4)' }}
-                      thumbColor={isEnabled ? '#4ade80' : '#64748b'}
+                      trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(124,92,255,0.4)' }}
+                      thumbColor={isEnabled ? '#7c5cff' : '#64748b'}
                       ios_backgroundColor="rgba(255,255,255,0.1)"
                     />
                   </View>
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     minWidth: 0,                  // allow flex children to shrink past intrinsic content
   },
   langBtnActive: { 
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
   },
   langBtnGradient: {
     position: 'absolute',
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   langTextActive: {
-    color: '#4ade80',
+    color: '#7c5cff',
   },
   langCheck: {
     position: 'absolute',
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#4ade80',
+    backgroundColor: '#7c5cff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   prefIconActive: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
   },
   prefIconPurple: {
     backgroundColor: 'rgba(139,92,246,0.15)',

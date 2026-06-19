@@ -44,11 +44,11 @@ const THEME: Record<
   success: {
     emoji: '🎉',
     card: ['#10241b', '#0f2018'],
-    button: ['#4ade80', '#22c55e'],
-    border: 'rgba(74,222,128,0.5)',
-    shadow: '#22c55e',
-    badgeBg: 'rgba(74,222,128,0.15)',
-    badgeBorder: 'rgba(74,222,128,0.4)',
+    button: ['#7c5cff', '#2dd4db'],
+    border: 'rgba(124,92,255,0.5)',
+    shadow: '#2dd4db',
+    badgeBg: 'rgba(124,92,255,0.15)',
+    badgeBorder: 'rgba(124,92,255,0.4)',
   },
   error: {
     emoji: '⚠️',

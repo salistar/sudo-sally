@@ -108,7 +108,7 @@ export default function RatingTrajectoryChart() {
           <Text style={{ fontSize: 16 }}>📈</Text>
           <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>{t('ratingTrajectory')}</Text>
         </View>
-        <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '900' }}>+{totalWins} ⭐ / {DAYS}j</Text>
+        <Text style={{ color: '#7c5cff', fontSize: 12, fontWeight: '900' }}>+{totalWins} ⭐ / {DAYS}j</Text>
       </View>
       <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 14 }}>
         {isFlat ? t('noWinYet14d') : t('cumulativeStars')}
@@ -126,12 +126,12 @@ export default function RatingTrajectoryChart() {
             />
           ))}
           {/* Area fill */}
-          {!isFlat && <Path d={areaD} fill="rgba(74,222,128,0.10)" />}
+          {!isFlat && <Path d={areaD} fill="rgba(124,92,255,0.10)" />}
           {/* Line */}
-          <Path d={pathD} stroke="#4ade80" strokeWidth={2.5} fill="none" />
+          <Path d={pathD} stroke="#7c5cff" strokeWidth={2.5} fill="none" />
           {/* Dots */}
           {series.map((p, i) => (
-            <Circle key={i} cx={xFor(i)} cy={yFor(p.stars)} r={p.stars > 0 ? 3.5 : 2} fill={p.stars > 0 ? '#4ade80' : 'rgba(255,255,255,0.15)'} />
+            <Circle key={i} cx={xFor(i)} cy={yFor(p.stars)} r={p.stars > 0 ? 3.5 : 2} fill={p.stars > 0 ? '#7c5cff' : 'rgba(255,255,255,0.15)'} />
           ))}
           {/* X labels (every 3rd) */}
           {series.map((p, i) => (

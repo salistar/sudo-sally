@@ -39,8 +39,8 @@ export default function HowToPlay() {
   ];
 
   const difficulty = [
-    { level: t('beginner'), range: '1-5', clues: '45-50', color: '#4ade80' },
-    { level: t('easy'), range: '6-10', clues: '36-44', color: '#22c55e' },
+    { level: t('beginner'), range: '1-5', clues: '45-50', color: '#7c5cff' },
+    { level: t('easy'), range: '6-10', clues: '36-44', color: '#2dd4db' },
     { level: t('medium'), range: '11-15', clues: '32-35', color: '#fbbf24' },
     { level: t('hard'), range: '16-20', clues: '28-31', color: '#f97316' },
     { level: t('expert'), range: '21-25', clues: '24-27', color: '#ef4444' },
@@ -79,7 +79,7 @@ export default function HowToPlay() {
     return (
       <View key={index} style={styles.tipCard}>
         <LinearGradient
-          colors={['rgba(74,222,128,0.12)', 'rgba(74,222,128,0.04)']}
+          colors={['rgba(124,92,255,0.12)', 'rgba(124,92,255,0.04)']}
           style={styles.tipGradient}
         >
           <View style={styles.tipIconContainer}>
@@ -172,7 +172,7 @@ export default function HowToPlay() {
         {/* Intro Card */}
         <View style={styles.introCard}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)']}
+            colors={['rgba(124,92,255,0.15)', 'rgba(124,92,255,0.05)']}
             style={styles.introGradient}
           >
             <Text style={styles.introIcon}>🧩</Text>
@@ -334,7 +334,7 @@ export default function HowToPlay() {
         {/* Ready to Play */}
         <View style={styles.readyCard}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
+            colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']}
             style={styles.readyGradient}
           >
             <Text style={styles.readyIcon}>🚀</Text>
@@ -351,7 +351,7 @@ export default function HowToPlay() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#4ade80', '#22c55e'] as const}
+                colors={['#7c5cff', '#2dd4db'] as const}
                 style={styles.playButtonGradient}
               >
                 <Text style={styles.playButtonText}>{t('startPlaying')}</Text>
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   introIcon: {
     fontSize: 48,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   sectionTitle: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 18, 
     fontWeight: '700',
   },
@@ -493,12 +493,12 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(74,222,128,0.2)',
+    backgroundColor: 'rgba(124,92,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   ruleNumberText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   miniBoard: { 
     borderWidth: 2, 
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
     borderRadius: 8,
     overflow: 'hidden',
   },
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   },
   miniRowBorder: {
     borderBottomWidth: 2,
-    borderBottomColor: '#4ade80',
+    borderBottomColor: '#7c5cff',
   },
   miniCell: { 
     width: 32, 
@@ -544,10 +544,10 @@ const styles = StyleSheet.create({
   },
   miniCellBorderR: { 
     borderRightWidth: 2, 
-    borderRightColor: '#4ade80',
+    borderRightColor: '#7c5cff',
   },
   miniCellFilled: {
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(124,92,255,0.1)',
   },
   miniText: { 
     color: 'rgba(255,255,255,0.3)', 
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   legendFilled: {
-    backgroundColor: 'rgba(74,222,128,0.3)',
+    backgroundColor: 'rgba(124,92,255,0.3)',
   },
   legendEmpty: {
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -634,12 +634,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(124,92,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   controlArrowText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     padding: 16, 
     borderRadius: 16,
     borderLeftWidth: 4, 
-    borderLeftColor: '#4ade80',
+    borderLeftColor: '#7c5cff',
   },
   tipIconContainer: {
     width: 48,
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tipTitle: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 16, 
     fontWeight: '700',
   },
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   scoreXP: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.3)',
+    borderColor: 'rgba(124,92,255,0.3)',
   },
   readyIcon: {
     fontSize: 48,

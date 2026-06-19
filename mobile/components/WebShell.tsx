@@ -98,13 +98,13 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         style={{
           flexDirection: 'row', alignItems: 'center', gap: 12,
           paddingVertical: 11, paddingHorizontal: 14, borderRadius: 12,
-          backgroundColor: active ? 'rgba(74,222,128,0.14)' : 'transparent',
-          borderWidth: 1, borderColor: active ? 'rgba(74,222,128,0.35)' : 'transparent',
+          backgroundColor: active ? 'rgba(124,92,255,0.14)' : 'transparent',
+          borderWidth: 1, borderColor: active ? 'rgba(124,92,255,0.35)' : 'transparent',
           marginBottom: 4,
         }}
       >
         <Text style={{ fontSize: 18 }}>{item.icon}</Text>
-        <Text style={{ color: active ? '#4ade80' : '#cbd5e1', fontWeight: active ? '800' : '600', fontSize: 14 }}>
+        <Text style={{ color: active ? '#7c5cff' : '#cbd5e1', fontWeight: active ? '800' : '600', fontSize: 14 }}>
           {t(item.tKey as any)}
         </Text>
       </TouchableOpacity>
@@ -175,7 +175,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           <SallyMascot size={42} mode="wink" />
           <View>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>SallySudo</Text>
-            <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.11.5 · WEB</Text>
+            <Text style={{ color: '#7c5cff', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>v3.11.5 · WEB</Text>
           </View>
         </TouchableOpacity>
 
@@ -270,14 +270,14 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
                 <View style={{ width: 1, height: 14, backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Text style={{ fontSize: 14 }}>⭐</Text>
-                  <Text style={{ color: '#4ade80', fontSize: 13, fontWeight: '800' }}>{user.stars ?? 0}</Text>
+                  <Text style={{ color: '#7c5cff', fontSize: 13, fontWeight: '800' }}>{user.stars ?? 0}</Text>
                 </View>
               </View>
             )}
             {path !== '/daily' && (
               <TouchableOpacity onPress={() => router.replace('/daily' as any)}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)' }}>
-                <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>⏱️ {t('daily')}</Text>
+                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(124,92,255,0.12)', borderWidth: 1, borderColor: 'rgba(124,92,255,0.3)' }}>
+                <Text style={{ color: '#7c5cff', fontSize: 12, fontWeight: '800' }}>⏱️ {t('daily')}</Text>
               </TouchableOpacity>
             )}
             {path !== '/challenges' && (

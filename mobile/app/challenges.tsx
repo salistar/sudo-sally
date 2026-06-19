@@ -421,7 +421,7 @@ export default function Challenges() {
               <Text style={styles.modalTitle}>⚔️ {t('challengeBtn')} {selectedUser?.username}</Text>
               <Text style={styles.modalSubtitle}>{t('selectDifficulty')}</Text>
               {[
-                { key: 'easy', emoji: '😊', label: t('easy'), color: '#4ade80' },
+                { key: 'easy', emoji: '😊', label: t('easy'), color: '#7c5cff' },
                 { key: 'medium', emoji: '😐', label: t('medium'), color: '#fbbf24' },
                 { key: 'hard', emoji: '😈', label: t('hard'), color: '#ef4444' },
               ].map(diff => (
@@ -469,7 +469,7 @@ export default function Challenges() {
           <Text style={styles.statLabel}>{t('lost')}</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statNum, { color: '#4ade80' }]}>{stats.winRate}%</Text>
+          <Text style={[styles.statNum, { color: '#7c5cff' }]}>{stats.winRate}%</Text>
           <Text style={styles.statLabel}>{t('winRate')}</Text>
         </View>
       </View>
@@ -503,7 +503,7 @@ export default function Challenges() {
       {/* Content */}
       <ScrollView 
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ade80" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7c5cff" />}
       >
         {/* Online + Recent + Search */}
         {selectedTab === 'online' && (
@@ -529,7 +529,7 @@ export default function Challenges() {
             {/* If actively searching, show ONLY the search results */}
             {searchQ.trim().length >= 2 ? (
               searching ? (
-                <View style={styles.empty}><ActivityIndicator color="#4ade80" /></View>
+                <View style={styles.empty}><ActivityIndicator color="#7c5cff" /></View>
               ) : searchResults.length === 0 ? (
                 <View style={styles.empty}>
                   <Text style={styles.emptyIcon}>🤷</Text>
@@ -585,8 +585,8 @@ export default function Challenges() {
                         <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{user.username}</Text>
                         <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
                       </View>
-                      <View style={[styles.challengeBtn, { backgroundColor: 'rgba(74,222,128,0.15)' }]}>
-                        <Text style={[styles.btnText, { color: '#4ade80' }]}>⚔️ {t('challengeBtn')}</Text>
+                      <View style={[styles.challengeBtn, { backgroundColor: 'rgba(124,92,255,0.15)' }]}>
+                        <Text style={[styles.btnText, { color: '#7c5cff' }]}>⚔️ {t('challengeBtn')}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -733,7 +733,7 @@ export default function Challenges() {
             <Text style={styles.modalSubtitle}>{t('selectDifficulty')}</Text>
 
             {[
-              { key: 'easy', emoji: '😊', label: t('easy'), desc: `35 ${t('cellsRemoved')}`, color: '#4ade80' },
+              { key: 'easy', emoji: '😊', label: t('easy'), desc: `35 ${t('cellsRemoved')}`, color: '#7c5cff' },
               { key: 'medium', emoji: '😐', label: t('medium'), desc: `45 ${t('cellsRemoved')}`, color: '#fbbf24' },
               { key: 'hard', emoji: '😈', label: t('hard'), desc: `55 ${t('cellsRemoved')}`, color: '#ef4444' },
             ].map(diff => (
@@ -766,9 +766,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   back: { color: '#64748b', fontSize: 16 },
   title: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  onlineCount: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(74,222,128,0.2)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
-  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ade80', marginRight: 5 },
-  onlineText: { color: '#4ade80', fontWeight: '600' },
+  onlineCount: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124,92,255,0.2)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#7c5cff', marginRight: 5 },
+  onlineText: { color: '#7c5cff', fontWeight: '600' },
   
   statsBar: { flexDirection: 'row', justifyContent: 'space-around', padding: 15, marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 },
   statItem: { alignItems: 'center' },
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
   tabsScroll: { minHeight: 56, maxHeight: 64, marginTop: 12, flexGrow: 0 },
   tabsScrollContent: { paddingHorizontal: 16, paddingRight: 32, paddingVertical: 6, alignItems: 'center', gap: 10 },
   tab: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  tabActive: { backgroundColor: '#4ade80', borderColor: '#4ade80' },
+  tabActive: { backgroundColor: '#7c5cff', borderColor: '#7c5cff' },
   tabText: { color: '#cbd5e1', fontWeight: '700', fontSize: 14, letterSpacing: 0.2 },
   tabTextActive: { color: '#0a0a1a' },
   
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 50, marginBottom: 10 },
   emptyText: { color: '#64748b', fontSize: 16, textAlign: 'center' },
   emptySubtext: { color: '#475569', fontSize: 13, marginTop: 5, textAlign: 'center' },
-  inviteLink: { color: '#4ade80', fontSize: 14, marginTop: 10, fontWeight: '700' },
+  inviteLink: { color: '#7c5cff', fontSize: 14, marginTop: 10, fontWeight: '700' },
 
   // v3.3.0 — Player search row
   searchRow: {
@@ -810,8 +810,8 @@ const styles = StyleSheet.create({
   sectionHead: { color: '#94a3b8', fontSize: 12, fontWeight: '700', letterSpacing: 0.8, marginTop: 6, marginBottom: 8, textTransform: 'uppercase' },
   
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 15, borderRadius: 14, marginBottom: 10 },
-  activeCard: { borderWidth: 1, borderColor: '#4ade80' },
-  onlineIndicator: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4ade80', marginRight: 10 },
+  activeCard: { borderWidth: 1, borderColor: '#7c5cff' },
+  onlineIndicator: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#7c5cff', marginRight: 10 },
   avatar: { fontSize: 32, marginRight: 12 },
   info: { flex: 1 },
   name: { color: '#fff', fontSize: 16, fontWeight: '600' } as any,
@@ -819,18 +819,18 @@ const styles = StyleSheet.create({
   // long Guest_xxxxxxxx usernames seen in v3.5 audit screenshots.
   stats: { color: '#64748b', fontSize: 12, marginTop: 2 },
   
-  challengeBtn: { backgroundColor: '#4ade80', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 15 },
+  challengeBtn: { backgroundColor: '#7c5cff', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 15 },
   btnText: { color: '#000', fontWeight: '700' },
   btn: { padding: 10, borderRadius: 10, marginLeft: 8 },
-  acceptBtn: { backgroundColor: 'rgba(74,222,128,0.2)' },
+  acceptBtn: { backgroundColor: 'rgba(124,92,255,0.2)' },
   declineBtn: { backgroundColor: 'rgba(239,68,68,0.2)' },
   cancelBtn: { backgroundColor: 'rgba(100,116,139,0.2)', paddingHorizontal: 12 },
   cancelText: { color: '#94a3b8', fontWeight: '600' },
-  playBtn: { backgroundColor: '#4ade80', padding: 10, borderRadius: 20 },
+  playBtn: { backgroundColor: '#7c5cff', padding: 10, borderRadius: 20 },
   playText: { fontSize: 18 },
   
   resultBadge: { padding: 10, borderRadius: 12 },
-  winBadge: { backgroundColor: 'rgba(74,222,128,0.2)' },
+  winBadge: { backgroundColor: 'rgba(124,92,255,0.2)' },
   loseBadge: { backgroundColor: 'rgba(239,68,68,0.2)' },
   resultText: { fontSize: 20 },
   

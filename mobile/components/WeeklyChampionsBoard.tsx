@@ -44,7 +44,7 @@ export default function WeeklyChampionsBoard() {
   const { t } = useLang();
   const PANELS = [
     { key: 'today', icon: '🌅', label: t('todayChamp'),    color: '#fbbf24', url: `${API}/leaderboard/weekly` },
-    { key: 'week',  icon: '📅', label: t('thisWeekChamp'), color: '#4ade80', url: `${API}/leaderboard/weekly` },
+    { key: 'week',  icon: '📅', label: t('thisWeekChamp'), color: '#7c5cff', url: `${API}/leaderboard/weekly` },
     { key: 'all',   icon: '🏆', label: t('legendChamp'),   color: '#a855f7', url: `${API}/leaderboard` },
   ];
   const [boards, setBoards] = useState<Record<string, Row[]>>({});

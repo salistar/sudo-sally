@@ -53,7 +53,7 @@ export default function Register() {
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
     const labels = [t('veryWeak'), t('weak'), t('fair'), t('good'), t('strong')];
-    const colors = ['#ef4444', '#f97316', '#fbbf24', '#4ade80', '#22c55e'];
+    const colors = ['#ef4444', '#f97316', '#fbbf24', '#7c5cff', '#2dd4db'];
     
     const result = {
       strength,
@@ -553,8 +553,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   stepComplete: {
-    backgroundColor: 'rgba(74,222,128,0.2)',
-    borderColor: '#4ade80',
+    backgroundColor: 'rgba(124,92,255,0.2)',
+    borderColor: '#7c5cff',
   },
   stepText: {
     color: '#94a3b8',
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   stepLineComplete: {
-    backgroundColor: '#4ade80',
+    backgroundColor: '#7c5cff',
   },
   
   // Form
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(59,130,246,0.05)',
   },
   inputWrapperValid: {
-    borderColor: 'rgba(74,222,128,0.5)',
+    borderColor: 'rgba(124,92,255,0.5)',
   },
   inputWrapperError: {
     borderColor: 'rgba(239,68,68,0.5)',
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   validIcon: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   matchTextValid: {
-    color: '#4ade80',
+    color: '#7c5cff',
   },
   matchTextError: {
     color: '#ef4444',

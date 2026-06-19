@@ -28,8 +28,8 @@ export default function Levels() {
   console.log(`${FILE_NAME} 📊 Initial state - levels: ${levels.length}, loading: ${loading}, filter: ${selectedDifficulty}`);
 
   const difficulties = [
-    { key: 'beginner', label: t('beginner'), range: '1-5', color: '#4ade80' },
-    { key: 'easy', label: t('easy'), range: '6-10', color: '#22c55e' },
+    { key: 'beginner', label: t('beginner'), range: '1-5', color: '#7c5cff' },
+    { key: 'easy', label: t('easy'), range: '6-10', color: '#2dd4db' },
     { key: 'medium', label: t('medium'), range: '11-15', color: '#fbbf24' },
     { key: 'hard', label: t('hard'), range: '16-20', color: '#f97316' },
     { key: 'expert', label: t('expert'), range: '21-25', color: '#ef4444' },
@@ -75,8 +75,8 @@ export default function Levels() {
 
   const getDifficultyColor = useCallback((diff: string): string => {
     const colors: Record<string, string> = { 
-      beginner: '#4ade80', 
-      easy: '#22c55e', 
+      beginner: '#7c5cff', 
+      easy: '#2dd4db', 
       medium: '#fbbf24', 
       hard: '#f97316', 
       expert: '#ef4444', 
@@ -179,7 +179,7 @@ export default function Levels() {
       {/* Progress Overview */}
       <View style={styles.progressCard}>
         <LinearGradient
-          colors={['rgba(74,222,128,0.1)', 'rgba(74,222,128,0.02)']}
+          colors={['rgba(124,92,255,0.1)', 'rgba(124,92,255,0.02)']}
           style={styles.progressGradient}
         >
           <View style={styles.progressStats}>
@@ -202,7 +202,7 @@ export default function Levels() {
           </View>
           <View style={styles.progressBarContainer}>
             <LinearGradient
-              colors={['#4ade80', '#22c55e']}
+              colors={['#7c5cff', '#2dd4db']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBar, { width: `${levels.length > 0 ? (completedCount / levels.length) * 100 : 0}%` }]}
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   progressStats: {
     flexDirection: 'row',
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   progressStatValue: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 24,
     fontWeight: '800',
   },
@@ -473,8 +473,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   filterChipActive: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
-    borderColor: 'rgba(74,222,128,0.4)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
+    borderColor: 'rgba(124,92,255,0.4)',
   },
   filterChipText: {
     color: '#94a3b8',
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   filterChipTextActive: {
-    color: '#4ade80',
+    color: '#7c5cff',
   },
   filterDot: {
     width: 8,
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   
   // Badges
   completedBadge: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '700',
     marginTop: 4,

@@ -202,7 +202,7 @@ export default function Home() {
   };
 
   const menu = [
-    { icon: '🎮', label: t('play'), desc: t('startGame'), route: '/levels', colors: ['#4ade80', '#22c55e'] as const },
+    { icon: '🎮', label: t('play'), desc: t('startGame'), route: '/levels', colors: ['#7c5cff', '#2dd4db'] as const },
     { icon: '⏱️', label: t('dailyChallenge'), desc: t('challenge'), route: '/daily', colors: ['#f59e0b', '#d97706'] as const },
     // Single multiplayer entry — both cards used to point to two different
     // screens (one real, one fake "coming soon"). Unified for v3.3.0.
@@ -233,7 +233,7 @@ export default function Home() {
         <View style={styles.header}>
           <TouchableOpacity style={styles.avatarContainer} onPress={handleProfilePress} activeOpacity={0.8}>
             <LinearGradient
-              colors={['rgba(74,222,128,0.3)', 'rgba(74,222,128,0.1)']}
+              colors={['rgba(124,92,255,0.3)', 'rgba(124,92,255,0.1)']}
               style={styles.avatarGradient}
             >
               <Text style={styles.avatarText}>{user?.avatar || '👤'}</Text>
@@ -242,7 +242,7 @@ export default function Home() {
               <Text style={styles.levelBadgeText}>{Math.floor((user?.xp || 0) / 100) + 1}</Text>
             </View>
             {/* Online Indicator */}
-            <View style={[styles.onlineIndicator, { backgroundColor: isOnline ? '#4ade80' : '#64748b' }]} />
+            <View style={[styles.onlineIndicator, { backgroundColor: isOnline ? '#7c5cff' : '#64748b' }]} />
           </TouchableOpacity>
           
           <View style={styles.userInfo}>
@@ -261,7 +261,7 @@ export default function Home() {
         {/* Logo Section */}
         <View style={styles.logoSection}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.1)', 'rgba(74,222,128,0.02)']}
+            colors={['rgba(124,92,255,0.1)', 'rgba(124,92,255,0.02)']}
             style={styles.logoGradient}
           >
             <View style={styles.logoIconContainer}>
@@ -299,15 +299,15 @@ export default function Home() {
             style={{ marginHorizontal: 0, marginBottom: 18 }}
           >
             <LinearGradient
-              colors={['#4ade80', '#22c55e']}
+              colors={['#7c5cff', '#2dd4db']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ borderRadius: 22, padding: 22, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
+              style={{ borderRadius: 22, padding: 22, alignItems: 'center', shadowColor: '#7c5cff', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}
             >
               <Text style={{ fontSize: 38, marginBottom: 6 }}>🚀</Text>
               <Text style={{ color: '#0a0a1a', fontSize: 20, fontWeight: '900', letterSpacing: 0.3 }}>Play your first puzzle</Text>
               <Text style={{ color: '#0a0a1a', opacity: 0.7, fontSize: 13, marginTop: 4, textAlign: 'center' }}>Win in under 5 minutes — earn your first ⭐</Text>
               <View style={{ marginTop: 12, backgroundColor: '#0a0a1a', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 16 }}>
-                <Text style={{ color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>START NOW →</Text>
+                <Text style={{ color: '#7c5cff', fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>START NOW →</Text>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -319,7 +319,7 @@ export default function Home() {
           <View style={styles.statsRow}>
             <View style={[styles.statBox, { width: STAT_W }]}>
               <LinearGradient
-                colors={['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)']}
+                colors={['rgba(124,92,255,0.15)', 'rgba(124,92,255,0.05)']}
                 style={styles.statGradient}
               >
                 <Text style={styles.statIcon}>🏆</Text>
@@ -375,8 +375,8 @@ export default function Home() {
             </View>
             <View style={styles.challengeStatDivider} />
             <View style={styles.challengeStatItem}>
-              <View style={[styles.onlineDot, { backgroundColor: isOnline ? '#4ade80' : '#64748b' }]} />
-              <Text style={[styles.challengeStatNum, { color: isOnline ? '#4ade80' : '#64748b' }]}>
+              <View style={[styles.onlineDot, { backgroundColor: isOnline ? '#7c5cff' : '#64748b' }]} />
+              <Text style={[styles.challengeStatNum, { color: isOnline ? '#7c5cff' : '#64748b' }]}>
                 {isOnline ? t('online') : t('offline')}
               </Text>
               <Text style={styles.challengeStatLabel}>{t('statusLabel')}</Text>
@@ -392,7 +392,7 @@ export default function Home() {
           </View>
           <View style={styles.xpBarContainer}>
             <LinearGradient
-              colors={['#4ade80', '#22c55e']}
+              colors={['#7c5cff', '#2dd4db']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.xpBar, { width: `${((user?.xp || 0) % 100)}%` }]}
@@ -467,7 +467,7 @@ export default function Home() {
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={['#4ade80', '#22c55e']}
+            colors={['#7c5cff', '#2dd4db']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.quickPlayGradient}
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center', 
     borderWidth: 2, 
-    borderColor: 'rgba(74,222,128,0.5)',
+    borderColor: 'rgba(124,92,255,0.5)',
   },
   avatarText: { 
     fontSize: 28,
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -4,
     right: -4,
-    backgroundColor: '#4ade80',
+    backgroundColor: '#7c5cff',
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     padding: 28,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   logoIconContainer: {
     position: 'relative',
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(74,222,128,0.2)',
+    backgroundColor: 'rgba(124,92,255,0.2)',
     top: -8,
     left: -8,
   },
@@ -623,14 +623,14 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
   },
   versionBadge: {
-    backgroundColor: 'rgba(74,222,128,0.2)',
+    backgroundColor: 'rgba(124,92,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 10,
     marginTop: 8,
   },
   versionText: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statNum: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 24, 
     fontWeight: '800',
   },
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   xpLevel: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -892,7 +892,7 @@ const styles = StyleSheet.create({
   quickPlayBtn: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#4ade80',
+    shadowColor: '#7c5cff',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

@@ -1082,7 +1082,7 @@ export default function ChallengeGame() {
             )}
           </View>
           {recordedUrl && !isRecording && (
-            <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#4ade80', flexBasis: '100%' }]} onPress={downloadRecording}>
+            <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#7c5cff', flexBasis: '100%' }]} onPress={downloadRecording}>
               <Text style={styles.recIcon}>⬇️</Text>
               <Text style={styles.recText}>
                 {IS_WEB ? 'Download' : 'Save / Share'} ({Math.floor(recordingDurMs / 60000)}:{String(Math.floor((recordingDurMs % 60000) / 1000)).padStart(2, '0')})
@@ -1170,7 +1170,7 @@ export default function ChallengeGame() {
   if (loading) {
     return (
       <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-        <ActivityIndicator size="large" color="#4ade80" style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color="#7c5cff" style={{ flex: 1 }} />
       </LinearGradient>
     );
   }
@@ -1193,12 +1193,12 @@ export default function ChallengeGame() {
           {!callActive ? (
             <>
               <Text style={styles.topCallLabel}>📞 Call your opponent — STUN + free TURN relay:</Text>
-              <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#2dd4db' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video</Text></TouchableOpacity>
             </>
           ) : (
             <>
-              <View style={[styles.callStatusDot, callStatus === 'connected' && { backgroundColor: '#4ade80' }, callStatus === 'calling' && { backgroundColor: '#fbbf24' }, callStatus === 'failed' && { backgroundColor: '#ef4444' }]} />
+              <View style={[styles.callStatusDot, callStatus === 'connected' && { backgroundColor: '#7c5cff' }, callStatus === 'calling' && { backgroundColor: '#fbbf24' }, callStatus === 'failed' && { backgroundColor: '#ef4444' }]} />
               <Text style={[styles.callText, { color:'#fff', marginRight: 12 }]}>
                 {callKind === 'video' ? '📹 Video' : '📞 Audio'} —{' '}
                 {callStatus === 'calling' ? 'ringing opponent…' :
@@ -1322,7 +1322,7 @@ export default function ChallengeGame() {
         {/* Waiting */}
         {myCompleted && !gameOver && (
           <View style={styles.waiting}>
-            <ActivityIndicator color="#4ade80" />
+            <ActivityIndicator color="#7c5cff" />
             <Text style={styles.waitingText}>{t('waitingForOpponent')} {opponent.username}...</Text>
           </View>
         )}
@@ -1417,7 +1417,7 @@ export default function ChallengeGame() {
                 <Text style={styles.ringBtnIcon}>📵</Text>
                 <Text style={styles.ringBtnText}>Reject</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#22c55e' }]} onPress={acceptIncomingCall}>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#2dd4db' }]} onPress={acceptIncomingCall}>
                 <Text style={styles.ringBtnIcon}>📞</Text>
                 <Text style={styles.ringBtnText}>Accept</Text>
               </TouchableOpacity>
@@ -1475,13 +1475,13 @@ export default function ChallengeGame() {
                   <>
                     <Text style={styles.tabHint}>Real WebRTC call with your opponent — peer-to-peer, signaled via the socket, STUN servers from Google. Allow the browser to use your microphone (and camera for video).</Text>
                     <View style={styles.callRow}>
-                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#22c55e' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
+                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#2dd4db' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
                       <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video call</Text></TouchableOpacity>
                     </View>
                   </>
                 ) : (
                   <>
-                    <Text style={[styles.tabHint, { color: '#4ade80' }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call active{callError ? ` — ${callError}` : ''}</Text>
+                    <Text style={[styles.tabHint, { color: '#7c5cff' }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call active{callError ? ` — ${callError}` : ''}</Text>
                     {callKind === 'video' && Platform.OS === 'web' && (
                       <View style={styles.videoRow}>
                         {React.createElement('video', { ref: localVidRef, autoPlay: true, playsInline: true, muted: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
@@ -1502,7 +1502,7 @@ export default function ChallengeGame() {
 
             {panelTab === 'record' && (
               <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Record the audio of your match (your microphone). The file downloads as <Text style={{ color:'#4ade80' }}>.webm</Text>.</Text>
+                <Text style={styles.tabHint}>Record the audio of your match (your microphone). The file downloads as <Text style={{ color:'#7c5cff' }}>.webm</Text>.</Text>
                 <View style={styles.callRow}>
                   {!isRecording ? (
                     <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={() => startRecording('audio')}><Text style={styles.callIcon}>🔴</Text><Text style={styles.callText}>Start</Text></TouchableOpacity>
@@ -1510,7 +1510,7 @@ export default function ChallengeGame() {
                     <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#fbbf24' }]} onPress={stopRecording}><Text style={styles.callIcon}>⏹️</Text><Text style={styles.callText}>Stop</Text></TouchableOpacity>
                   )}
                   {recordedUrl && (
-                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#4ade80' }]} onPress={downloadRecording}><Text style={styles.callIcon}>⬇️</Text><Text style={styles.callText}>Download</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#7c5cff' }]} onPress={downloadRecording}><Text style={styles.callIcon}>⬇️</Text><Text style={styles.callText}>Download</Text></TouchableOpacity>
                   )}
                 </View>
               </View>
@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
   playerAvatar: { fontSize: 28 },
   playerName: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 3 },
   playerStats: { color: '#64748b', fontSize: 10, marginTop: 2 },
-  done: { color: '#4ade80', fontSize: 11, marginTop: 3, fontWeight: '600' },
+  done: { color: '#7c5cff', fontSize: 11, marginTop: 3, fontWeight: '600' },
   vsText: { color: '#ef4444', fontWeight: '800', fontSize: 14 },
 
   // Stacked layout: ONE board after the other (vertical column), centered horizontally,
@@ -1580,15 +1580,15 @@ const styles = StyleSheet.create({
   cell: { justifyContent: 'center', alignItems: 'center', borderWidth: 0.5, borderColor: '#334155' },
   selected: { backgroundColor: 'rgba(59,130,246,0.4)' },
   errorCell: { backgroundColor: 'rgba(239,68,68,0.2)' },
-  borderRight: { borderRightWidth: 2, borderRightColor: '#4ade80' },
-  borderBottom: { borderBottomWidth: 2, borderBottomColor: '#4ade80' },
+  borderRight: { borderRightWidth: 2, borderRightColor: '#7c5cff' },
+  borderBottom: { borderBottomWidth: 2, borderBottomColor: '#7c5cff' },
   cellText: { color: '#fff', fontWeight: '600' },
   initialText: { color: '#94a3b8' },
   errorText: { color: '#ef4444' },
 
   numpad: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 5, marginBottom: 12 },
-  numBtn: { width: 45, height: 45, backgroundColor: 'rgba(74,222,128,0.2)', borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#4ade80' },
-  numText: { color: '#4ade80', fontSize: 20, fontWeight: '700' },
+  numBtn: { width: 45, height: 45, backgroundColor: 'rgba(124,92,255,0.2)', borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#7c5cff' },
+  numText: { color: '#7c5cff', fontSize: 20, fontWeight: '700' },
 
   tools: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
   tool: { alignItems: 'center', padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, minWidth: 70 },
@@ -1596,8 +1596,8 @@ const styles = StyleSheet.create({
   toolIcon: { fontSize: 20 },
   toolLabel: { color: '#64748b', fontSize: 10, marginTop: 3 },
 
-  waiting: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 15, backgroundColor: 'rgba(74,222,128,0.1)', borderRadius: 10, marginTop: 15 },
-  waitingText: { color: '#4ade80', fontSize: 13 },
+  waiting: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 15, backgroundColor: 'rgba(124,92,255,0.1)', borderRadius: 10, marginTop: 15 },
+  waitingText: { color: '#7c5cff', fontSize: 13 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   resultModal: { backgroundColor: '#1a1a3a', padding: 25, borderRadius: 20, alignItems: 'center', width: '85%' },
@@ -1608,14 +1608,14 @@ const styles = StyleSheet.create({
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   resultLabel: { color: '#64748b', fontSize: 13 },
   resultValue: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  rewards: { marginTop: 15, backgroundColor: 'rgba(74,222,128,0.1)', padding: 12, borderRadius: 10, alignItems: 'center' },
-  rewardsTitle: { color: '#4ade80', fontSize: 12 },
-  rewardsText: { color: '#4ade80', fontSize: 16, fontWeight: '700', marginTop: 3 },
-  backBtn: { marginTop: 20, backgroundColor: '#4ade80', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 },
+  rewards: { marginTop: 15, backgroundColor: 'rgba(124,92,255,0.1)', padding: 12, borderRadius: 10, alignItems: 'center' },
+  rewardsTitle: { color: '#7c5cff', fontSize: 12 },
+  rewardsText: { color: '#7c5cff', fontSize: 16, fontWeight: '700', marginTop: 3 },
+  backBtn: { marginTop: 20, backgroundColor: '#7c5cff', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 },
   backBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
 
   // ============ FLOATING TOOLS BUTTON ============
-  fab: { position: 'absolute', right: 16, bottom: 22, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4ade80',
+  fab: { position: 'absolute', right: 16, bottom: 22, width: 58, height: 58, borderRadius: 29, backgroundColor: '#7c5cff',
     alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
   fabIcon: { fontSize: 26 },
   fabBadge: { position: 'absolute', top: -2, right: -2, minWidth: 22, height: 22, paddingHorizontal: 5, backgroundColor: '#ef4444', borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0a0a1a' },
@@ -1626,7 +1626,7 @@ const styles = StyleSheet.create({
   panelCard: { backgroundColor: '#13132c', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 12, maxHeight: '80%', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   panelTabs: { flexDirection: 'row', gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', alignItems: 'center' },
   panelTab: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.05)' },
-  panelTabActive: { backgroundColor: '#4ade80' },
+  panelTabActive: { backgroundColor: '#7c5cff' },
   panelTabText: { color: '#94a3b8', fontSize: 13, fontWeight: '700' },
   panelTabTextActive: { color: '#000' },
   panelClose: { marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
@@ -1639,7 +1639,7 @@ const styles = StyleSheet.create({
   chatList: { maxHeight: 360, minHeight: 200, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12 },
   chatEmpty: { color: '#64748b', fontSize: 13, textAlign: 'center', padding: 20 },
   chatBubble: { padding: 10, borderRadius: 12, maxWidth: '85%' },
-  chatMine: { alignSelf: 'flex-end', backgroundColor: 'rgba(74,222,128,0.15)', borderColor: 'rgba(74,222,128,0.35)', borderWidth: 1 },
+  chatMine: { alignSelf: 'flex-end', backgroundColor: 'rgba(124,92,255,0.15)', borderColor: 'rgba(124,92,255,0.35)', borderWidth: 1 },
   chatTheirs: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.06)' },
   chatFrom: { color: '#94a3b8', fontSize: 10, fontWeight: '700', marginBottom: 4 },
   chatText: { color: '#fff', fontSize: 14 },
@@ -1654,8 +1654,8 @@ const styles = StyleSheet.create({
     ? { flex: 1, minWidth: 0, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14 }
     : { flex: 1, minWidth: 0, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 22, paddingHorizontal: 14, paddingVertical: 11, color: '#fff', fontSize: 15, minHeight: 44 },
   chatSend: IS_WEB
-    ? { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#4ade80' }
-    : { paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#4ade80', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    ? { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#7c5cff' }
+    : { paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#7c5cff', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   chatSendText: { color: '#000', fontWeight: '800', fontSize: 13 },
 
   // ============ CALL / RECORD ============
@@ -1666,13 +1666,13 @@ const styles = StyleSheet.create({
   videoRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
 
   // ============ TOP CALL BAR ============
-  topCallBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, paddingHorizontal: 20, backgroundColor: 'rgba(17,17,40,0.6)', borderBottomWidth: 1, borderBottomColor: 'rgba(74,222,128,0.15)', gap: 12, flexWrap: 'wrap' },
+  topCallBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, paddingHorizontal: 20, backgroundColor: 'rgba(17,17,40,0.6)', borderBottomWidth: 1, borderBottomColor: 'rgba(124,92,255,0.15)', gap: 12, flexWrap: 'wrap' },
   topCallBtns: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   topCallVideos: { flexDirection: 'row', gap: 10 },
   topCallLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginRight: 6 },
   callBtnSm: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
   callStatusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fbbf24', marginRight: 6 },
-  audioRemoteWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: 'rgba(74,222,128,0.12)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' },
+  audioRemoteWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: 'rgba(124,92,255,0.12)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(124,92,255,0.35)' },
   audioRemoteIcon: { fontSize: 20 },
   audioRemoteName: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
@@ -1698,7 +1698,7 @@ const styles = StyleSheet.create({
   deckFootnote: { color: '#64748b', fontSize: 10, lineHeight: 14, fontStyle: 'italic', marginTop: 6 },
 
   // ============ DECK TOGGLE (collapse the right sidebar on web) ============
-  deckToggle: { position: 'absolute', right: 360, top: '50%', width: 22, height: 50, marginTop: -25, backgroundColor: 'rgba(74,222,128,0.85)', borderTopLeftRadius: 10, borderBottomLeftRadius: 10, alignItems: 'center', justifyContent: 'center', zIndex: 10, shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 6, shadowOffset: { width: -2, height: 0 }, elevation: 5 },
+  deckToggle: { position: 'absolute', right: 360, top: '50%', width: 22, height: 50, marginTop: -25, backgroundColor: 'rgba(124,92,255,0.85)', borderTopLeftRadius: 10, borderBottomLeftRadius: 10, alignItems: 'center', justifyContent: 'center', zIndex: 10, shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 6, shadowOffset: { width: -2, height: 0 }, elevation: 5 },
   deckToggleCollapsed: { right: 0 },
   deckToggleText: { color: '#000', fontSize: 14, fontWeight: '900' },
 
@@ -1716,15 +1716,15 @@ const styles = StyleSheet.create({
 
   // ============ RINGING MODAL ============
   ringOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
-  ringCard: { backgroundColor: '#13132c', padding: 32, borderRadius: 22, alignItems: 'center', gap: 12, maxWidth: 360, width: '85%', borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)', shadowColor: '#4ade80', shadowOpacity: 0.4, shadowRadius: 30 },
+  ringCard: { backgroundColor: '#13132c', padding: 32, borderRadius: 22, alignItems: 'center', gap: 12, maxWidth: 360, width: '85%', borderWidth: 1, borderColor: 'rgba(124,92,255,0.3)', shadowColor: '#7c5cff', shadowOpacity: 0.4, shadowRadius: 30 },
   ringPulse: { fontSize: 64 },
-  ringTitle: { color: '#4ade80', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
+  ringTitle: { color: '#7c5cff', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
   ringSub: { color: '#cbd5e1', fontSize: 15, marginBottom: 14, textAlign: 'center' },
   ringBtns: { flexDirection: 'row', gap: 14, width: '100%', justifyContent: 'center' },
   ringBtn: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minWidth: 110 },
   ringBtnIcon: { fontSize: 28 },
   ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  deckTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
+  deckTitle: { color: '#7c5cff', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
   // Web: chat card grows, list fills it. Native: chat is in the scrollview so
   // the list can have a generous fixed height; the outer page scrolls beyond.

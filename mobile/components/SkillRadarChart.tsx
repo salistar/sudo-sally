@@ -82,7 +82,7 @@ export default function SkillRadarChart({ stats, dailyStreak = 0 }: Props) {
           <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 }}>{t('skillRadar')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-          <Text style={{ color: '#4ade80', fontSize: 22, fontWeight: '900', letterSpacing: -0.5 }}>{totalScore}</Text>
+          <Text style={{ color: '#7c5cff', fontSize: 22, fontWeight: '900', letterSpacing: -0.5 }}>{totalScore}</Text>
           <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700' }}>/100</Text>
         </View>
       </View>
@@ -125,14 +125,14 @@ export default function SkillRadarChart({ stats, dailyStreak = 0 }: Props) {
           {/* User polygon */}
           <Polygon
             points={polyPoints}
-            fill="rgba(74,222,128,0.22)"
-            stroke="#4ade80"
+            fill="rgba(124,92,255,0.22)"
+            stroke="#7c5cff"
             strokeWidth={2}
           />
           {/* Vertex dots */}
           {values.map((v, i) => {
             const [x, y] = xy(i, R * v);
-            return <Circle key={`dot${i}`} cx={x} cy={y} r={3.5} fill="#4ade80" />;
+            return <Circle key={`dot${i}`} cx={x} cy={y} r={3.5} fill="#7c5cff" />;
           })}
           {/* Axis labels */}
           {labels.map((label, i) => {
@@ -163,7 +163,7 @@ export default function SkillRadarChart({ stats, dailyStreak = 0 }: Props) {
               <SvgText
                 key={`v${i}`}
                 x={x} y={y}
-                fontSize={9} fill="#4ade80" textAnchor={ta as any}
+                fontSize={9} fill="#7c5cff" textAnchor={ta as any}
                 fontWeight="900"
               >
                 {Math.round(v * 100)}

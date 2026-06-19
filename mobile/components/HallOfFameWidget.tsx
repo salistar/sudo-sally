@@ -53,7 +53,7 @@ async function fetchTopThree(): Promise<Row[]> {
 function tierFor(stars: number, t: (k: any) => string): { label: string; color: string } {
   if (stars >= 50) return { label: t('tierLegend'),   color: '#fbbf24' };
   if (stars >= 10) return { label: t('tierChampion'), color: '#a855f7' };
-  return { label: t('tierRising'), color: '#4ade80' };
+  return { label: t('tierRising'), color: '#7c5cff' };
 }
 
 const MEDALS = ['🥇', '🥈', '🥉'];

@@ -132,11 +132,11 @@ export default function ActiveDuelsWidget() {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
-                  <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '700' }}>{t('you')}</Text>
-                  <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '900' }}>{d.myPct}%</Text>
+                  <Text style={{ color: '#7c5cff', fontSize: 10, fontWeight: '700' }}>{t('you')}</Text>
+                  <Text style={{ color: '#7c5cff', fontSize: 10, fontWeight: '900' }}>{d.myPct}%</Text>
                 </View>
                 <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
-                  <View style={{ width: `${d.myPct}%`, height: '100%', backgroundColor: '#4ade80' }} />
+                  <View style={{ width: `${d.myPct}%`, height: '100%', backgroundColor: '#7c5cff' }} />
                 </View>
               </View>
               <View style={{ flex: 1 }}>

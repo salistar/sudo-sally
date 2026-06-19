@@ -67,13 +67,13 @@ export default function Game() {
 
   const getDifficultyColor = useCallback((difficulty: string): readonly [string, string] => {
     switch (difficulty) {
-      case 'beginner': return ['#4ade80', '#22c55e'] as const;
+      case 'beginner': return ['#7c5cff', '#2dd4db'] as const;
       case 'easy': return ['#60a5fa', '#3b82f6'] as const;
       case 'medium': return ['#fbbf24', '#f59e0b'] as const;
       case 'hard': return ['#f97316', '#ea580c'] as const;
       case 'expert': return ['#f87171', '#ef4444'] as const;
       case 'master': return ['#a78bfa', '#8b5cf6'] as const;
-      default: return ['#4ade80', '#22c55e'] as const;
+      default: return ['#7c5cff', '#2dd4db'] as const;
     }
   }, []);
 
@@ -474,11 +474,11 @@ export default function Game() {
       <View
         style={[
           styles.boardContainer,
-          isDesktopWeb && ({ boxShadow: '0 0 32px 0 rgba(74,222,128,0.25), 0 8px 40px -6px rgba(0,0,0,0.6)' } as any),
+          isDesktopWeb && ({ boxShadow: '0 0 32px 0 rgba(124,92,255,0.25), 0 8px 40px -6px rgba(0,0,0,0.6)' } as any),
         ]}
       >
         <LinearGradient
-          colors={['rgba(74, 222, 128, 0.1)', 'rgba(74, 222, 128, 0.02)']}
+          colors={['rgba(124, 92, 255, 0.1)', 'rgba(124, 92, 255, 0.02)']}
           style={styles.boardGradient}
         >
           <View style={styles.board}>
@@ -616,7 +616,7 @@ export default function Game() {
               disabled={isComplete}
             >
               <LinearGradient
-                colors={isComplete ? ['rgba(100,100,100,0.2)', 'rgba(100,100,100,0.1)'] : ['rgba(74,222,128,0.25)', 'rgba(74,222,128,0.1)']}
+                colors={isComplete ? ['rgba(100,100,100,0.2)', 'rgba(100,100,100,0.1)'] : ['rgba(124,92,255,0.25)', 'rgba(124,92,255,0.1)']}
                 style={styles.numBtnGradient}
               >
                 <Text style={[styles.numText, isComplete && styles.numTextComplete]}>{num}</Text>
@@ -662,7 +662,7 @@ export default function Game() {
               
               <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleResume}>
                 <LinearGradient
-                  colors={['#4ade80', '#22c55e']}
+                  colors={['#7c5cff', '#2dd4db']}
                   style={styles.modalBtnGradient}
                 >
                   <Text style={styles.modalBtnIcon}>▶️</Text>
@@ -694,7 +694,7 @@ export default function Game() {
           autoStart
           fallSpeed={3500}
           fadeOut
-          colors={['#4ade80', '#22c55e', '#fbbf24', '#60a5fa', '#a855f7', '#f97316']}
+          colors={['#7c5cff', '#2dd4db', '#fbbf24', '#60a5fa', '#a855f7', '#f97316']}
         />
       )}
       {/* Result Modal — distinct design per type (win / game over) */}
@@ -726,7 +726,7 @@ export default function Game() {
                   </View>
                   <View style={styles.resultStatDivider} />
                   <View style={styles.resultStat}>
-                    <Text style={[styles.resultStatValue, { color: '#4ade80' }]}>+{result.xp}</Text>
+                    <Text style={[styles.resultStatValue, { color: '#7c5cff' }]}>+{result.xp}</Text>
                     <Text style={styles.resultStatLabel}>{t('xp')}</Text>
                   </View>
                   <View style={styles.resultStatDivider} />
@@ -747,7 +747,7 @@ export default function Game() {
                   </View>
                 )}
                 <TouchableOpacity style={styles.resultBtnPrimary} onPress={() => router.replace(`/game?level=${levelNum + 1}`)}>
-                  <LinearGradient colors={['#4ade80', '#22c55e']} style={styles.resultBtnGrad}>
+                  <LinearGradient colors={['#7c5cff', '#2dd4db']} style={styles.resultBtnGrad}>
                     <Text style={styles.resultBtnPrimaryText}>▶️  {t('nextLevel')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'rgba(74, 222, 128, 0.3)',
+    borderColor: 'rgba(124, 92, 255, 0.3)',
   },
   board: { 
     backgroundColor: 'rgba(0,0,0,0.3)',
@@ -978,18 +978,18 @@ const styles = StyleSheet.create({
   },
   cellSameNumber: {
     // v3.9.1 — bumped 0.20 -> 0.38 to make matching-number guidance pop
-    backgroundColor: 'rgba(74, 222, 128, 0.38)',
+    backgroundColor: 'rgba(124, 92, 255, 0.38)',
   },
   cellError: { 
     backgroundColor: 'rgba(239, 68, 68, 0.25)',
   },
   cellBorderRight: { 
     borderRightWidth: 2, 
-    borderRightColor: 'rgba(74, 222, 128, 0.6)',
+    borderRightColor: 'rgba(124, 92, 255, 0.6)',
   },
   cellBorderBottom: { 
     borderBottomWidth: 2, 
-    borderBottomColor: 'rgba(74, 222, 128, 0.6)',
+    borderBottomColor: 'rgba(124, 92, 255, 0.6)',
   },
   cellText: { 
     fontSize: 22, 
@@ -1141,12 +1141,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.4)',
+    borderColor: 'rgba(124, 92, 255, 0.4)',
     borderRadius: 14,
     position: 'relative',
   },
   numText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 20,
     fontWeight: '700',
   },
@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalStatValue: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 24,
     fontWeight: '700',
   },
@@ -1270,8 +1270,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   resultCardWin: {
-    borderColor: 'rgba(74,222,128,0.5)',
-    shadowColor: '#4ade80',
+    borderColor: 'rgba(124,92,255,0.5)',
+    shadowColor: '#7c5cff',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.4,
     shadowRadius: 24,
@@ -1289,9 +1289,9 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
     borderWidth: 2,
-    borderColor: 'rgba(74,222,128,0.4)',
+    borderColor: 'rgba(124,92,255,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 14,
@@ -1313,7 +1313,7 @@ const styles = StyleSheet.create({
   resultTitleWin: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#4ade80',
+    color: '#7c5cff',
     letterSpacing: 0.5,
   },
   resultTitleLose: {

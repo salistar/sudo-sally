@@ -98,7 +98,7 @@ export default function Stats() {
   const statItems = stats ? [
     { key: 'gamesPlayed', icon: '🎮', label: t('gamesPlayed'), value: stats.gamesPlayed, color: '#60a5fa', category: 'games' },
     { key: 'gamesWon', icon: '🏆', label: t('gamesWon'), value: stats.gamesWon, color: '#fbbf24', category: 'games' },
-    { key: 'winRate', icon: '📈', label: t('winRate'), value: `${winRate}%`, color: '#4ade80', category: 'games' },
+    { key: 'winRate', icon: '📈', label: t('winRate'), value: `${winRate}%`, color: '#7c5cff', category: 'games' },
     { key: 'totalTime', icon: '⏱️', label: t('totalTime'), value: formatTime(stats.totalTime), color: '#f472b6', category: 'time' },
     { key: 'avgTime', icon: '⚡', label: t('avgTimeShort'), value: stats.gamesWon ? formatTime(avgTime) : '--:--', color: '#c084fc', category: 'time' },
     { key: 'currentStreak', icon: '🔥', label: t('currentStreak'), value: stats.currentStreak, color: '#fb923c', category: 'streak' },
@@ -132,10 +132,10 @@ export default function Stats() {
       {stats && (
         <Animated.View style={[styles.summaryContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.summaryRow}>
-            <LinearGradient colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']} style={styles.summaryCard}>
+            <LinearGradient colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']} style={styles.summaryCard}>
               <Text style={styles.summaryValue}>{winRate}%</Text>
               <Text style={styles.summaryLabel}>{t('winRate')}</Text>
-              <View style={[styles.summaryIndicator, { backgroundColor: '#4ade80' }]} />
+              <View style={[styles.summaryIndicator, { backgroundColor: '#7c5cff' }]} />
             </LinearGradient>
             
             <LinearGradient colors={['rgba(251,191,36,0.2)', 'rgba(251,191,36,0.05)']} style={styles.summaryCard}>
@@ -175,9 +175,9 @@ export default function Stats() {
               style={{ marginBottom: 18 }}
             >
               <LinearGradient
-                colors={['#4ade80', '#22c55e']}
+                colors={['#7c5cff', '#2dd4db']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ borderRadius: 20, padding: 22, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.3, shadowRadius: 14 }}
+                style={{ borderRadius: 20, padding: 22, alignItems: 'center', shadowColor: '#7c5cff', shadowOpacity: 0.3, shadowRadius: 14 }}
               >
                 <Text style={{ fontSize: 36, marginBottom: 4 }}>🚀</Text>
                 <Text style={{ color: '#0a0a1a', fontSize: 18, fontWeight: '900' }}>Play your first puzzle</Text>
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#4ade80',
+    color: '#7c5cff',
     marginBottom: 4,
   },
   summaryLabel: {
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statValue: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 24, 
     fontWeight: '800',
   },

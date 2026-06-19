@@ -50,7 +50,7 @@ const webCss = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     background:
-      radial-gradient(circle at 30% 20%, rgba(74,222,128,0.10), transparent 60%),
+      radial-gradient(circle at 30% 20%, rgba(124,92,255,0.10), transparent 60%),
       radial-gradient(circle at 80% 80%, rgba(96,165,250,0.08), transparent 60%),
       #0a0a1a;
     min-height: 100vh;
@@ -63,8 +63,8 @@ const webCss = `
      the scrollbar any width on dark themes. */
   *::-webkit-scrollbar          { width: 12px; height: 12px; }
   *::-webkit-scrollbar-track    { background: rgba(255,255,255,0.02); }
-  *::-webkit-scrollbar-thumb    { background: rgba(74,222,128,0.35); border-radius: 6px; border: 2px solid #0a0a1a; }
-  *::-webkit-scrollbar-thumb:hover { background: rgba(74,222,128,0.6); }
+  *::-webkit-scrollbar-thumb    { background: rgba(124,92,255,0.35); border-radius: 6px; border: 2px solid #0a0a1a; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(124,92,255,0.6); }
   /* Firefox */
-  * { scrollbar-width: thin; scrollbar-color: rgba(74,222,128,0.35) rgba(255,255,255,0.02); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(124,92,255,0.35) rgba(255,255,255,0.02); }
 `;

@@ -58,7 +58,7 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
         <Text style={{ color: '#f9fafb', fontSize: 14, fontWeight: '800', marginBottom: 4 }}>{t('leaderboardEmpty')}</Text>
         <Text style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
           {t('nobodyEarnedStars')}{'\n'}
-          <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('playToOpenBall')}</Text>
+          <Text style={{ color: '#7c5cff', fontWeight: '700' }}>{t('playToOpenBall')}</Text>
         </Text>
       </View>
     );
@@ -82,7 +82,7 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
         const colors: [string, string] = isTop
           ? ['#fbbf24', '#f59e0b']
           : i < 3
-          ? ['#4ade80', '#22c55e']
+          ? ['#7c5cff', '#2dd4db']
           : ['#3b82f6', '#2563eb'];
 
         return (
@@ -93,15 +93,15 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
               paddingVertical: 8, paddingHorizontal: isYou ? 10 : 0,
               borderRadius: 10,
               borderWidth: isYou ? 1 : 0,
-              borderColor: isYou ? 'rgba(74,222,128,0.45)' : 'transparent',
-              backgroundColor: isYou ? 'rgba(74,222,128,0.06)' : 'transparent',
+              borderColor: isYou ? 'rgba(124,92,255,0.45)' : 'transparent',
+              backgroundColor: isYou ? 'rgba(124,92,255,0.06)' : 'transparent',
               marginBottom: 2,
             }}
           >
             {/* Rank pill */}
             <View style={{ width: 32, alignItems: 'center' }}>
               <Text style={{
-                color: isTop ? '#fbbf24' : i < 3 ? '#4ade80' : '#94a3b8',
+                color: isTop ? '#fbbf24' : i < 3 ? '#7c5cff' : '#94a3b8',
                 fontSize: 14, fontWeight: '900', letterSpacing: -0.5,
               }}>
                 #{r.rank}
@@ -119,7 +119,7 @@ export default function RankingBarChart({ rows, currentUserId }: Props) {
             <View style={{ width: 120 }}>
               <Text style={{ color: '#f9fafb', fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
                 {r.username}
-                {isYou && <Text style={{ color: '#4ade80', fontSize: 10, fontWeight: '800' }}>  · {t('you')}</Text>}
+                {isYou && <Text style={{ color: '#7c5cff', fontSize: 10, fontWeight: '800' }}>  · {t('you')}</Text>}
               </Text>
             </View>
             {/* Bar */}

@@ -126,7 +126,7 @@ export default function RematchPanel() {
         {opps.map(o => {
           const total = o.wins + o.losses + o.draws;
           const winRate = total > 0 ? Math.round((o.wins / total) * 100) : 0;
-          const colour = o.wins > o.losses ? '#4ade80' : o.losses > o.wins ? '#ef4444' : '#94a3b8';
+          const colour = o.wins > o.losses ? '#7c5cff' : o.losses > o.wins ? '#ef4444' : '#94a3b8';
           return (
             <View
               key={o.username}

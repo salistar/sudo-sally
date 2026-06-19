@@ -13,7 +13,7 @@ const { width, height } = Dimensions.get('window');
 // so EN / FR / AR users see the tutorial in their own language. The shape (visual
 // keyword + color) stays language-neutral.
 const VISUALS: Array<{ visual: string; color: string }> = [
-  { visual: 'grid',   color: '#4ade80' },
+  { visual: 'grid',   color: '#7c5cff' },
   { visual: 'select', color: '#60a5fa' },
   { visual: 'notes',  color: '#c084fc' },
   { visual: 'hint',   color: '#fbbf24' },
@@ -148,7 +148,7 @@ export default function Tutorial() {
         return (
           <View style={styles.miniGridContainer}>
             <LinearGradient 
-              colors={['rgba(74,222,128,0.1)', 'rgba(74,222,128,0.02)']} 
+              colors={['rgba(124,92,255,0.1)', 'rgba(124,92,255,0.02)']} 
               style={styles.miniGridWrapper}
             >
               <View style={styles.miniGrid}>
@@ -405,7 +405,7 @@ export default function Tutorial() {
               activeOpacity={0.8}
             >
               <LinearGradient 
-                colors={['#4ade80', '#22c55e']}
+                colors={['#7c5cff', '#2dd4db']}
                 style={styles.navBtnGradient}
               >
                 <Text style={styles.navBtnTextPrimary}>{t('playExcl')} 🎮</Text>
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   miniGrid: { 
     backgroundColor: 'rgba(0,0,0,0.3)', 
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
     borderColor: '#334155' 
   },
   miniCellHighlighted: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
   },
   miniCellText: { 
     color: '#64748b', 
@@ -553,15 +553,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   miniCellTextHighlighted: {
-    color: '#4ade80',
+    color: '#7c5cff',
   },
   borderRight: { 
     borderRightWidth: 2, 
-    borderRightColor: '#4ade80' 
+    borderRightColor: '#7c5cff' 
   },
   borderBottom: { 
     borderBottomWidth: 2, 
-    borderBottomColor: '#4ade80' 
+    borderBottomColor: '#7c5cff' 
   },
   gridLabel: {
     position: 'absolute',
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   gridLabelText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 12,
     fontWeight: '600',
   },

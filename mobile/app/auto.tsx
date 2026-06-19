@@ -46,7 +46,7 @@ export default function Auto() {
 
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.box}>
-      <ActivityIndicator size="large" color="#4ade80" />
+      <ActivityIndicator size="large" color="#7c5cff" />
       <Text style={styles.text}>{status}</Text>
     </LinearGradient>
   );

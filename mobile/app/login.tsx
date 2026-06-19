@@ -228,7 +228,7 @@ export default function Login() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <LinearGradient
-                colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
+                colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']}
                 style={styles.logoGradient}
               >
                 {/* v3.6 — was 🔐 emoji; replaced with Sally for brand consistency */}
@@ -345,7 +345,7 @@ export default function Login() {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={loading ? ['#64748b', '#475569'] : ['#4ade80', '#22c55e']}
+                colors={loading ? ['#64748b', '#475569'] : ['#7c5cff', '#2dd4db']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.loginGradient}
@@ -494,14 +494,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(74,222,128,0.3)',
+    borderColor: 'rgba(124,92,255,0.3)',
   },
   logoGlow: {
     position: 'absolute',
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(124,92,255,0.1)',
     top: -10,
     left: -10,
   },
@@ -544,8 +544,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   inputWrapperFocused: {
-    borderColor: 'rgba(74,222,128,0.5)',
-    backgroundColor: 'rgba(74,222,128,0.05)',
+    borderColor: 'rgba(124,92,255,0.5)',
+    backgroundColor: 'rgba(124,92,255,0.05)',
   },
   inputIcon: {
     fontSize: 18,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   
   // Forgot Password
   forgotPassword: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     textAlign: 'right',
     fontWeight: '600',
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginTop: 8,
-    shadowColor: '#4ade80',
+    shadowColor: '#7c5cff',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   registerLink: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  demoTabA: { borderColor: 'rgba(74,222,128,0.5)', backgroundColor: 'rgba(74,222,128,0.08)' },
+  demoTabA: { borderColor: 'rgba(124,92,255,0.5)', backgroundColor: 'rgba(124,92,255,0.08)' },
   demoTabB: { borderColor: 'rgba(96,165,250,0.5)', backgroundColor: 'rgba(96,165,250,0.08)' },
   demoTabC: { borderColor: 'rgba(251,191,36,0.5)', backgroundColor: 'rgba(251,191,36,0.08)' },
   demoAvatar: { fontSize: 24 },

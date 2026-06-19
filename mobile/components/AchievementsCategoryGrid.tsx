@@ -61,7 +61,7 @@ function buildCategories(t: (k: string) => string): Category[] {
       key: 'discovery',
       label: t('catDiscovery'),
       icon: '✨',
-      color: '#4ade80',
+      color: '#7c5cff',
       match: () => true,
     },
   ];

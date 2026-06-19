@@ -73,7 +73,7 @@ export default function Splash() {
             <Animated.View style={[styles.ring, { transform: [{ rotate: spin }] }]} />
 
             <LinearGradient
-              colors={['rgba(74,222,128,0.18)', 'rgba(34,197,94,0.06)']}
+              colors={['rgba(124,92,255,0.18)', 'rgba(45,212,219,0.06)']}
               style={styles.logoCard}
             >
               <View style={styles.grid}>
@@ -101,7 +101,7 @@ export default function Splash() {
 
         {/* Wordmark */}
         <Text style={styles.title}>SALLYSUDO</Text>
-        <LinearGradient colors={['#4ade80', '#22c55e']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tagBadge}>
+        <LinearGradient colors={['#7c5cff', '#2dd4db']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tagBadge}>
           <Text style={styles.tagText}>{t('trainBrainDaily')}</Text>
         </LinearGradient>
       </Animated.View>
@@ -109,7 +109,7 @@ export default function Splash() {
       {/* Loader */}
       <Animated.View style={[styles.loader, { opacity: fade }]}>
         <View style={styles.loaderRow}>
-          <View style={[styles.loaderDot, { backgroundColor: '#4ade80' }]} />
+          <View style={[styles.loaderDot, { backgroundColor: '#7c5cff' }]} />
           <View style={[styles.loaderDot, { backgroundColor: '#60a5fa' }]} />
           <View style={[styles.loaderDot, { backgroundColor: '#f472b6' }]} />
         </View>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   blob: { position: 'absolute', borderRadius: 999 },
-  blobTop: { top: -90, right: -70, width: 240, height: 240, backgroundColor: 'rgba(74,222,128,0.07)' },
+  blobTop: { top: -90, right: -70, width: 240, height: 240, backgroundColor: 'rgba(124,92,255,0.07)' },
   blobBottom: { bottom: -110, left: -80, width: 280, height: 280, backgroundColor: 'rgba(96,165,250,0.06)' },
 
   center: { alignItems: 'center' },
@@ -135,26 +135,26 @@ const styles = StyleSheet.create({
   logoWrap: { width: CARD + 40, height: CARD + 40, justifyContent: 'center', alignItems: 'center', marginBottom: 28 },
   glow: {
     position: 'absolute', width: CARD, height: CARD, borderRadius: CARD / 2,
-    backgroundColor: 'rgba(74,222,128,0.35)',
+    backgroundColor: 'rgba(124,92,255,0.35)',
   },
   ring: {
     position: 'absolute', width: CARD + 26, height: CARD + 26, borderRadius: (CARD + 26) / 2,
-    borderWidth: 2, borderColor: 'rgba(74,222,128,0.35)', borderTopColor: '#4ade80', borderRightColor: '#22c55e',
+    borderWidth: 2, borderColor: 'rgba(124,92,255,0.35)', borderTopColor: '#7c5cff', borderRightColor: '#2dd4db',
   },
   logoCard: {
     width: CARD, height: CARD, borderRadius: 30, padding: 14,
-    borderWidth: 2, borderColor: 'rgba(74,222,128,0.5)',
+    borderWidth: 2, borderColor: 'rgba(124,92,255,0.5)',
     justifyContent: 'center', alignItems: 'center',
   },
   grid: { width: CARD - 28, height: CARD - 28, flexDirection: 'row', flexWrap: 'wrap', borderRadius: 8, overflow: 'hidden', backgroundColor: 'rgba(0,0,0,0.25)' },
   cell: {
     width: CELL, height: CELL, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 0.5, borderColor: 'rgba(74,222,128,0.18)',
+    borderWidth: 0.5, borderColor: 'rgba(124,92,255,0.18)',
   },
-  cellFilled: { backgroundColor: 'rgba(74,222,128,0.16)' },
-  cellText: { color: '#4ade80', fontSize: CELL * 0.5, fontWeight: '800' },
+  cellFilled: { backgroundColor: 'rgba(124,92,255,0.16)' },
+  cellText: { color: '#7c5cff', fontSize: CELL * 0.5, fontWeight: '800' },
 
-  corner: { position: 'absolute', width: 16, height: 16, borderColor: '#4ade80' },
+  corner: { position: 'absolute', width: 16, height: 16, borderColor: '#7c5cff' },
   cTL: { top: 7, left: 7, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 8 },
   cTR: { top: 7, right: 7, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 8 },
   cBL: { bottom: 7, left: 7, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 8 },

@@ -126,18 +126,18 @@ export default function ChallengeHistoryList() {
         <View style={{ paddingVertical: 18, alignItems: 'center' }}>
           <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 12 }}>
             {t('noDuelPlayed')}{'\n'}
-            <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('startFirst1v1')}</Text>
+            <Text style={{ color: '#7c5cff', fontWeight: '700' }}>{t('startFirst1v1')}</Text>
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/challenges' as any)}
-            style={{ paddingHorizontal: 18, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(74,222,128,0.14)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' }}
+            style={{ paddingHorizontal: 18, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(124,92,255,0.14)', borderWidth: 1, borderColor: 'rgba(124,92,255,0.35)' }}
           >
-            <Text style={{ color: '#4ade80', fontSize: 12, fontWeight: '800' }}>{t('open1v1Lobby')}</Text>
+            <Text style={{ color: '#7c5cff', fontSize: 12, fontWeight: '800' }}>{t('open1v1Lobby')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         rows.map(r => {
-          const colour = r.outcome === 'win' ? '#4ade80' : r.outcome === 'draw' ? '#94a3b8' : '#ef4444';
+          const colour = r.outcome === 'win' ? '#7c5cff' : r.outcome === 'draw' ? '#94a3b8' : '#ef4444';
           const tag = r.outcome === 'win' ? t('victoryTag') : r.outcome === 'draw' ? t('drawTag') : t('defeatTag');
           return (
             <View
@@ -162,7 +162,7 @@ export default function ChallengeHistoryList() {
               {/* Stats */}
               <Text style={{ color: '#cbd5e1', fontSize: 11, fontWeight: '700' }}>{fmtTime(r.myTime)}</Text>
               <View style={{ width: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              <Text style={{ color: r.myErrors > 0 ? '#ef4444' : '#4ade80', fontSize: 11, fontWeight: '700' }}>
+              <Text style={{ color: r.myErrors > 0 ? '#ef4444' : '#7c5cff', fontSize: 11, fontWeight: '700' }}>
                 {r.myErrors} ❌
               </Text>
               <View style={{ width: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.08)' }} />

@@ -182,7 +182,7 @@ export default function Welcome() {
           { transform: [{ scale: logoScaleAnim }] }
         ]}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']}
+            colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']}
             style={styles.logoGradient}
           >
             <View style={styles.logoInner}>
@@ -198,7 +198,7 @@ export default function Welcome() {
 
         <Text style={styles.title}>{t('welcome', selectedLang)}</Text>
         <LinearGradient
-          colors={['#4ade80', '#22c55e']}
+          colors={['#7c5cff', '#2dd4db']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.subtitleBadge}
@@ -235,7 +235,7 @@ export default function Welcome() {
               >
                 <LinearGradient
                   colors={isSelected 
-                    ? ['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.08)']
+                    ? ['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.08)']
                     : ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']
                   }
                   style={[
@@ -255,7 +255,7 @@ export default function Welcome() {
                   </View>
                   {isSelected && (
                     <LinearGradient
-                      colors={['#4ade80', '#22c55e']}
+                      colors={['#7c5cff', '#2dd4db']}
                       style={styles.checkmark}
                     >
                       <Text style={styles.checkmarkText}>✓</Text>
@@ -307,7 +307,7 @@ export default function Welcome() {
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={['#4ade80', '#22c55e', '#16a34a']}
+            colors={['#7c5cff', '#2dd4db', '#16a34a']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.continueGradient}
@@ -329,7 +329,7 @@ export default function Welcome() {
       <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
         <Text style={styles.footerText}>Powered by Sally Suite</Text>
         <View style={styles.footerDots}>
-          <View style={[styles.footerDot, { backgroundColor: '#4ade80' }]} />
+          <View style={[styles.footerDot, { backgroundColor: '#7c5cff' }]} />
           <View style={[styles.footerDot, { backgroundColor: '#60a5fa' }]} />
           <View style={[styles.footerDot, { backgroundColor: '#f472b6' }]} />
         </View>
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     right: -80,
     width: 250,
     height: 250,
-    backgroundColor: 'rgba(74, 222, 128, 0.06)',
+    backgroundColor: 'rgba(124, 92, 255, 0.06)',
   },
   decorBottom: {
     bottom: -120,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
   },
   logoInner: {
     width: 90,
@@ -406,13 +406,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.3)',
+    borderColor: 'rgba(124,92,255,0.3)',
   },
   cornerAccent: {
     position: 'absolute',
     width: 16,
     height: 16,
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
   },
   cornerTL: {
     top: 6,
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   langButtonActive: {
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
   },
   langFlagContainer: {
     width: 48,
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#4ade80',
+    shadowColor: '#7c5cff',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
     left: '20%',
     right: '20%',
     height: 20,
-    backgroundColor: '#4ade80',
+    backgroundColor: '#7c5cff',
     borderRadius: 100,
     opacity: 0.2,
   },

@@ -114,7 +114,7 @@ export default function DailyQuestsPanel() {
       titleKey: 'questDailyTitle', descKey: 'questDailyDesc',
       progress: prog.claimedToday ? 1 : 0, target: 1,
       reward: { value: 1, symbol: '⭐' },
-      color: '#4ade80',
+      color: '#7c5cff',
       route: '/daily',
     },
   ];

@@ -82,6 +82,6 @@ const styles = StyleSheet.create({
   icon: { fontSize: 22, opacity: 0.55 },
   iconActive: { opacity: 1 },
   label: { color: '#64748b', fontSize: 10, fontWeight: '600', marginTop: 2 },
-  labelActive: { color: '#4ade80', fontWeight: '800' },
-  dot: { position: 'absolute', bottom: -6, width: 16, height: 3, borderRadius: 2, backgroundColor: '#4ade80' },
+  labelActive: { color: '#7c5cff', fontWeight: '800' },
+  dot: { position: 'absolute', bottom: -6, width: 16, height: 3, borderRadius: 2, backgroundColor: '#7c5cff' },
 });

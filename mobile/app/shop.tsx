@@ -206,7 +206,7 @@ export default function Shop() {
             activeOpacity={0.7}
           >
             {tab === 'themes' ? (
-              <LinearGradient colors={['#4ade80', '#22c55e']} style={styles.tabGradient}>
+              <LinearGradient colors={['#7c5cff', '#2dd4db']} style={styles.tabGradient}>
                 <Text style={styles.tabIcon}>🎨</Text>
                 <Text style={styles.tabTextActive}>{t('themes')}</Text>
               </LinearGradient>
@@ -224,7 +224,7 @@ export default function Shop() {
             activeOpacity={0.7}
           >
             {tab === 'powerups' ? (
-              <LinearGradient colors={['#4ade80', '#22c55e']} style={styles.tabGradient}>
+              <LinearGradient colors={['#7c5cff', '#2dd4db']} style={styles.tabGradient}>
                 <Text style={styles.tabIcon}>⚡</Text>
                 <Text style={styles.tabTextActive}>{t('powerups')}</Text>
               </LinearGradient>
@@ -320,7 +320,7 @@ export default function Shop() {
                     >
                       <View style={styles.powerupIconContainer}>
                         <LinearGradient 
-                          colors={['rgba(74,222,128,0.2)', 'rgba(74,222,128,0.05)']} 
+                          colors={['rgba(124,92,255,0.2)', 'rgba(124,92,255,0.05)']} 
                           style={styles.powerupIconBg}
                         >
                           <Text style={styles.powerupIcon}>{p.icon}</Text>
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   quantityValue: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 15,
     fontWeight: '700',
   },
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -591,12 +591,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   ownedIcon: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '700',
   },
   ownedText: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 14,
     fontWeight: '600',
   },
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   powerupIcon: { 
     fontSize: 36,

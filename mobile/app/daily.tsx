@@ -124,7 +124,7 @@ export default function Daily() {
   const getDifficultyColor = (difficulty: string | undefined): readonly [string, string] => {
     if (difficulty === 'easy') {
       console.log(`${FILE_NAME} 🎨 getDifficultyColor() - Easy difficulty, using green`);
-      return ['#4ade80', '#22c55e'] as const;
+      return ['#7c5cff', '#2dd4db'] as const;
     }
     if (difficulty === 'hard') {
       console.log(`${FILE_NAME} 🎨 getDifficultyColor() - Hard difficulty, using red`);
@@ -319,7 +319,7 @@ export default function Daily() {
         {challenge?.completed ? (
           <View style={styles.completedCard}>
             <LinearGradient
-              colors={['rgba(74, 222, 128, 0.15)', 'rgba(74, 222, 128, 0.05)']}
+              colors={['rgba(124, 92, 255, 0.15)', 'rgba(124, 92, 255, 0.05)']}
               style={styles.completedCardGradient}
             >
               <View style={styles.completedBadge}>
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     borderRadius: 20, 
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.3)',
+    borderColor: 'rgba(124, 92, 255, 0.3)',
   },
   completedBadge: {
     flexDirection: 'row',
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   completedText: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 22, 
     fontWeight: '700',
   },

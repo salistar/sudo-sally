@@ -268,7 +268,7 @@ export default function Leaderboard() {
             <Text style={{ fontSize: 48 }}>🏆</Text>
             <Text style={{ color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 12, textAlign: 'center' }}>The leaderboard is empty.</Text>
             <Text style={{ color: '#64748b', fontSize: 14, marginTop: 8, textAlign: 'center' }}>Play a few puzzles to become the first champion!</Text>
-            <TouchableOpacity onPress={() => router.replace('/levels')} style={{ marginTop: 20, backgroundColor: '#4ade80', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }}>
+            <TouchableOpacity onPress={() => router.replace('/levels')} style={{ marginTop: 20, backgroundColor: '#7c5cff', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }}>
               <Text style={{ color: '#0a0a1a', fontWeight: '800' }}>Play a puzzle</Text>
             </TouchableOpacity>
           </View>
@@ -286,7 +286,7 @@ export default function Leaderboard() {
         {/* Your Rank Card */}
         <View style={styles.yourRankCard}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)']}
+            colors={['rgba(124,92,255,0.15)', 'rgba(124,92,255,0.05)']}
             style={styles.yourRankGradient}
           >
             <View style={styles.yourRankLeft}>
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.3)',
+    borderColor: 'rgba(124,92,255,0.3)',
   },
   yourRankLeft: {
     flex: 1,
@@ -573,26 +573,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   yourRankNumber: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 32,
     fontWeight: '800',
   },
   yourRankTrend: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(74,222,128,0.2)',
+    backgroundColor: 'rgba(124,92,255,0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     gap: 2,
   },
   yourRankTrendIcon: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 12,
     fontWeight: '700',
   },
   yourRankTrendText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   trendUp: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(124,92,255,0.15)',
   },
   trendDown: {
     backgroundColor: 'rgba(239,68,68,0.15)',

@@ -13,7 +13,7 @@ export default function RootLayout() {
   // Apply any persisted palette choice before first paint (fire-and-forget).
   useEffect(() => { loadStoredTheme(); }, []);
 
-  if (!ready) return <View style={styles.loading}><ActivityIndicator size="large" color="#4ade80" /></View>;
+  if (!ready) return <View style={styles.loading}><ActivityIndicator size="large" color="#7c5cff" /></View>;
 
   return (
     <AppProvider>

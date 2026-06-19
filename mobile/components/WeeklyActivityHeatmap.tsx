@@ -43,10 +43,10 @@ function seededIntensity(uid: string, day: number, slot: number, scale: number):
 
 const COLORS = [
   '#1f2940', // 0 — empty
-  'rgba(74,222,128,0.18)',
-  'rgba(74,222,128,0.38)',
-  'rgba(74,222,128,0.62)',
-  '#4ade80',  // 4 — heavy
+  'rgba(124,92,255,0.18)',
+  'rgba(124,92,255,0.38)',
+  'rgba(124,92,255,0.62)',
+  '#7c5cff',  // 4 — heavy
 ];
 
 export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props) {
@@ -110,7 +110,7 @@ export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props
                 borderRadius: 6,
                 backgroundColor: COLORS[cell],
                 borderWidth: 1,
-                borderColor: cell === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(74,222,128,0.25)',
+                borderColor: cell === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(124,92,255,0.25)',
               }} />
             </View>
           ))}
@@ -121,7 +121,7 @@ export default function WeeklyActivityHeatmap({ userId, gamesPlayed = 0 }: Props
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 14, gap: 6 }}>
         <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginRight: 4 }}>{t('less')}</Text>
         {COLORS.map((c, i) => (
-          <View key={i} style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: c, borderWidth: 1, borderColor: i === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(74,222,128,0.25)' }} />
+          <View key={i} style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: c, borderWidth: 1, borderColor: i === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(124,92,255,0.25)' }} />
         ))}
         <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', marginLeft: 4 }}>{t('more')}</Text>
       </View>

@@ -36,8 +36,8 @@ export default function SallyMascot({
         {/* Body gradient — soft green that ties into the brand */}
         <LinearGradient id="sallyBody" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="#5eead4" />
-          <Stop offset="0.6" stopColor="#4ade80" />
-          <Stop offset="1" stopColor="#22c55e" />
+          <Stop offset="0.6" stopColor="#7c5cff" />
+          <Stop offset="1" stopColor="#2dd4db" />
         </LinearGradient>
         <LinearGradient id="sallyBelly" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="#dcfce7" />
@@ -91,16 +91,16 @@ export default function SallyMascot({
       <Ellipse cx="122" cy="180" rx="14" ry="6" fill="url(#sallyBeak)" />
 
       {/* Wings — small tucked-in arcs on each side */}
-      <Path d="M 35 110 Q 20 130 35 155 Q 50 145 45 120 Z" fill="#22c55e" />
-      <Path d="M 165 110 Q 180 130 165 155 Q 150 145 155 120 Z" fill="#22c55e" />
+      <Path d="M 35 110 Q 20 130 35 155 Q 50 145 45 120 Z" fill="#2dd4db" />
+      <Path d="M 165 110 Q 180 130 165 155 Q 150 145 155 120 Z" fill="#2dd4db" />
 
       {/* Sudoku thought bubble — only in 'thinking' mode */}
       {mode === 'thinking' && (
         <G>
           <Rect x="138" y="22" width="46" height="46" rx="10" fill="#fff" />
-          <Rect x="143" y="27" width="36" height="36" rx="6" fill="none" stroke="#4ade80" strokeWidth="1.5" />
+          <Rect x="143" y="27" width="36" height="36" rx="6" fill="none" stroke="#7c5cff" strokeWidth="1.5" />
           {/* Mini 3×3 with two digits */}
-          <Path d="M 155 27 V 63 M 167 27 V 63 M 143 39 H 179 M 143 51 H 179" stroke="#4ade80" strokeWidth="1" />
+          <Path d="M 155 27 V 63 M 167 27 V 63 M 143 39 H 179 M 143 51 H 179" stroke="#7c5cff" strokeWidth="1" />
           <SvgText x="146" y="38" fill="#0a0a1a" fontSize="10" fontWeight="bold" fontFamily="Arial">5</SvgText>
           <SvgText x="170" y="62" fill="#0a0a1a" fontSize="10" fontWeight="bold" fontFamily="Arial">8</SvgText>
           {/* Bubble tail */}

@@ -188,12 +188,12 @@ export default function Profile() {
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)']}
+            colors={['rgba(124,92,255,0.15)', 'rgba(124,92,255,0.05)']}
             style={styles.avatarSectionGradient}
           >
             <View style={styles.avatarContainer}>
               <LinearGradient
-                colors={['rgba(74,222,128,0.3)', 'rgba(74,222,128,0.1)']}
+                colors={['rgba(124,92,255,0.3)', 'rgba(124,92,255,0.1)']}
                 style={styles.currentAvatar}
               >
                 {/* v3.6 — Was a generic 🎮/👤 emoji. If the user hasn't picked
@@ -207,7 +207,7 @@ export default function Profile() {
               <View style={styles.avatarGlow} />
               <View style={styles.levelBadge}>
                 <LinearGradient
-                  colors={['#4ade80', '#22c55e']}
+                  colors={['#7c5cff', '#2dd4db']}
                   style={styles.levelBadgeGradient}
                 >
                   <Text style={styles.levelBadgeText}>{level}</Text>
@@ -226,7 +226,7 @@ export default function Profile() {
               </View>
               <View style={styles.xpBarContainer}>
                 <LinearGradient
-                  colors={['#4ade80', '#22c55e']}
+                  colors={['#7c5cff', '#2dd4db']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.xpBar, { width: `${xpProgress}%` }]}
@@ -243,7 +243,7 @@ export default function Profile() {
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <LinearGradient
-                colors={['rgba(74,222,128,0.12)', 'rgba(74,222,128,0.04)']}
+                colors={['rgba(124,92,255,0.12)', 'rgba(124,92,255,0.04)']}
                 style={styles.statGradient}
               >
                 <Text style={styles.statIcon}>⭐</Text>
@@ -317,7 +317,7 @@ export default function Profile() {
                     >
                       {isSelected && (
                         <LinearGradient
-                          colors={['rgba(74,222,128,0.3)', 'rgba(74,222,128,0.1)']}
+                          colors={['rgba(124,92,255,0.3)', 'rgba(124,92,255,0.1)']}
                           style={styles.avatarBtnGradient}
                         />
                       )}
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     padding: 28,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   avatarContainer: {
     position: 'relative',
@@ -492,14 +492,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center', 
     borderWidth: 3, 
-    borderColor: 'rgba(74,222,128,0.5)',
+    borderColor: 'rgba(124,92,255,0.5)',
   },
   avatarGlow: {
     position: 'absolute',
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(124,92,255,0.1)',
     top: -10,
     left: -10,
   },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   xpLabel: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   viewAllText: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statNum: { 
-    color: '#4ade80', 
+    color: '#7c5cff', 
     fontSize: 28, 
     fontWeight: '800',
   },
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   avatarBtnActive: { 
-    borderColor: '#4ade80',
+    borderColor: '#7c5cff',
   },
   avatarBtnGradient: {
     position: 'absolute',
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#4ade80',
+    backgroundColor: '#7c5cff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -715,12 +715,12 @@ const styles = StyleSheet.create({
   },
   achievementCard: {
     width: 120,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(124,92,255,0.1)',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(124,92,255,0.2)',
   },
   achievementLocked: {
     backgroundColor: 'rgba(255,255,255,0.03)',
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   achievementUnlocked: {
-    color: '#4ade80',
+    color: '#7c5cff',
     fontSize: 10,
     fontWeight: '600',
   },

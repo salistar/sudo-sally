@@ -117,7 +117,7 @@ export default function LobbyDesktopLayout(p: Props) {
               <View style={{ paddingHorizontal: s.md, paddingVertical: 4, borderRadius: r.pill, backgroundColor: `${c.violet}22`, borderWidth: 1, borderColor: `${c.violet}45` }}>
                 <Text style={{ color: c.violet, ...type.eyebrow }}>{t('rankedTag')}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: s.md, paddingVertical: 4, borderRadius: r.pill, backgroundColor: 'rgba(74,222,128,0.12)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: s.md, paddingVertical: 4, borderRadius: r.pill, backgroundColor: 'rgba(124,92,255,0.12)', borderWidth: 1, borderColor: 'rgba(124,92,255,0.35)' }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.success }}>
                   <Animated.View style={{ position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: c.success, transform: [{ scale: dotScale }], opacity: dotOpacity }} />
                 </View>

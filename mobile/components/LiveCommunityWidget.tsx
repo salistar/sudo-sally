@@ -224,7 +224,7 @@ export default function LiveCommunityWidget() {
       hint: stats?.recentUsernames?.length
         ? stats.recentUsernames.join(' · ').slice(0, 60)
         : t('nobodyYetBeFirst'),
-      color: '#4ade80',
+      color: '#7c5cff',
       onPress: () => router.push('/challenges' as any),
     },
     {
@@ -252,8 +252,8 @@ export default function LiveCommunityWidget() {
   return (
     <View style={{ marginBottom: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#4ade80', justifyContent: 'center', alignItems: 'center' }}>
-          <Animated.View style={{ position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: '#4ade80', transform: [{ scale: dotScale }], opacity: dotOpacity }} />
+        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#7c5cff', justifyContent: 'center', alignItems: 'center' }}>
+          <Animated.View style={{ position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: '#7c5cff', transform: [{ scale: dotScale }], opacity: dotOpacity }} />
         </View>
         <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>{t('liveCommunity')}</Text>
       </View>
@@ -292,7 +292,7 @@ export default function LiveCommunityWidget() {
                         key={u.username + i}
                         style={{
                           width: 30, height: 30, borderRadius: 15,
-                          backgroundColor: 'rgba(74,222,128,0.18)',
+                          backgroundColor: 'rgba(124,92,255,0.18)',
                           borderWidth: 1.5, borderColor: '#0a0a1a',
                           marginLeft: i === 0 ? 0 : -8,
                           alignItems: 'center', justifyContent: 'center',
@@ -336,7 +336,7 @@ export default function LiveCommunityWidget() {
           <View style={{ paddingVertical: 18, alignItems: 'center' }}>
             <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
               {t('noGameFinished')}{'\n'}
-              <Text style={{ color: '#4ade80', fontWeight: '700' }}>{t('beFirstToAppear')}</Text>
+              <Text style={{ color: '#7c5cff', fontWeight: '700' }}>{t('beFirstToAppear')}</Text>
             </Text>
           </View>
         ) : (
@@ -349,14 +349,14 @@ export default function LiveCommunityWidget() {
                   paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
                 }}
               >
-                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(74,222,128,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(124,92,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 14 }}>{row.winnerAvatar}</Text>
                 </View>
                 <Text style={{ color: '#f9fafb', fontSize: 13, fontWeight: '800' }} numberOfLines={1}>{row.winnerName}</Text>
                 {row.isDraw ? (
                   <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>= égalité avec</Text>
                 ) : (
-                  <Text style={{ color: '#4ade80', fontSize: 11, fontWeight: '900' }}>WIN vs</Text>
+                  <Text style={{ color: '#7c5cff', fontSize: 11, fontWeight: '900' }}>WIN vs</Text>
                 )}
                 <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 11 }}>{row.loserAvatar}</Text>

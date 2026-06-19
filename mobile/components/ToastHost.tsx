@@ -41,7 +41,7 @@ const MAX_VISIBLE = 4;
 function colorFor(kind: Kind, c: any): { bg: string; ring: string; fg: string } {
   switch (kind) {
     case 'received': return { bg: 'rgba(239,68,68,0.10)', ring: 'rgba(239,68,68,0.45)', fg: '#fca5a5' };
-    case 'accepted': return { bg: 'rgba(74,222,128,0.10)', ring: 'rgba(74,222,128,0.45)', fg: '#86efac' };
+    case 'accepted': return { bg: 'rgba(124,92,255,0.10)', ring: 'rgba(124,92,255,0.45)', fg: '#86efac' };
     case 'declined': return { bg: 'rgba(148,163,184,0.10)', ring: 'rgba(148,163,184,0.35)', fg: '#cbd5e1' };
     case 'achievement': return { bg: 'rgba(124,92,255,0.12)', ring: 'rgba(124,92,255,0.45)', fg: '#c4b5fd' };
   }

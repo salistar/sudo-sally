@@ -76,7 +76,7 @@ export default function Achievements() {
     const percentage = (progress / target) * 100;
     if (percentage >= 75) {
       console.log(`${FILE_NAME} 🎨 getProgressColor() - ${percentage.toFixed(0)}% complete, using green gradient`);
-      return ['#4ade80', '#22c55e'] as const;
+      return ['#7c5cff', '#2dd4db'] as const;
     }
     if (percentage >= 50) {
       console.log(`${FILE_NAME} 🎨 getProgressColor() - ${percentage.toFixed(0)}% complete, using blue gradient`);

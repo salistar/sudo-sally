@@ -129,8 +129,8 @@ export default function NotificationsBell() {
         style={{
           width: 40, height: 40, borderRadius: 20,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: open ? 'rgba(74,222,128,0.16)' : 'rgba(255,255,255,0.04)',
-          borderWidth: 1, borderColor: open ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)',
+          backgroundColor: open ? 'rgba(124,92,255,0.16)' : 'rgba(255,255,255,0.04)',
+          borderWidth: 1, borderColor: open ? 'rgba(124,92,255,0.4)' : 'rgba(255,255,255,0.08)',
         }}
       >
         <Text style={{ fontSize: 16 }}>🔔</Text>
@@ -182,7 +182,7 @@ export default function NotificationsBell() {
                   borderRadius: 10,
                   marginBottom: 4,
                   borderLeftWidth: 3,
-                  borderLeftColor: it.kind === 'challenge' ? '#ef4444' : '#4ade80',
+                  borderLeftColor: it.kind === 'challenge' ? '#ef4444' : '#7c5cff',
                   backgroundColor: 'rgba(255,255,255,0.02)',
                 }}
               >
@@ -193,7 +193,7 @@ export default function NotificationsBell() {
                   <Text style={{ color: '#f9fafb', fontSize: 12, fontWeight: '800' }} numberOfLines={1}>{it.title}</Text>
                   <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: '600' }} numberOfLines={1}>{it.subtitle}</Text>
                 </View>
-                <Text style={{ fontSize: 11, color: it.kind === 'challenge' ? '#ef4444' : '#4ade80', fontWeight: '900' }}>
+                <Text style={{ fontSize: 11, color: it.kind === 'challenge' ? '#ef4444' : '#7c5cff', fontWeight: '900' }}>
                   {it.kind === 'challenge' ? '⚔️' : '⭐'}
                 </Text>
               </TouchableOpacity>
