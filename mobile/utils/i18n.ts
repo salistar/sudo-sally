@@ -659,6 +659,7 @@ export const translations = {
     chatYou: 'You',
     chatEmpty: 'your opponent',
     levelUp: 'LEVEL UP!',
+    achievementUnlocked: 'ACHIEVEMENT UNLOCKED',
     // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
     allFilter: 'All',
     newBadge: 'NEW',
@@ -1331,6 +1332,7 @@ export const translations = {
     chatYou: 'Moi',
     chatEmpty: 'ton adversaire',
     levelUp: 'NIVEAU SUPÉRIEUR !',
+    achievementUnlocked: 'SUCCÈS DÉBLOQUÉ',
     // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
     allFilter: 'Tous',
     newBadge: 'NOUVEAU',
@@ -2003,6 +2005,7 @@ export const translations = {
     chatYou: 'أنت',
     chatEmpty: 'خصمك',
     levelUp: 'ترقية المستوى!',
+    achievementUnlocked: 'تم فتح الإنجاز',
     // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
     allFilter: 'الكل',
     newBadge: 'جديد',

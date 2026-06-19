@@ -309,6 +309,41 @@ export const storage = {
     }
   },
 
+  // sprint-24 — Recompute every achievement's progress from the current
+  // stats/user/levels after a finished game and unlock any that just reached
+  // their target. Returns the NEWLY-unlocked achievements so the caller can
+  // celebrate them. This is the runtime unlock path that never existed before
+  // (the achievements screen only ever displayed static data).
+  async checkAchievements(ctx: { win: boolean; timeThisGame: number; hintsThisGame: number }): Promise<Achievement[]> {
+    const [achievements, stats, user, levels] = await Promise.all([
+      this.getAchievements(), this.getStats(), this.getUser(), this.getLevels(),
+    ]);
+    const level = Math.floor((user?.xp || 0) / 100) + 1;
+    const completedLevels = levels.filter(l => l.completed).length;
+    const newly: Achievement[] = [];
+    for (const a of achievements) {
+      if (a.unlocked) continue;
+      let progress = a.progress;
+      switch (a.id) {
+        case 'first_win':     progress = Math.min(stats.gamesWon, a.target); break;
+        case 'speed_demon':   progress = Math.max(a.progress, ctx.win && ctx.timeThisGame > 0 && ctx.timeThisGame < 120 ? 1 : 0); break;
+        case 'perfect_10':    progress = Math.min(stats.perfectGames, a.target); break;
+        case 'streak_master': progress = Math.min(stats.bestStreak, a.target); break;
+        case 'no_hints':      progress = Math.min(a.progress + (ctx.win && ctx.hintsThisGame === 0 ? 1 : 0), a.target); break;
+        case 'level_10':
+        case 'level_20':      progress = Math.min(level, a.target); break;
+        case 'level_30':      progress = Math.min(completedLevels, a.target); break;
+        case 'collector':     progress = Math.min(user?.stars || 0, a.target); break;
+        case 'dedicated':     progress = Math.min(stats.totalTime, a.target); break;
+        default: break;
+      }
+      a.progress = progress;
+      if (progress >= a.target) { a.unlocked = true; newly.push(a); }
+    }
+    await AsyncStorage.setItem(KEYS.ACHIEVEMENTS, JSON.stringify(achievements));
+    return newly;
+  },
+
   // Auth
   async isLoggedIn(): Promise<boolean> {
     const token = await AsyncStorage.getItem(KEYS.AUTH_TOKEN);

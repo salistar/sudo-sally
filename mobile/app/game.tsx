@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView, Pla
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } from '../utils/sudoku';
-import { storage, formatTime, calculateStars, calculateXP } from '../utils/storage';
+import { storage, formatTime, calculateStars, calculateXP, type Achievement } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
 import ConfettiCannon from 'react-native-confetti-cannon';
@@ -18,7 +18,7 @@ export default function Game() {
   
   const { level } = useLocalSearchParams<{ level: string }>();
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang() as any;
   const levelNum = parseInt(level || '1');
 
   // v3.9.0 — responsive sizing. The previous Dimensions.get('window') at module
@@ -50,7 +50,7 @@ export default function Game() {
   const [notesMode, setNotesMode] = useState(false);
   const [notes, setNotes] = useState<Set<number>[][]>([]);
   const [history, setHistory] = useState<{board: Board; row: number; col: number}[]>([]);
-  const [result, setResult] = useState<{ type: 'win' | 'gameover'; time: number; stars: number; xp: number; leveledUpTo?: number } | null>(null);
+  const [result, setResult] = useState<{ type: 'win' | 'gameover'; time: number; stars: number; xp: number; leveledUpTo?: number; unlocked?: Achievement[] } | null>(null);
   const timerRef = useRef<NodeJS.Timeout>();
 
   console.log(`${FILE_NAME} 📊 State initialized - errors: ${errors}, hints: ${hints}, time: ${time}, paused: ${paused}, notesMode: ${notesMode}`);
@@ -223,8 +223,22 @@ export default function Game() {
       console.log(`${FILE_NAME} ✅ handleWin() - User now has ${user.xp} XP, ${user.stars} stars, ${user.coins} coins${leveledUpTo ? ` — LEVEL UP to ${leveledUpTo}` : ''}`);
     }
 
+    // sprint-24 — evaluate achievement conditions now that stats/user/levels
+    // are updated, and unlock any that just hit their target. This is the first
+    // place achievements actually unlock at runtime.
+    let unlocked: Achievement[] = [];
+    try {
+      unlocked = await storage.checkAchievements({ win: true, timeThisGame: time, hintsThisGame: 3 - hints });
+      // On web, also surface each unlock as a global toast (ToastHost seam).
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        unlocked.forEach(a => window.dispatchEvent(new CustomEvent('sally-toast', {
+          detail: { kind: 'achievement', name: a.title?.[lang] || a.title?.en, icon: a.icon },
+        })));
+      }
+    } catch (e) { console.log(`${FILE_NAME} achievement check failed`, e); }
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setResult({ type: 'win', time, stars, xp, leveledUpTo });
+    setResult({ type: 'win', time, stars, xp, leveledUpTo, unlocked });
   };
 
   const handleHint = () => {
@@ -705,6 +719,17 @@ export default function Game() {
                     <Text style={styles.resultStatLabel}>🪙 {t('coins')}</Text>
                   </View>
                 </View>
+                {!!result.unlocked?.length && (
+                  <View style={styles.achUnlockBox}>
+                    <Text style={styles.achUnlockTitle}>🏅 {t('achievementUnlocked')}</Text>
+                    {result.unlocked.map((a) => (
+                      <View key={a.id} style={styles.achUnlockRow}>
+                        <Text style={styles.achUnlockIcon}>{a.icon}</Text>
+                        <Text style={styles.achUnlockName} numberOfLines={1}>{a.title?.[lang] || a.title?.en}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
                 <TouchableOpacity style={styles.resultBtnPrimary} onPress={() => router.replace(`/game?level=${levelNum + 1}`)}>
                   <LinearGradient colors={['#4ade80', '#22c55e']} style={styles.resultBtnGrad}>
                     <Text style={styles.resultBtnPrimaryText}>▶️  {t('nextLevel')}</Text>
@@ -1301,6 +1326,30 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.6,
   },
+  achUnlockBox: {
+    alignSelf: 'stretch',
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(124,92,255,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.4)',
+    gap: 6,
+  },
+  achUnlockTitle: {
+    color: '#c4b5fd',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  achUnlockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  achUnlockIcon: { fontSize: 20 },
+  achUnlockName: { color: '#e2e8f0', fontSize: 14, fontWeight: '700', flex: 1 },
   starsRow: {
     flexDirection: 'row',
     gap: 8,

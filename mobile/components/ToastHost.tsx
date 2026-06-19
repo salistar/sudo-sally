@@ -23,7 +23,7 @@ import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
 import { useTheme } from '../utils/theme';
 
-type Kind = 'received' | 'accepted' | 'declined';
+type Kind = 'received' | 'accepted' | 'declined' | 'achievement';
 
 type Toast = {
   id: string;
@@ -43,11 +43,12 @@ function colorFor(kind: Kind, c: any): { bg: string; ring: string; fg: string } 
     case 'received': return { bg: 'rgba(239,68,68,0.10)', ring: 'rgba(239,68,68,0.45)', fg: '#fca5a5' };
     case 'accepted': return { bg: 'rgba(74,222,128,0.10)', ring: 'rgba(74,222,128,0.45)', fg: '#86efac' };
     case 'declined': return { bg: 'rgba(148,163,184,0.10)', ring: 'rgba(148,163,184,0.35)', fg: '#cbd5e1' };
+    case 'achievement': return { bg: 'rgba(124,92,255,0.12)', ring: 'rgba(124,92,255,0.45)', fg: '#c4b5fd' };
   }
 }
 
 function iconFor(kind: Kind): string {
-  return kind === 'received' ? '⚔️' : kind === 'accepted' ? '✅' : '🚫';
+  return kind === 'received' ? '⚔️' : kind === 'accepted' ? '✅' : kind === 'achievement' ? '🏅' : '🚫';
 }
 
 export default function ToastHost() {
@@ -112,6 +113,18 @@ export default function ToastHost() {
           createdAt: Date.now(),
         });
       };
+      // sprint-24 — achievement-unlock toast (fired via the sally-toast seam
+      // from game.tsx when a puzzle win unlocks one or more achievements).
+      const onAchievement = (data: any) => {
+        const id = `ach${++seq.current}`;
+        push({
+          id, kind: 'achievement', avatar: data?.icon || '🏅',
+          title: t('achievementUnlocked'),
+          body: data?.name || '',
+          href: '/achievements',
+          createdAt: Date.now(),
+        });
+      };
 
       socketService.on('challenge:received', onReceived);
       socketService.on('challenge:accepted', onAccepted);
@@ -132,6 +145,7 @@ export default function ToastHost() {
           if (kind === 'received') onReceived({ challengerName: d.name, challengerAvatar: d.avatar });
           else if (kind === 'accepted') onAccepted({ username: d.name, challengeId: d.challengeId });
           else if (kind === 'declined') onDeclined({ username: d.name });
+          else if (kind === 'achievement') onAchievement({ name: d.name, icon: d.icon });
         };
         window.addEventListener('sally-toast', onCustom);
         cleanups.push(() => window.removeEventListener('sally-toast', onCustom));
