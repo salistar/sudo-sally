@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { storage, User } from '../utils/storage';
@@ -182,8 +182,32 @@ export default function Register() {
     ? { style: { width: '100%', maxWidth: 520 } as any }
     : { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false, keyboardShouldPersistTaps: 'handled' };
 
+  // v3.11 — desktop web: aurora hero image panel beside the form (right column).
+  const HeroPanel = () => (
+    <View style={styles.heroPanel}>
+      <LinearGradient
+        colors={['#7c5cff', '#5b8def', '#2dd4db']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroGlow}
+      >
+        <View style={styles.heroInner}>
+          <Image
+            source={{ uri: '/hero-profile.png' }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+        </View>
+      </LinearGradient>
+      <Text style={styles.heroTagline}>
+        Create your profile and challenge anyone, anywhere.
+      </Text>
+    </View>
+  );
+
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+      <View style={isDesktopWeb ? styles.desktopRow : undefined}>
       <FormShell {...formShellProps}>
         <ContentShell {...contentShellProps}
           keyboardShouldPersistTaps="handled"
@@ -454,6 +478,8 @@ export default function Register() {
           <View style={{ height: 40 }} />
         </ContentShell>
       </FormShell>
+      {isDesktopWeb && <HeroPanel />}
+      </View>
 
       <AppModal popup={popup} onClose={closePopup} buttonLabel={t('ok')} />
     </LinearGradient>
@@ -463,6 +489,49 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  // v3.11 — desktop web 2-column row: form (left) + hero image panel (right)
+  desktopRow: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  heroPanel: {
+    width: 520,
+    maxWidth: 520,
+    alignItems: 'center',
+  },
+  heroGlow: {
+    width: 520,
+    maxWidth: 520,
+    padding: 3,
+    borderRadius: 20,
+    shadowColor: '#7c5cff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 30,
+  },
+  heroInner: {
+    borderRadius: 17,
+    overflow: 'hidden',
+    backgroundColor: '#0a0a1a',
+  },
+  heroImage: {
+    width: '100%',
+    aspectRatio: 1300 / 820,
+    borderRadius: 16,
+  },
+  heroTagline: {
+    marginTop: 22,
+    color: '#cbd5e1',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 26,
+    maxWidth: 460,
   },
   keyboardView: {
     flex: 1,
