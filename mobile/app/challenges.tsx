@@ -512,7 +512,7 @@ export default function Challenges() {
                 style={styles.searchInput}
                 value={searchQ}
                 onChangeText={runSearch}
-                placeholder="Search a player by name…"
+                placeholder={t('searchPlayerPlaceholder')}
                 placeholderTextColor="#64748b"
                 autoCapitalize="none"
               />
@@ -530,8 +530,8 @@ export default function Challenges() {
               ) : searchResults.length === 0 ? (
                 <View style={styles.empty}>
                   <Text style={styles.emptyIcon}>🤷</Text>
-                  <Text style={styles.emptyText}>No player matches "{searchQ}"</Text>
-                  <Text style={styles.emptySubtext}>Try the start of their username.</Text>
+                  <Text style={styles.emptyText}>{t('noPlayerMatches')} "{searchQ}"</Text>
+                  <Text style={styles.emptySubtext}>{t('tryStartUsername')}</Text>
                 </View>
               ) : (
                 searchResults.map(user => (
@@ -540,7 +540,7 @@ export default function Challenges() {
                     <Text style={styles.avatar}>{user.avatar || '👤'}</Text>
                     <View style={styles.info}>
                       <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{user.username}</Text>
-                      <Text style={styles.stats}>{user.isOnline ? '🟢 online' : '⚪ offline'} · ⭐ {user.stars} • Lvl {user.level}</Text>
+                      <Text style={styles.stats}>{user.isOnline ? `🟢 ${t('online')}` : `⚪ ${t('offline')}`} · ⭐ {user.stars} • Lvl {user.level}</Text>
                     </View>
                     <View style={styles.challengeBtn}>
                       <Text style={styles.btnText}>⚔️ {t('challengeBtn')}</Text>
@@ -552,7 +552,7 @@ export default function Challenges() {
               <>
                 {/* Section 1 — currently online (real-time) */}
                 {onlineUsers.length > 0 && (
-                  <Text style={styles.sectionHead}>🟢 Online now ({onlineUsers.length})</Text>
+                  <Text style={styles.sectionHead}>{t('onlineNowSection')} ({onlineUsers.length})</Text>
                 )}
                 {onlineUsers.map(user => (
                   <TouchableOpacity key={user._id} style={styles.card} onPress={() => openChallenge(user)}>
@@ -570,7 +570,7 @@ export default function Challenges() {
 
                 {/* Section 2 — recently active (last 24h) so the lobby is never empty */}
                 {recentUsers.filter(u => !onlineUsers.find(o => o._id === u._id)).length > 0 && (
-                  <Text style={styles.sectionHead}>⏰ Active in the last 24h</Text>
+                  <Text style={styles.sectionHead}>{t('activeLast24h')}</Text>
                 )}
                 {recentUsers
                   .filter(u => !onlineUsers.find(o => o._id === u._id))
@@ -583,7 +583,7 @@ export default function Challenges() {
                         <Text style={styles.stats}>⭐ {user.stars} • Lvl {user.level}</Text>
                       </View>
                       <View style={[styles.challengeBtn, { backgroundColor: 'rgba(74,222,128,0.15)' }]}>
-                        <Text style={[styles.btnText, { color: '#4ade80' }]}>⚔️ Challenge</Text>
+                        <Text style={[styles.btnText, { color: '#4ade80' }]}>⚔️ {t('challengeBtn')}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -591,10 +591,10 @@ export default function Challenges() {
                 {onlineUsers.length === 0 && recentUsers.length === 0 && !currentUser && (
                   <View style={styles.empty}>
                     <Text style={styles.emptyIcon}>🔑</Text>
-                    <Text style={styles.emptyText}>Sign in to play 1v1</Text>
-                    <Text style={styles.emptySubtext}>Create a free account or use one of the demo logins to search players and send challenges.</Text>
+                    <Text style={styles.emptyText}>{t('signInToPlay')}</Text>
+                    <Text style={styles.emptySubtext}>{t('signInToPlayHint')}</Text>
                     <TouchableOpacity onPress={() => router.replace('/login' as any)} style={[styles.challengeBtn, { marginTop: 16, paddingHorizontal: 28 }]}>
-                      <Text style={styles.btnText}>Sign in →</Text>
+                      <Text style={styles.btnText}>{t('signInCta')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -602,7 +602,7 @@ export default function Challenges() {
                   <View style={styles.empty}>
                     <Text style={styles.emptyIcon}>👥</Text>
                     <Text style={styles.emptyText}>{t('noUsersOnline')}</Text>
-                    <Text style={styles.emptySubtext}>Search a friend by name above, or invite them to install the app:</Text>
+                    <Text style={styles.emptySubtext}>{t('inviteFriendHint')}</Text>
                     <Text style={styles.inviteLink}>https://sallysudo.com</Text>
                   </View>
                 )}

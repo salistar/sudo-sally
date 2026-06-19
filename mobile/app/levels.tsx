@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { storage, LevelData } from '../utils/storage';
 import BottomNav from '../components/BottomNav';
 import LevelsDesktopLayout from '../components/LevelsDesktopLayout';
+import { useLang } from '../utils/LanguageContext';
 import * as Haptics from 'expo-haptics';
 import { formatClock } from '../utils/format';
 
@@ -14,6 +15,7 @@ export default function Levels() {
   console.log(`${FILE_NAME} 🚀 Component mounting...`);
   
   const router = useRouter();
+  const { t } = useLang();
   const [levels, setLevels] = useState<LevelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
@@ -26,12 +28,12 @@ export default function Levels() {
   console.log(`${FILE_NAME} 📊 Initial state - levels: ${levels.length}, loading: ${loading}, filter: ${selectedDifficulty}`);
 
   const difficulties = [
-    { key: 'beginner', label: 'Beginner', range: '1-5', color: '#4ade80' },
-    { key: 'easy', label: 'Easy', range: '6-10', color: '#22c55e' },
-    { key: 'medium', label: 'Medium', range: '11-15', color: '#fbbf24' },
-    { key: 'hard', label: 'Hard', range: '16-20', color: '#f97316' },
-    { key: 'expert', label: 'Expert', range: '21-25', color: '#ef4444' },
-    { key: 'master', label: 'Master', range: '26-30', color: '#8b5cf6' },
+    { key: 'beginner', label: t('beginner'), range: '1-5', color: '#4ade80' },
+    { key: 'easy', label: t('easy'), range: '6-10', color: '#22c55e' },
+    { key: 'medium', label: t('medium'), range: '11-15', color: '#fbbf24' },
+    { key: 'hard', label: t('hard'), range: '16-20', color: '#f97316' },
+    { key: 'expert', label: t('expert'), range: '21-25', color: '#ef4444' },
+    { key: 'master', label: t('master'), range: '26-30', color: '#8b5cf6' },
   ];
 
   const loadLevels = useCallback(async () => {
@@ -166,7 +168,7 @@ export default function Levels() {
         
         <View style={styles.titleContainer}>
           <Text style={styles.titleIcon}>🎮</Text>
-          <Text style={styles.title}>Levels</Text>
+          <Text style={styles.title}>{t('levels')}</Text>
         </View>
         
         <View style={styles.headerStats}>
@@ -183,19 +185,19 @@ export default function Levels() {
           <View style={styles.progressStats}>
             <View style={styles.progressStatItem}>
               <Text style={styles.progressStatValue}>{completedCount}</Text>
-              <Text style={styles.progressStatLabel}>Completed</Text>
+              <Text style={styles.progressStatLabel}>{t('completed')}</Text>
             </View>
             <View style={styles.progressDivider} />
             <View style={styles.progressStatItem}>
               <Text style={styles.progressStatValue}>{levels.length - completedCount}</Text>
-              <Text style={styles.progressStatLabel}>Remaining</Text>
+              <Text style={styles.progressStatLabel}>{t('remaining')}</Text>
             </View>
             <View style={styles.progressDivider} />
             <View style={styles.progressStatItem}>
               <Text style={[styles.progressStatValue, styles.progressStatValueStars]}>
                 {totalStars}
               </Text>
-              <Text style={styles.progressStatLabel}>Stars</Text>
+              <Text style={styles.progressStatLabel}>{t('stars')}</Text>
             </View>
           </View>
           <View style={styles.progressBarContainer}>
@@ -207,7 +209,7 @@ export default function Levels() {
             />
           </View>
           <Text style={styles.progressPercent}>
-            {levels.length > 0 ? Math.round((completedCount / levels.length) * 100) : 0}% Complete
+            {levels.length > 0 ? Math.round((completedCount / levels.length) * 100) : 0}% {t('percentComplete')}
           </Text>
         </LinearGradient>
       </View>
@@ -226,7 +228,7 @@ export default function Levels() {
           onPress={() => handleDifficultyFilter(null)}
         >
           <Text style={[styles.filterChipText, !selectedDifficulty && styles.filterChipTextActive]}>
-            All
+            {t('allFilter')}
           </Text>
         </TouchableOpacity>
         {difficulties.map((diff) => (
@@ -282,7 +284,7 @@ export default function Levels() {
                 {level.locked ? (
                   <View style={styles.lockedContent}>
                     <Text style={styles.lockIcon}>🔒</Text>
-                    <Text style={styles.lockText}>Locked</Text>
+                    <Text style={styles.lockText}>{t('locked')}</Text>
                   </View>
                 ) : (
                   <>
@@ -316,7 +318,7 @@ export default function Levels() {
                     ) : level.completed ? (
                       <Text style={styles.completedBadge}>✓</Text>
                     ) : (
-                      <Text style={styles.newBadge}>NEW</Text>
+                      <Text style={styles.newBadge}>{t('newBadge')}</Text>
                     )}
                   </>
                 )}

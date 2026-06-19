@@ -658,6 +658,20 @@ export const translations = {
     chatSend: 'Send',
     chatYou: 'You',
     chatEmpty: 'your opponent',
+    levelUp: 'LEVEL UP!',
+    // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
+    allFilter: 'All',
+    newBadge: 'NEW',
+    percentComplete: 'Complete',
+    searchPlayerPlaceholder: 'Search a player by name…',
+    noPlayerMatches: 'No player matches',
+    tryStartUsername: 'Try the start of their username.',
+    onlineNowSection: '🟢 Online now',
+    activeLast24h: '⏰ Active in the last 24h',
+    signInToPlay: 'Sign in to play 1v1',
+    signInToPlayHint: 'Create a free account or use one of the demo logins to search players and send challenges.',
+    signInCta: 'Sign in →',
+    inviteFriendHint: 'Search a friend by name above, or invite them to install the app:',
   },
 
   fr: {
@@ -1316,6 +1330,20 @@ export const translations = {
     chatSend: 'Envoyer',
     chatYou: 'Moi',
     chatEmpty: 'ton adversaire',
+    levelUp: 'NIVEAU SUPÉRIEUR !',
+    // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
+    allFilter: 'Tous',
+    newBadge: 'NOUVEAU',
+    percentComplete: 'Complété',
+    searchPlayerPlaceholder: 'Rechercher un joueur par nom…',
+    noPlayerMatches: 'Aucun joueur ne correspond à',
+    tryStartUsername: 'Essaie le début de leur pseudo.',
+    onlineNowSection: '🟢 En ligne maintenant',
+    activeLast24h: '⏰ Actifs ces dernières 24h',
+    signInToPlay: 'Connecte-toi pour jouer en 1v1',
+    signInToPlayHint: 'Crée un compte gratuit ou utilise un des comptes démo pour chercher des joueurs et envoyer des défis.',
+    signInCta: 'Se connecter →',
+    inviteFriendHint: 'Cherche un ami par nom ci-dessus, ou invite-le à installer l\'app :',
   },
 
   ar: {
@@ -1974,6 +2002,20 @@ export const translations = {
     chatSend: 'إرسال',
     chatYou: 'أنت',
     chatEmpty: 'خصمك',
+    levelUp: 'ترقية المستوى!',
+    // v3.11.17 sprint-23 — phone /levels + /challenges hardcoded-string i18n
+    allFilter: 'الكل',
+    newBadge: 'جديد',
+    percentComplete: 'مكتمل',
+    searchPlayerPlaceholder: 'ابحث عن لاعب بالاسم…',
+    noPlayerMatches: 'لا يوجد لاعب يطابق',
+    tryStartUsername: 'جرّب بداية اسم المستخدم.',
+    onlineNowSection: '🟢 متصل الآن',
+    activeLast24h: '⏰ نشط خلال آخر 24 ساعة',
+    signInToPlay: 'سجّل الدخول للعب 1 ضد 1',
+    signInToPlayHint: 'أنشئ حسابًا مجانيًا أو استخدم أحد حسابات العرض للبحث عن اللاعبين وإرسال التحديات.',
+    signInCta: 'تسجيل الدخول ←',
+    inviteFriendHint: 'ابحث عن صديق بالاسم أعلاه، أو ادعه لتثبيت التطبيق:',
   }
 };
 

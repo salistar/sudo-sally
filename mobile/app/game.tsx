@@ -50,7 +50,7 @@ export default function Game() {
   const [notesMode, setNotesMode] = useState(false);
   const [notes, setNotes] = useState<Set<number>[][]>([]);
   const [history, setHistory] = useState<{board: Board; row: number; col: number}[]>([]);
-  const [result, setResult] = useState<{ type: 'win' | 'gameover'; time: number; stars: number; xp: number } | null>(null);
+  const [result, setResult] = useState<{ type: 'win' | 'gameover'; time: number; stars: number; xp: number; leveledUpTo?: number } | null>(null);
   const timerRef = useRef<NodeJS.Timeout>();
 
   console.log(`${FILE_NAME} 📊 State initialized - errors: ${errors}, hints: ${hints}, time: ${time}, paused: ${paused}, notesMode: ${notesMode}`);
@@ -209,16 +209,22 @@ export default function Game() {
     
     console.log(`${FILE_NAME} 👤 handleWin() - Updating user profile...`);
     const user = await storage.getUser();
+    // sprint-23 — detect a level-up by comparing the derived level (floor(xp/100)+1)
+    // before vs after the XP gain, so we can celebrate crossing a 100-XP boundary.
+    let leveledUpTo: number | undefined;
     if (user) {
+      const prevLevel = Math.floor((user.xp || 0) / 100) + 1;
       user.xp += xp;
       user.stars += stars;
       user.coins += stars * 10;
+      const newLevel = Math.floor(user.xp / 100) + 1;
+      if (newLevel > prevLevel) leveledUpTo = newLevel;
       await storage.setUser(user);
-      console.log(`${FILE_NAME} ✅ handleWin() - User now has ${user.xp} XP, ${user.stars} stars, ${user.coins} coins`);
+      console.log(`${FILE_NAME} ✅ handleWin() - User now has ${user.xp} XP, ${user.stars} stars, ${user.coins} coins${leveledUpTo ? ` — LEVEL UP to ${leveledUpTo}` : ''}`);
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setResult({ type: 'win', time, stars, xp });
+    setResult({ type: 'win', time, stars, xp, leveledUpTo });
   };
 
   const handleHint = () => {
@@ -671,6 +677,11 @@ export default function Game() {
                   <Text style={styles.resultEmoji}>🏆</Text>
                 </View>
                 <Text style={styles.resultTitleWin}>{t('levelComplete')}</Text>
+                {!!result.leveledUpTo && (
+                  <View style={styles.levelUpBanner}>
+                    <Text style={styles.levelUpText}>🎉 {t('levelUp')}  ·  {t('level')} {result.leveledUpTo}</Text>
+                  </View>
+                )}
                 <View style={styles.starsRow}>
                   {[1, 2, 3].map((s) => (
                     <Text key={s} style={[styles.bigStar, s > result.stars && styles.bigStarEmpty]}>
@@ -1274,6 +1285,21 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 14,
     marginTop: 6,
+  },
+  levelUpBanner: {
+    marginTop: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(229,181,103,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(229,181,103,0.5)',
+  },
+  levelUpText: {
+    color: '#fbbf24',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.6,
   },
   starsRow: {
     flexDirection: 'row',
