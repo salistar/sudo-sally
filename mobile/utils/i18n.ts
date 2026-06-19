@@ -636,6 +636,15 @@ export const translations = {
     joined: 'JOINED',
     linkCopied: 'LINK COPIED',
     shareProfile: 'SHARE PROFILE',
+
+    // v3.11.15 sprint-20 — Real-time socket toasts
+    toastChallengedYou: '⚔️ {name} challenged you',
+    toastChallengedYouHint: 'Open the lobby to accept or decline before they pick another opponent.',
+    toastAccepted: '✅ {name} accepted',
+    toastAcceptedHint: 'The board is loading — jump in before the timer starts.',
+    toastDeclined: '🚫 {name} declined',
+    toastDeclinedHint: 'No worries — plenty of other players are waiting in the lobby.',
+    toastClickToOpen: 'CLICK TO OPEN',
   },
 
   fr: {
@@ -1272,6 +1281,15 @@ export const translations = {
     joined: 'INSCRIT EN',
     linkCopied: 'LIEN COPIÉ',
     shareProfile: 'PARTAGER LE PROFIL',
+
+    // v3.11.15 sprint-20 — Real-time socket toasts
+    toastChallengedYou: "⚔️ {name} t'a défié",
+    toastChallengedYouHint: "Ouvre le lobby pour accepter ou refuser avant qu'il prenne un autre adversaire.",
+    toastAccepted: '✅ {name} a accepté',
+    toastAcceptedHint: 'La grille charge — saute dedans avant que le chrono parte.',
+    toastDeclined: '🚫 {name} a refusé',
+    toastDeclinedHint: "Pas grave — plein d'autres joueurs attendent dans le lobby.",
+    toastClickToOpen: 'OUVRIR',
   },
 
   ar: {
@@ -1908,6 +1926,15 @@ export const translations = {
     joined: 'انضم في',
     linkCopied: 'تم نسخ الرابط',
     shareProfile: 'شارك الملف',
+
+    // v3.11.15 sprint-20 — Real-time socket toasts
+    toastChallengedYou: '⚔️ {name} تحدّاك',
+    toastChallengedYouHint: 'افتح الردهة لقبول أو رفض التحدي قبل أن يختار خصمًا آخر.',
+    toastAccepted: '✅ {name} قبل',
+    toastAcceptedHint: 'اللوحة تُحمَّل — اقفز قبل أن يبدأ الموقت.',
+    toastDeclined: '🚫 {name} رفض',
+    toastDeclinedHint: 'لا تقلق — لاعبون كثر ينتظرون في الردهة.',
+    toastClickToOpen: 'اضغط للفتح',
   }
 };
 

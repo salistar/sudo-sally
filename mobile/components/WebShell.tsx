@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SallyMascot from './SallyMascot';
 import NotificationsBell from './NotificationsBell';
 import StreakFlameMeter from './StreakFlameMeter';
+import ToastHost from './ToastHost';
 import { useLang } from '../utils/LanguageContext';
 
 const SIDEBAR_W = 260;
@@ -133,6 +134,10 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: '#0a0a1a', minHeight: '100vh' as any }}>
+      {/* v3.11.15 sprint-20 — global socket toast stack, top-right
+          floating layer above all routes. Renders nothing when no
+          live event has fired recently. */}
+      <ToastHost />
       {/* SIDEBAR */}
       <View style={{
         width: SIDEBAR_W,
