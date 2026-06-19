@@ -123,9 +123,19 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
-    const updates = req.body;
-    delete updates.password; // Don't allow password update through this route
-    
+    // Strip fields a client must never be able to self-assign through this
+    // route. Without this, a user updating their own record could set
+    // role:'admin' (privilege escalation) or inflate coins/stars/xp/stats
+    // (economy cheat) or overwrite identity fields. Cosmetic/profile fields
+    // (username, avatar, settings, …) still pass through.
+    const updates = { ...req.body };
+    const FORBIDDEN = [
+      'password', 'role', 'isAdmin', '_id', 'email', 'googleId',
+      'coins', 'stars', 'xp', 'level',
+      'gamesPlayed', 'gamesWon', 'bestStreak', 'currentStreak', 'achievements', 'stats',
+    ];
+    for (const f of FORBIDDEN) delete updates[f];
+
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
     res.json({ success: true, user });
   } catch (error) {
