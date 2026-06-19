@@ -26,7 +26,8 @@ router.get('/', auth, async (req, res) => {
     
     res.json({ success: true, challenge, completed, streak: user.dailyChallenge.streak });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -74,7 +75,8 @@ router.post('/complete', auth, async (req, res) => {
       rewards: { xp: xpReward, coins: coinsReward }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 

@@ -27,6 +27,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 
 // Import Socket Service
 const { initializeSocket } = require('./services/socketService');
@@ -46,26 +48,53 @@ const turnRoutes = require('./routes/turn');
 
 const app = express();
 
+// Behind Caddy (one proxy hop) — needed so express-rate-limit and req.ip read
+// the real client IP from X-Forwarded-For instead of the proxy's address.
+app.set('trust proxy', 1);
+
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
 
 app.use(helmet());
+
+// CORS — in production, restrict to an explicit allowlist instead of '*'.
+// Native apps send no Origin header (allowed); browsers must be allowlisted.
+// Dev (NODE_ENV !== production) stays fully permissive.
+const allowedOrigins = (process.env.CORS_ORIGIN || 'https://app.sallysudo.com,https://sallysudo.com')
+  .split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true
+  origin(origin, cb) {
+    if (process.env.NODE_ENV !== 'production') return cb(null, true);
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  credentials: true,
 }));
 app.use(compression());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Strip MongoDB operator keys ($, .) from user input → blocks NoSQL operator
+// injection (e.g. login with email:{"$ne":null}).
+app.use(mongoSanitize());
+
+// Throttle auth endpoints (login/register/guest/google) against brute force
+// and mass guest-account creation. Generous enough for real users.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many attempts, please try again later.' },
+});
 
 // ============================================================================
 // ROUTES
 // ============================================================================
 
 // Existing routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/levels', levelRoutes);
 app.use('/api/games', gameRoutes);

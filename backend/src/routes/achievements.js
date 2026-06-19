@@ -10,7 +10,8 @@ router.get('/', async (req, res) => {
     const achievements = await Achievement.find({ isActive: true });
     res.json({ success: true, achievements });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -28,7 +29,8 @@ router.get('/me', auth, async (req, res) => {
     
     res.json({ success: true, achievements: userAchievements });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -50,7 +52,8 @@ router.post('/:id/unlock', auth, async (req, res) => {
     
     res.json({ success: true, achievement, rewards: achievement.rewards });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 

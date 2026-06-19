@@ -21,7 +21,8 @@ router.get('/search', auth, async (req, res) => {
     .limit(20);
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -54,7 +55,8 @@ router.get('/recent', auth, async (req, res) => {
     users = users.filter(u => String(u._id) !== selfStr);
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -91,7 +93,8 @@ router.get('/by-username/:username', async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -101,7 +104,8 @@ router.get('/', auth, async (req, res) => {
     const users = await User.find().select('-password');
     res.json({ success: true, users, count: users.length });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -112,7 +116,8 @@ router.get('/:id', auth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -139,7 +144,8 @@ router.put('/:id', auth, async (req, res) => {
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
     res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -153,7 +159,8 @@ router.delete('/:id', auth, async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -165,7 +172,8 @@ router.put('/:id/settings', auth, async (req, res) => {
     await user.save();
     res.json({ success: true, settings: user.settings });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 

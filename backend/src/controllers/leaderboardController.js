@@ -23,7 +23,8 @@ exports.getGlobal = async (req, res) => {
     
     res.json({ success: true, leaderboard: ranked });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -45,7 +46,8 @@ exports.getWeekly = async (req, res) => {
     
     res.json({ success: true, leaderboard: entries, period: periodKey });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -62,6 +64,7 @@ exports.getUserRank = async (req, res) => {
       gamesWon: user.stats.gamesWon
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };

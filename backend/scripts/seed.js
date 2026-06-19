@@ -6,6 +6,7 @@
 
 require('dotenv').config();
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 // Import models
 const User = require('../src/models/User');
@@ -14,6 +15,12 @@ const Achievement = require('../src/models/Achievement');
 const ShopItem = require('../src/models/ShopItem');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27117/sudoku_sally';
+
+// Seed credentials come from env; if absent, generate strong random ones and
+// print them once. No hardcoded admin123/test123/demo passwords in source.
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url');
+const TEST_PASSWORD  = process.env.SEED_TEST_PASSWORD  || crypto.randomBytes(9).toString('base64url');
+const DEMO_PASSWORD  = process.env.SEED_DEMO_PASSWORD  || crypto.randomBytes(9).toString('base64url');
 
 // Sudoku puzzle generator
 function generateSudoku(difficulty) {
@@ -57,6 +64,13 @@ async function seed() {
     console.log('🌱 Starting database seed...');
     console.log(`📡 Connecting to: ${MONGODB_URI}`);
     
+    // Guard: this script wipes ALL users/levels/achievements/shop. Never let it
+    // run against a production DB by accident — require FORCE_SEED=1 to override.
+    if (process.env.NODE_ENV === 'production' && process.env.FORCE_SEED !== '1') {
+      console.error('✖ Refusing to seed in production (deletes all data). Set FORCE_SEED=1 to override.');
+      process.exit(1);
+    }
+
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
@@ -72,9 +86,9 @@ async function seed() {
     // Seed Users
     console.log('👥 Creating test users...');
     const users = [
-      { username: 'admin', email: 'admin@sudokusally.com', password: 'admin123', role: 'admin', coins: 99999, stars: 999 },
-      { username: 'testuser', email: 'test@test.com', password: 'test123', role: 'user', coins: 500, stars: 50 },
-      { username: 'demo', email: 'demo@demo.com', password: 'demo', role: 'user', coins: 100, stars: 10 }
+      { username: 'admin', email: 'admin@sudokusally.com', password: ADMIN_PASSWORD, role: 'admin', coins: 99999, stars: 999 },
+      { username: 'testuser', email: 'test@test.com', password: TEST_PASSWORD, role: 'user', coins: 500, stars: 50 },
+      { username: 'demo', email: 'demo@demo.com', password: DEMO_PASSWORD, role: 'user', coins: 100, stars: 10 }
     ];
     
     for (const userData of users) {
@@ -138,10 +152,10 @@ async function seed() {
     console.log('\n==================================================');
     console.log('✅ Database seeded successfully!');
     console.log('==================================================');
-    console.log('\n📋 Test accounts:');
-    console.log('   👑 Admin: admin@sudokusally.com / admin123');
-    console.log('   👤 User:  test@test.com / test123');
-    console.log('   👤 Demo:  demo@demo.com / demo');
+    console.log('\n📋 Test accounts (passwords from env, or generated above):');
+    console.log(`   👑 Admin: admin@sudokusally.com / ${ADMIN_PASSWORD}`);
+    console.log(`   👤 User:  test@test.com / ${TEST_PASSWORD}`);
+    console.log(`   👤 Demo:  demo@demo.com / ${DEMO_PASSWORD}`);
 
   } catch (error) {
     console.error('❌ Seed error:', error);

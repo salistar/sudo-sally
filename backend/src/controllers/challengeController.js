@@ -98,7 +98,7 @@ exports.getOnlineUsers = async (req, res) => {
 
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -178,7 +178,7 @@ exports.sendChallenge = async (req, res) => {
 
     res.status(201).json({ success: true, challenge });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -231,7 +231,7 @@ exports.getMyChallenges = async (req, res) => {
       history
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -265,7 +265,7 @@ exports.acceptChallenge = async (req, res) => {
 
     res.json({ success: true, challenge });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -289,7 +289,7 @@ exports.declineChallenge = async (req, res) => {
     
     res.json({ success: true, message: 'Challenge declined' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -327,7 +327,7 @@ exports.startChallenge = async (req, res) => {
 
     res.json({ success: true, challenge });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -353,7 +353,7 @@ exports.getChallenge = async (req, res) => {
     
     res.json({ success: true, challenge });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -388,7 +388,7 @@ exports.updateProgress = async (req, res) => {
 
     res.json({ success: true, message: 'Progress updated' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -436,7 +436,7 @@ exports.completeChallenge = async (req, res) => {
     
     res.json({ success: true, challenge });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -481,7 +481,7 @@ exports.abandonChallenge = async (req, res) => {
     
     res.json({ success: true, challenge, message: 'Challenge abandoned' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -505,7 +505,7 @@ exports.cancelChallenge = async (req, res) => {
     
     res.json({ success: true, message: 'Challenge cancelled' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -533,7 +533,7 @@ exports.getChallengeStats = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -565,9 +565,18 @@ async function determineWinner(challenge) {
     }
   }
   
+  // Atomic claim: when both players finish near-simultaneously, two concurrent
+  // completeChallenge calls can both reach here and double-credit XP/coins/stars.
+  // Flip status playing→completed in a single atomic op; only the winner of that
+  // race (claimed !== null) runs updateUserStats. Idempotent for the loser.
+  const completedAt = new Date();
+  const claimed = await Challenge.findOneAndUpdate(
+    { _id: challenge._id, status: 'playing' },
+    { $set: { status: 'completed', completedAt, winner: challenge.winner, loser: challenge.loser, isDraw: challenge.isDraw } }
+  );
   challenge.status = 'completed';
-  challenge.completedAt = new Date();
-  
+  challenge.completedAt = completedAt;
+  if (!claimed) return;   // already settled by a concurrent call — don't re-award
   await updateUserStats(challenge);
 }
 
@@ -581,19 +590,20 @@ async function updateUserStats(challenge) {
       $inc: { xp: 30, coins: 15 }
     });
   } else if (challenge.winner && challenge.loser) {
+    const rw = challenge.rewards || {};
     await User.findByIdAndUpdate(challenge.winner, {
-      $inc: { 
-        xp: challenge.rewards.winnerXP, 
-        coins: challenge.rewards.winnerCoins,
+      $inc: {
+        xp: rw.winnerXP ?? 100,
+        coins: rw.winnerCoins ?? 50,
         stars: 3,
         'stats.challengesWon': 1
       }
     });
-    
+
     await User.findByIdAndUpdate(challenge.loser, {
-      $inc: { 
-        xp: challenge.rewards.loserXP, 
-        coins: challenge.rewards.loserCoins,
+      $inc: {
+        xp: rw.loserXP ?? 20,
+        coins: rw.loserCoins ?? 5,
         'stats.challengesLost': 1
       }
     });

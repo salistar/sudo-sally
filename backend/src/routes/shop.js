@@ -10,7 +10,8 @@ router.get('/', async (req, res) => {
     const items = await ShopItem.find({ isActive: true });
     res.json({ success: true, items });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -49,7 +50,8 @@ router.post('/buy', auth, async (req, res) => {
     
     res.json({ success: true, message: 'Purchase successful', balance: user.coins });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 

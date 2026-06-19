@@ -18,7 +18,8 @@ router.get('/', auth, async (req, res) => {
     
     res.json({ success: true, levels: levelsWithProgress });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 
@@ -29,7 +30,8 @@ router.get('/:id', auth, async (req, res) => {
     if (!level) return res.status(404).json({ error: 'Level not found' });
     res.json({ success: true, level });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 });
 

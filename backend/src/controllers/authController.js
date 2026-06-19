@@ -80,7 +80,7 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -130,7 +130,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -140,7 +140,7 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password -googleId');
     res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
 
@@ -233,11 +233,13 @@ exports.googleAuth = async (req, res) => {
 // Guest login
 exports.guestLogin = async (req, res) => {
   try {
-    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+    // Crypto-strong: Math.random() guest passwords were predictable. The
+    // password must be unguessable since a guest account holds progress/coins.
+    const suffix = crypto.randomBytes(6).toString('hex');
     const user = await User.create({
-      username: 'Guest_' + guestId.substr(6),
-      email: guestId + '@guest.local',
-      password: guestId,
+      username: 'Guest_' + suffix,
+      email: 'guest_' + suffix + '@guest.local',
+      password: crypto.randomBytes(24).toString('hex'),
       role: 'user',
       coins: 50,
       achievements: [{ achievementId: 'welcome', unlockedAt: new Date() }],
@@ -247,6 +249,6 @@ exports.guestLogin = async (req, res) => {
     const { password, googleId, ...safe } = user.toObject();
     res.status(201).json({ success: true, token, user: safe, isGuest: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
 };
