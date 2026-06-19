@@ -18,6 +18,9 @@ RUN npm ci --legacy-peer-deps --no-audit --no-fund
 # Copy the rest of the mobile source and produce the web bundle.
 COPY . ./
 RUN npx expo export --platform web --output-dir dist
+# Per-route Open Graph: static export shares one <head>, so rewrite og/twitter
+# tags per named route in the exported HTML for correct link unfurls.
+RUN node scripts/og-rewrite.mjs dist
 
 # ─── Stage 2 — nginx serving dist/ ──────────────────────────────
 FROM nginx:1.27-alpine
