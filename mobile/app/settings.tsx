@@ -9,6 +9,7 @@ import AppModal, { PopupData } from '../components/AppModal';
 import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme, setTheme, ThemeName } from '../utils/theme';
 
 const FILE_NAME = '📁 [Settings.tsx]';
 
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   
   const router = useRouter();
   const { t, setLang } = useLang();
+  const { name: themeName } = useTheme();
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [settings, setSettings] = useState<Settings>({
     language: 'en', 
@@ -87,6 +89,20 @@ export default function SettingsScreen() {
     update('language', langCode); // keep local state + storage in sync
   }, [update, setLang]);
 
+  const handleThemeChange = useCallback(async (name: ThemeName) => {
+    console.log(`${FILE_NAME} 🎨 handleThemeChange() - Changing theme to: ${name}`);
+    try {
+      if (settings.vibration) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch (error) {
+      console.log(`${FILE_NAME} ⚠️ handleThemeChange() - Haptics not available`);
+    }
+    // Global switch — setTheme persists to AsyncStorage and live-notifies
+    // every useTheme() consumer (including this screen) via the listener Set.
+    await setTheme(name);
+  }, [settings.vibration]);
+
   const handleLogout = useCallback(() => {
     console.log(`${FILE_NAME} 🚪 handleLogout() - Logout requested, showing confirmation...`);
     setPopup({
@@ -136,6 +152,11 @@ export default function SettingsScreen() {
     { key: 'music', icon: '🎵', label: t('music'), desc: 'Play music while playing' },
     { key: 'vibration', icon: '📳', label: t('vibration'), desc: 'Haptic feedback on actions' },
     { key: 'notifications', icon: '🔔', label: t('notifications'), desc: 'Daily reminders & updates' },
+  ];
+
+  const themes: { name: ThemeName; icon: string; label: string }[] = [
+    { name: 'midnight',   icon: '🌙', label: t('themeMidnight') },
+    { name: 'atlas-gold', icon: '🪙', label: t('themeAtlasGold') },
   ];
 
   console.log(`${FILE_NAME} 🖼️ Rendering main component...`);
@@ -254,29 +275,53 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Appearance Section */}
+        {/* Appearance Section — real palette switcher (Midnight / Atlas Gold) */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>🎨</Text>
-            <Text style={styles.sectionTitle}>Appearance</Text>
+            <Text style={styles.sectionTitle}>{t('theme')}</Text>
           </View>
-          
+
           <View style={styles.appearanceCard}>
             <LinearGradient
               colors={['rgba(139,92,246,0.1)', 'rgba(139,92,246,0.02)']}
               style={styles.appearanceGradient}
             >
-              <View style={styles.prefRow}>
-                <View style={[styles.prefIconContainer, styles.prefIconPurple]}>
-                  <Text style={styles.prefIcon}>🌙</Text>
-                </View>
-                <View style={styles.prefInfo}>
-                  <Text style={styles.prefLabel}>{t('darkMode')}</Text>
-                  <Text style={styles.prefDesc}>Always enabled for best experience</Text>
-                </View>
-                <View style={styles.lockedBadge}>
-                  <Text style={styles.lockedBadgeText}>ON</Text>
-                </View>
+              <View style={styles.langRow}>
+                {themes.map((theme) => {
+                  const isSelected = themeName === theme.name;
+                  console.log(`${FILE_NAME} 🎨 Rendering theme: ${theme.name} (selected: ${isSelected})`);
+
+                  return (
+                    <TouchableOpacity
+                      key={theme.name}
+                      style={[styles.langBtn, isSelected && styles.themeBtnActive]}
+                      onPress={() => handleThemeChange(theme.name)}
+                      activeOpacity={0.7}
+                    >
+                      {isSelected && (
+                        <LinearGradient
+                          colors={['rgba(139,92,246,0.25)', 'rgba(139,92,246,0.05)']}
+                          style={styles.langBtnGradient}
+                        />
+                      )}
+                      <Text style={styles.langFlag}>{theme.icon}</Text>
+                      <Text
+                        style={[styles.langText, isSelected && styles.themeTextActive]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
+                        {theme.label}
+                      </Text>
+                      {isSelected && (
+                        <View style={styles.themeCheck}>
+                          <Text style={styles.langCheckText}>✓</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </LinearGradient>
           </View>
@@ -657,6 +702,24 @@ const styles = StyleSheet.create({
     color: '#a78bfa',
     fontSize: 12,
     fontWeight: '700',
+  },
+  // Theme (palette) switcher — purple-accented variant of the language pills
+  themeBtnActive: {
+    borderColor: '#a78bfa',
+  },
+  themeTextActive: {
+    color: '#a78bfa',
+  },
+  themeCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#a78bfa',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   
   // Account

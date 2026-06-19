@@ -16,6 +16,7 @@ import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import BottomNav from '../components/BottomNav';
 import LobbyDesktopLayout from '../components/LobbyDesktopLayout';
+import { SkeletonList } from '../components/Skeleton';
 import { useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -384,7 +385,9 @@ export default function Challenges() {
   if (loading) {
     return (
       <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-        <ActivityIndicator size="large" color="#4ade80" style={{ flex: 1 }} />
+        <View style={styles.content}>
+          <SkeletonList rows={6} />
+        </View>
       </LinearGradient>
     );
   }

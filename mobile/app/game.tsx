@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } from '../utils/sudoku';
 import { storage, formatTime, calculateStars, calculateXP, type Achievement } from '../utils/storage';
 import { useLang } from '../utils/LanguageContext';
+import { useBoardKeyboard } from '../utils/useBoardKeyboard';
 import * as Haptics from 'expo-haptics';
 import ConfettiCannon from 'react-native-confetti-cannon';
 
@@ -362,6 +363,21 @@ export default function Game() {
       return !prev;
     });
   };
+
+  // Web-only keyboard shortcuts (no-op on native). Wired to the existing
+  // handlers above; arrows move the selection, 1-9 place, Backspace/Delete/0
+  // erase, H = hint, U = undo, N = toggle notes. Ignored while paused or the
+  // result modal is up.
+  useBoardKeyboard({
+    selected,
+    setSelected,
+    onNumber: handleNumber,
+    onErase: handleErase,
+    onHint: handleHint,
+    onUndo: handleUndo,
+    onToggleNotes: toggleNotesMode,
+    enabled: !paused && !result,
+  });
 
   console.log(`${FILE_NAME} 🖼️ Rendering - board length: ${board.length}`);
 

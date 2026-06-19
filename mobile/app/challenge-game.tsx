@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { socketService } from '../utils/socket';
 import { API_URL } from '../utils/api';
 import { useLang } from '../utils/LanguageContext';
+import { useBoardKeyboard } from '../utils/useBoardKeyboard';
 import AppModal, { PopupData } from '../components/AppModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -450,6 +451,18 @@ export default function ChallengeGame() {
     setMyBoard(newBoard);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  // Web-only keyboard shortcuts (no-op on native). Arrows move the selection,
+  // 1-9 place a number, Backspace/Delete/0 erase. No hint/undo/notes in the
+  // challenge mode, so those keys are omitted. Ignored once the game is over
+  // or this player has completed their board.
+  useBoardKeyboard({
+    selected,
+    setSelected,
+    onNumber: handleNumber,
+    onErase: handleErase,
+    enabled: !gameOver && !myCompleted,
+  });
 
   const isBoardComplete = (board: Board): boolean => {
     for (let i = 0; i < 9; i++) {

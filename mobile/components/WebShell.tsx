@@ -20,6 +20,7 @@ import SallyMascot from './SallyMascot';
 import NotificationsBell from './NotificationsBell';
 import StreakFlameMeter from './StreakFlameMeter';
 import ToastHost from './ToastHost';
+import WebGlobals from './WebGlobals';
 import { useLang } from '../utils/LanguageContext';
 
 const SIDEBAR_W = 260;
@@ -49,11 +50,17 @@ const SECONDARY: NavItem[] = [
 
 export default function WebShell({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === 'web' && width >= BREAKPOINT;
+  const isWeb = Platform.OS === 'web';
+  const isDesktopWeb = isWeb && width >= BREAKPOINT;
 
-  if (!isDesktopWeb) return <>{children}</>;
-
-  return <DesktopShell>{children}</DesktopShell>;
+  // Web-only global overlays (RTL <html dir>, onboarding, changelog, cookie
+  // banner) render on ALL web widths, not just the desktop shell.
+  return (
+    <>
+      {isWeb && <WebGlobals />}
+      {isDesktopWeb ? <DesktopShell>{children}</DesktopShell> : <>{children}</>}
+    </>
+  );
 }
 
 function DesktopShell({ children }: { children: React.ReactNode }) {

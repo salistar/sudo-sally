@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LEADERBOARD as MOCK_LEADERBOARD } from '../utils/storage';
@@ -8,6 +8,7 @@ import BottomNav from '../components/BottomNav';
 import RankingBarChart from '../components/RankingBarChart';
 import WeeklyChampionsBoard from '../components/WeeklyChampionsBoard';
 import HallOfFameWidget from '../components/HallOfFameWidget';
+import { SkeletonList } from '../components/Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
@@ -258,8 +259,8 @@ export default function Leaderboard() {
       <Wrapper {...wrapperProps}>
         {/* Loading / empty states */}
         {loading && (
-          <View style={{ padding: 40, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#4ade80" />
+          <View style={{ paddingVertical: 24 }}>
+            <SkeletonList rows={8} />
           </View>
         )}
         {!loading && LEADERBOARD.length === 0 && (
