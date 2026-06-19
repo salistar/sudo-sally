@@ -537,7 +537,7 @@ h2.section-title {
   transform: translateY(-7px) rotate(-45deg);
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1000px) {
   .nav-toggle {
     display: flex;
   }
@@ -1592,11 +1592,17 @@ h2.section-title {
 
 /* LOGO FIX — keep the mark + "SallySudo" wordmark on ONE line, anchored
    left; the link group may wrap on its own, never pushing the brand. */
-.site-header .nav { flex-wrap: nowrap; gap: 16px; align-items: center; }
+.site-header .nav { flex-wrap: nowrap; gap: 14px; align-items: center; }
 .brand { flex: 0 0 auto !important; white-space: nowrap; }
 .brand .logo-mark { display: block; flex: none; }
 .brand .wordmark { white-space: nowrap; line-height: 1; }
-.nav-links { flex-wrap: wrap; row-gap: 4px; justify-content: flex-end; }
+/* Desktop (>1000px): the decluttered nav stays on ONE row, never wrapping
+   the Download CTA to a second line. Below 1000px the hamburger drawer
+   (media query above) takes over and stacks the links vertically. */
+@media (min-width: 1001px) {
+  .nav-links { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; }
+  .nav-links > a { padding: 7px 10px !important; font-size: 0.86rem !important; }
+}
 
 /* HERO — aurora gradient wordmark + a richer animated glow behind the card. */
 .hero { position: relative; overflow: hidden; }
