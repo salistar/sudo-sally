@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getDailyChallenge, DailyChallenge } from '../utils/daily';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
+import DailyDesktopLayout from '../components/DailyDesktopLayout';
 import * as Haptics from 'expo-haptics';
 
 const FILE_NAME = '📁 [Daily.tsx]';
@@ -147,6 +148,23 @@ export default function Daily() {
 
   const difficultyStars = getDifficultyStars(challenge?.difficulty);
   const difficultyColors = getDifficultyColor(challenge?.difficulty);
+
+  // v3.11.13 sprint-18 — desktop hero takeover. Phone keeps the original
+  // card layout below.
+  if (isDesktopWeb) {
+    return (
+      <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+        <ScrollView contentContainerStyle={{ padding: 32, maxWidth: 1240, alignSelf: 'center', width: '100%' }}>
+          <DailyDesktopLayout
+            challenge={challenge}
+            streak={streak}
+            timeLeft={timeLeft}
+            onPlay={startChallenge}
+          />
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
