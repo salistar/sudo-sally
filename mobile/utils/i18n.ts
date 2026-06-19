@@ -645,6 +645,20 @@ export const translations = {
     toastDeclined: '🚫 {name} declined',
     toastDeclinedHint: 'No worries — plenty of other players are waiting in the lobby.',
     toastClickToOpen: 'CLICK TO OPEN',
+
+    // v3.11.16 sprint-21 — Replay system
+    replayTag: 'REPLAY · BO1',
+    replayDraw: 'Drawn match',
+    replayWonBy: 'Won by {name}',
+    replayNoWinner: 'Unfinished',
+    replayMoves: 'moves',
+    replayNotFound: 'Replay not found',
+    replayNotFoundHint: 'The match is either still in progress or has expired from the archive.',
+    winnerTag: 'WINNER',
+    errorsShort: 'err',
+    frame: 'FRAME',
+    speed: 'SPEED',
+    watchReplay: 'WATCH REPLAY',
   },
 
   fr: {
@@ -1290,6 +1304,20 @@ export const translations = {
     toastDeclined: '🚫 {name} a refusé',
     toastDeclinedHint: "Pas grave — plein d'autres joueurs attendent dans le lobby.",
     toastClickToOpen: 'OUVRIR',
+
+    // v3.11.16 sprint-21 — Replay system
+    replayTag: 'REPLAY · BO1',
+    replayDraw: 'Match nul',
+    replayWonBy: 'Gagné par {name}',
+    replayNoWinner: 'Inachevé',
+    replayMoves: 'coups',
+    replayNotFound: 'Replay introuvable',
+    replayNotFoundHint: "Le match est encore en cours ou a expiré de l'archive.",
+    winnerTag: 'VAINQUEUR',
+    errorsShort: 'err',
+    frame: 'IMAGE',
+    speed: 'VITESSE',
+    watchReplay: 'VOIR LE REPLAY',
   },
 
   ar: {
@@ -1935,6 +1963,20 @@ export const translations = {
     toastDeclined: '🚫 {name} رفض',
     toastDeclinedHint: 'لا تقلق — لاعبون كثر ينتظرون في الردهة.',
     toastClickToOpen: 'اضغط للفتح',
+
+    // v3.11.16 sprint-21 — Replay system
+    replayTag: 'إعادة · أفضل 1',
+    replayDraw: 'تعادل',
+    replayWonBy: 'فاز {name}',
+    replayNoWinner: 'لم تكتمل',
+    replayMoves: 'حركات',
+    replayNotFound: 'الإعادة غير موجودة',
+    replayNotFoundHint: 'المباراة لا تزال جارية أو انتهت صلاحية أرشيفها.',
+    winnerTag: 'الفائز',
+    errorsShort: 'خطأ',
+    frame: 'الإطار',
+    speed: 'السرعة',
+    watchReplay: 'شاهد الإعادة',
   }
 };
 

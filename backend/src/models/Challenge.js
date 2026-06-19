@@ -28,16 +28,33 @@ const challengeSchema = new mongoose.Schema({
     completedAt: { type: Date },
     errors: { type: Number, default: 0 },
     timeSpent: { type: Number, default: 0 },
-    abandoned: { type: Boolean, default: false }
+    abandoned: { type: Boolean, default: false },
+    // v3.11.16 sprint-21 — chronological move log for the replay viewer.
+    // Each move: cell index (0..80), digit (1..9, or 0 to erase), elapsed
+    // milliseconds since startedAt, and whether the placement is a known
+    // mistake (post-hoc against solution). Capped at 500 per player to
+    // bound document size — average 9x9 solve is ~80 moves.
+    moves: { type: [{
+      cell: { type: Number, required: true },
+      value: { type: Number, required: true },
+      t: { type: Number, required: true },
+      err: { type: Boolean, default: false },
+    }], default: [] },
   },
-  
+
   challengedProgress: {
     board: { type: String },
     completed: { type: Boolean, default: false },
     completedAt: { type: Date },
     errors: { type: Number, default: 0 },
     timeSpent: { type: Number, default: 0 },
-    abandoned: { type: Boolean, default: false }
+    abandoned: { type: Boolean, default: false },
+    moves: { type: [{
+      cell: { type: Number, required: true },
+      value: { type: Number, required: true },
+      t: { type: Number, required: true },
+      err: { type: Boolean, default: false },
+    }], default: [] },
   },
   
   // Results

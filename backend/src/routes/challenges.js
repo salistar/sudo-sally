@@ -43,6 +43,45 @@ router.get('/stats', auth, getChallengeStats);
 // Send a new challenge
 router.post('/send', auth, sendChallenge);
 
+// v3.11.16 sprint-21 — replay endpoint. Returns the puzzle, solution,
+// difficulty, both move timelines and elapsed times — enough for the
+// /replay/[id] page to reconstruct the board frame-by-frame. Public to
+// authed players so anyone with a challenge id can watch the replay.
+// Declared BEFORE /:challengeId so Express order doesn't shadow it.
+const Challenge = require('../models/Challenge');
+router.get('/:challengeId/replay', auth, async (req, res) => {
+  try {
+    const c = await Challenge.findById(req.params.challengeId)
+      .populate('challenger',  'username avatar')
+      .populate('challenged',  'username avatar')
+      .populate('winner',      'username avatar');
+    if (!c) return res.status(404).json({ success: false, error: 'Challenge not found' });
+    res.json({
+      success: true,
+      replay: {
+        challengeId: String(c._id),
+        puzzle: c.puzzle,
+        solution: c.solution,
+        difficulty: c.difficulty,
+        startedAt: c.startedAt,
+        completedAt: c.completedAt,
+        challenger: c.challenger,
+        challenged: c.challenged,
+        winner: c.winner,
+        isDraw: !!c.isDraw,
+        challengerMoves: (c.challengerProgress?.moves || []),
+        challengedMoves: (c.challengedProgress?.moves || []),
+        challengerTime:  c.challengerProgress?.timeSpent || 0,
+        challengedTime:  c.challengedProgress?.timeSpent || 0,
+        challengerErrors: c.challengerProgress?.errors || 0,
+        challengedErrors: c.challengedProgress?.errors || 0,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Get specific challenge
 router.get('/:challengeId', auth, getChallenge);
 
