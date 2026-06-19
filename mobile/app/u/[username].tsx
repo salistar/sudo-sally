@@ -19,8 +19,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLang } from '../../utils/LanguageContext';
 import { useTheme } from '../../utils/theme';
-
-const API = 'https://api.sallysudo.com/api';
+import { API_URL } from '../../utils/api';
 
 type PublicProfile = {
   username: string;
@@ -62,12 +61,16 @@ export default function PublicProfile() {
   useEffect(() => {
     let cancelled = false;
     if (!username) return;
+    // Reset for the new username so we never flash the previous profile or a
+    // stale error (expo-router reuses this screen on /u/alice → /u/bob).
+    setProfile(null);
+    setError(null);
     setLoading(true);
-    fetch(`${API}/users/by-username/${encodeURIComponent(String(username))}`)
+    fetch(`${API_URL}/users/by-username/${encodeURIComponent(String(username))}`)
       .then(r => r.json())
       .then(j => {
         if (cancelled) return;
-        if (j?.user) setProfile(j.user);
+        if (j?.user) { setError(null); setProfile(j.user); }
         else setError(j?.error || 'Not found');
       })
       .catch(e => !cancelled && setError(String(e)))

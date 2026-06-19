@@ -22,8 +22,8 @@ import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL as API } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
 const POLL_MS = 60_000;
 
 function streakColor(streak: number, atRisk: boolean): { bg: string; fg: string; ring: string } {

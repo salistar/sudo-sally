@@ -7,6 +7,18 @@
  */
 
 require('dotenv').config();
+
+// SECURITY: never run in production with the weak fallback JWT secret. The
+// codebase uses `process.env.JWT_SECRET || 'secret'` in several places so local
+// dev still works; this guard makes sure a real, strong secret is configured
+// before the server accepts a single request in prod (otherwise anyone could
+// forge a token for any user). Docker compose already marks JWT_SECRET required.
+if (process.env.NODE_ENV === 'production' &&
+    (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'secret')) {
+  console.error('FATAL: JWT_SECRET must be set to a strong value in production.');
+  process.exit(1);
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');

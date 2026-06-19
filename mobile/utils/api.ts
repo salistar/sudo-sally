@@ -8,14 +8,18 @@
  */
 // import Constants from 'expo-constants';   // re-enable if you uncomment the dev block below
 
-const SERVER_URL = 'https://api.sallysudo.com';
+// Single source of truth for the backend host. Exported so every screen and
+// component imports these instead of re-hardcoding the literal (was duplicated
+// across u/[username], replay, NotificationsBell, StreakFlameMeter,
+// challenge-game, challenges — see sprint-22 audit).
+export const SERVER_URL = 'https://api.sallysudo.com';
 
 // ── Dev-only override (kept for reference, NEVER reached in release APK) ──
 // const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 // const USE_LOCAL_BACKEND = __DEV__ && false;
 // if (USE_LOCAL_BACKEND && devHost) SERVER_URL = `http://${devHost}:3101`;
 
-const API_URL = `${SERVER_URL}/api`;
+export const API_URL = `${SERVER_URL}/api`;
 
 class ApiService {
   private token: string | null = null;

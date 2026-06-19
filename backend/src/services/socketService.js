@@ -208,29 +208,43 @@ function initializeSocket(io) {
       });
     });
 
+    // Only sockets that actually joined a challenge room (challenge:join
+    // already enforces participation, lines ~74-86) may emit into it. Blocks
+    // a user from injecting chat / WebRTC signaling into a room they aren't in.
+    const inRoom = (challengeId) =>
+      typeof challengeId === 'string' && socket.rooms.has(`challenge:${challengeId}`);
+
     // ============ CHAT (text + base64 image, scoped to a challenge room) ============
     socket.on('challenge:chat', ({ challengeId, text, img }) => {
-      if (!challengeId) return;
+      if (!inRoom(challengeId)) return;
+      // Sanitize: cap text length, and only relay a bounded image data-URI.
+      // The web/native client must still render `text` as PLAIN TEXT (never
+      // innerHTML) — this is server-side defense in depth, not a DOM escape.
+      const safeText = typeof text === 'string' ? text.slice(0, 1000) : '';
+      const safeImg = (typeof img === 'string'
+        && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(img)
+        && img.length < 350000) ? img : undefined;
+      if (!safeText && !safeImg) return;
       socket.to(`challenge:${challengeId}`).emit('chat:message', {
-        odcUserId, from: username, text, img, ts: Date.now()
+        odcUserId, from: username, text: safeText, img: safeImg, ts: Date.now()
       });
     });
 
     // ============ WebRTC signaling (audio/video calls within a challenge) ============
     socket.on('webrtc:offer', ({ challengeId, sdp }) => {
-      if (!challengeId) return;
+      if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:offer', { from: odcUserId, sdp });
     });
     socket.on('webrtc:answer', ({ challengeId, sdp }) => {
-      if (!challengeId) return;
+      if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:answer', { from: odcUserId, sdp });
     });
     socket.on('webrtc:ice', ({ challengeId, candidate }) => {
-      if (!challengeId) return;
+      if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:ice', { from: odcUserId, candidate });
     });
     socket.on('call:end', ({ challengeId }) => {
-      if (!challengeId) return;
+      if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('call:end', { from: odcUserId });
     });
 

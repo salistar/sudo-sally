@@ -66,7 +66,6 @@ export const translations = {
     newRecord: 'New Record!',
     yourTime: 'Your Time',
     bestTime: 'Best Time',
-    nextLevel: 'Next Level',
     tryAgain: 'Try Again',
     backToMenu: 'Back to Menu',
     
@@ -89,7 +88,6 @@ export const translations = {
     
     // Misc
     locked: 'Locked',
-    unlocked: 'Unlocked',
     stars: 'Stars',
     coins: 'Coins',
     xp: 'XP',
@@ -100,7 +98,6 @@ export const translations = {
     yes: 'Yes',
     no: 'No',
     ok: 'OK',
-    loading: 'Loading...',
     error: 'Error',
     success: 'Success',
 
@@ -112,7 +109,6 @@ export const translations = {
     totalStars: 'Total Stars',
     challengesWon: 'Challenges Won',
     online: 'Online',
-    offline: 'Offline',
     statusLabel: 'Status',
     quickPlay: 'Quick Play',
     continueWhereLeft: 'Continue where you left off',
@@ -176,12 +172,10 @@ export const translations = {
     shop: 'Shop',
     ranking: 'Ranking',
     tutorial: 'Tutorial',
-    challenge: 'Challenge',
     startGame: 'Start Game',
     pvp: 'PvP',
     multiplayer: 'Multiplayer',
     items: 'Items',
-    progress: 'Progress',
     trophies: 'Trophies',
     learn: 'Learn',
     options: 'Options',
@@ -192,7 +186,6 @@ export const translations = {
     retry: 'Retry',
     levelFailed: '3 errors — level failed',
     // Levels
-    completed: 'Completed',
     remaining: 'Remaining',
     complete: 'Complete',
     // Login / social
@@ -287,7 +280,6 @@ export const translations = {
     availableThemes: 'Available Themes',
     customizeExperience: 'Customize your game experience',
     premiumTheme: 'Premium theme collection',
-    owned: 'Owned',
     boostGameplay: 'Boost your gameplay',
     notEnoughCoins: 'Not enough coins!',
     needMoreCoins: 'more coins needed.',
@@ -415,7 +407,6 @@ export const translations = {
 
     // Challenge game screen
     back: 'Back',
-    you: 'You',
     yourGrid: 'Your Grid',
     abandon: 'Abandon',
     waitingForOpponent: 'Waiting for',
@@ -733,7 +724,6 @@ export const translations = {
     newRecord: 'Nouveau record!',
     yourTime: 'Votre temps',
     bestTime: 'Meilleur temps',
-    nextLevel: 'Niveau suivant',
     tryAgain: 'Réessayer',
     backToMenu: 'Retour au menu',
     
@@ -756,7 +746,6 @@ export const translations = {
     
     // Misc
     locked: 'Verrouillé',
-    unlocked: 'Déverrouillé',
     stars: 'Étoiles',
     coins: 'Pièces',
     xp: 'XP',
@@ -767,7 +756,6 @@ export const translations = {
     yes: 'Oui',
     no: 'Non',
     ok: 'OK',
-    loading: 'Chargement...',
     error: 'Erreur',
     success: 'Succès',
 
@@ -779,7 +767,6 @@ export const translations = {
     totalStars: 'Étoiles totales',
     challengesWon: 'Défis gagnés',
     online: 'En ligne',
-    offline: 'Hors ligne',
     statusLabel: 'Statut',
     quickPlay: 'Partie rapide',
     continueWhereLeft: 'Reprends où tu t\'es arrêté',
@@ -843,12 +830,10 @@ export const translations = {
     shop: 'Boutique',
     ranking: 'Classement',
     tutorial: 'Tutoriel',
-    challenge: 'Défi',
     startGame: 'Lancer',
     pvp: 'JcJ',
     multiplayer: 'Multijoueur',
     items: 'Objets',
-    progress: 'Progression',
     trophies: 'Trophées',
     learn: 'Apprendre',
     options: 'Options',
@@ -859,7 +844,6 @@ export const translations = {
     retry: 'Réessayer',
     levelFailed: '3 erreurs — niveau échoué',
     // Levels
-    completed: 'Terminés',
     remaining: 'Restants',
     complete: 'Terminé',
     // Login / social
@@ -954,7 +938,6 @@ export const translations = {
     availableThemes: 'Thèmes disponibles',
     customizeExperience: 'Personnalise ton expérience de jeu',
     premiumTheme: 'Collection de thèmes premium',
-    owned: 'Possédé',
     boostGameplay: 'Améliore ton gameplay',
     notEnoughCoins: 'Pas assez de pièces !',
     needMoreCoins: 'pièces supplémentaires nécessaires.',
@@ -1082,7 +1065,6 @@ export const translations = {
 
     // Challenge game screen
     back: 'Retour',
-    you: 'Toi',
     yourGrid: 'Ta grille',
     abandon: 'Abandonner',
     waitingForOpponent: 'En attente de',
@@ -1400,7 +1382,6 @@ export const translations = {
     newRecord: 'رقم قياسي جديد!',
     yourTime: 'وقتك',
     bestTime: 'أفضل وقت',
-    nextLevel: 'المستوى التالي',
     tryAgain: 'حاول مجدداً',
     backToMenu: 'العودة للقائمة',
     
@@ -1423,7 +1404,6 @@ export const translations = {
     
     // Misc
     locked: 'مقفل',
-    unlocked: 'مفتوح',
     stars: 'نجوم',
     coins: 'عملات',
     xp: 'نقاط خبرة',
@@ -1434,7 +1414,6 @@ export const translations = {
     yes: 'نعم',
     no: 'لا',
     ok: 'حسناً',
-    loading: 'جاري التحميل...',
     error: 'خطأ',
     success: 'نجاح',
 
@@ -1446,7 +1425,6 @@ export const translations = {
     totalStars: 'مجموع النجوم',
     challengesWon: 'التحديات المربوحة',
     online: 'متصل',
-    offline: 'غير متصل',
     statusLabel: 'الحالة',
     quickPlay: 'لعب سريع',
     continueWhereLeft: 'تابع من حيث توقفت',
@@ -1510,12 +1488,10 @@ export const translations = {
     shop: 'المتجر',
     ranking: 'الترتيب',
     tutorial: 'تعليمي',
-    challenge: 'تحدٍّ',
     startGame: 'ابدأ',
     pvp: 'لاعب ضد لاعب',
     multiplayer: 'متعدد اللاعبين',
     items: 'عناصر',
-    progress: 'التقدّم',
     trophies: 'الجوائز',
     learn: 'تعلّم',
     options: 'خيارات',
@@ -1526,7 +1502,6 @@ export const translations = {
     retry: 'حاول مجدداً',
     levelFailed: '3 أخطاء — فشل المستوى',
     // Levels
-    completed: 'مكتملة',
     remaining: 'متبقية',
     complete: 'مكتمل',
     // Login / social
@@ -1621,7 +1596,6 @@ export const translations = {
     availableThemes: 'السمات المتاحة',
     customizeExperience: 'خصّص تجربة لعبك',
     premiumTheme: 'مجموعة سمات مميزة',
-    owned: 'مملوك',
     boostGameplay: 'عزّز أسلوب لعبك',
     notEnoughCoins: 'لا توجد عملات كافية!',
     needMoreCoins: 'عملات إضافية مطلوبة.',
@@ -1749,7 +1723,6 @@ export const translations = {
 
     // Challenge game screen
     back: 'رجوع',
-    you: 'أنت',
     yourGrid: 'شبكتك',
     abandon: 'استسلام',
     waitingForOpponent: 'في انتظار',

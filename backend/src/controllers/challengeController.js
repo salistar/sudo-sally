@@ -2,6 +2,43 @@ const Challenge = require('../models/Challenge');
 const User = require('../models/User');
 const { notifyUser } = require('../services/socketService');
 
+// v3.11.16 — Reconstruct the per-move log for the replay viewer by diffing the
+// newly-submitted board against the last stored one. The client only ever sends
+// the full board (JSON 2D array) on each progress/complete call, so we derive
+// the chronological moves server-side. Fully defensive: any parse/shape error
+// is swallowed so move-recording can never block the actual progress save.
+// `moves` is capped at 500 (matches the schema comment) to bound document size.
+function recordMoves(challenge, progressKey, newBoardStr) {
+  try {
+    const prog = challenge[progressKey];
+    if (!prog || !newBoardStr) return;
+    const moves = prog.moves || [];
+    if (moves.length >= 500) return;
+    const newGrid = typeof newBoardStr === 'string' ? JSON.parse(newBoardStr) : newBoardStr;
+    if (!Array.isArray(newGrid)) return;
+    const prevGrid = prog.board
+      ? (typeof prog.board === 'string' ? JSON.parse(prog.board) : prog.board)
+      : null;
+    const puzzle = String(challenge.puzzle || '');
+    const solution = String(challenge.solution || '');
+    const startedAt = challenge.startedAt ? new Date(challenge.startedAt).getTime() : Date.now();
+    const t = Math.max(0, Date.now() - startedAt);
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const cell = row * 9 + col;
+        if ((Number(puzzle[cell]) || 0) !== 0) continue;   // skip given cells
+        const newVal = Number(newGrid[row]?.[col]) || 0;
+        const prevVal = prevGrid ? (Number(prevGrid[row]?.[col]) || 0) : 0;
+        if (newVal === prevVal) continue;                   // no change here
+        const solVal = Number(solution[cell]) || 0;
+        moves.push({ cell, value: newVal, t, err: newVal !== 0 && newVal !== solVal });
+        if (moves.length >= 500) { prog.moves = moves; return; }
+      }
+    }
+    prog.moves = moves;
+  } catch (_) { /* never block the save on move-recording failure */ }
+}
+
 // Generate Sudoku puzzle
 function generateSudokuPuzzle(difficulty = 'medium') {
   const base = [
@@ -341,13 +378,14 @@ exports.updateProgress = async (req, res) => {
     
     const isChallenger = challenge.challenger.toString() === req.user.id;
     const progressKey = isChallenger ? 'challengerProgress' : 'challengedProgress';
-    
+
+    recordMoves(challenge, progressKey, board);   // diff BEFORE overwriting board
     challenge[progressKey].board = board;
     challenge[progressKey].timeSpent = timeSpent;
     challenge[progressKey].errors = errors;
-    
+
     await challenge.save();
-    
+
     res.json({ success: true, message: 'Progress updated' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -376,7 +414,8 @@ exports.completeChallenge = async (req, res) => {
     const isChallenger = challenge.challenger.toString() === req.user.id;
     const progressKey = isChallenger ? 'challengerProgress' : 'challengedProgress';
     const opponentKey = isChallenger ? 'challengedProgress' : 'challengerProgress';
-    
+
+    recordMoves(challenge, progressKey, board);   // capture the final placements
     challenge[progressKey].board = board;
     challenge[progressKey].timeSpent = timeSpent;
     challenge[progressKey].errors = errors;

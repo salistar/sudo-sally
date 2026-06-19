@@ -20,8 +20,8 @@ import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL as API } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
 const POLL_MS = 25_000;
 const FRESH_WIN_WINDOW_MS = 24 * 3600 * 1000;
 

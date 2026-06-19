@@ -48,10 +48,26 @@ router.post('/send', auth, sendChallenge);
 // /replay/[id] page to reconstruct the board frame-by-frame. Public to
 // authed players so anyone with a challenge id can watch the replay.
 // Declared BEFORE /:challengeId so Express order doesn't shadow it.
+const mongoose = require('mongoose');
 const Challenge = require('../models/Challenge');
 router.get('/:challengeId/replay', auth, async (req, res) => {
   try {
-    const c = await Challenge.findById(req.params.challengeId)
+    // Guard a malformed id before it reaches findById (avoids a CastError
+    // whose message would echo the bad input back to the caller).
+    if (!mongoose.isValidObjectId(req.params.challengeId)) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
+    }
+    // Scope to participants AND require the match to be over. Without this:
+    //  • any authed user could fetch ANY challenge's replay (IDOR), and
+    //  • a player mid-game could read `solution` and win instantly (cheat).
+    const c = await Challenge.findOne({
+      _id: req.params.challengeId,
+      status: 'completed',
+      $or: [
+        { challenger: req.user.id },
+        { challenged: req.user.id },
+      ],
+    })
       .populate('challenger',  'username avatar')
       .populate('challenged',  'username avatar')
       .populate('winner',      'username avatar');
@@ -78,7 +94,8 @@ router.get('/:challengeId/replay', auth, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[replay]', error);
+    res.status(500).json({ success: false, error: 'Failed to load replay' });
   }
 });
 

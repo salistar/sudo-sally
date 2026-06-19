@@ -137,7 +137,7 @@ exports.login = async (req, res) => {
 // Get current user
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select('-password -googleId');
     res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -244,7 +244,8 @@ exports.guestLogin = async (req, res) => {
     });
     
     const token = generateToken(user._id);
-    res.status(201).json({ success: true, token, user, isGuest: true });
+    const { password, googleId, ...safe } = user.toObject();
+    res.status(201).json({ success: true, token, user: safe, isGuest: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

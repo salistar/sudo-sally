@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { socketService } from '../utils/socket';
+import { API_URL } from '../utils/api';
 import { useLang } from '../utils/LanguageContext';
 import AppModal, { PopupData } from '../components/AppModal';
 import BottomNav from '../components/BottomNav';
@@ -43,12 +44,7 @@ interface Challenge {
   challengedProgress?: { timeSpent: number; errors: number };
 }
 
-// Release builds always hit the production API. The dev override below is
-// kept as documentation only and is unreachable in shipped APKs.
-const API_URL = 'https://api.sallysudo.com/api';
-// const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
-// const USE_LOCAL_BACKEND = __DEV__ && false;
-// if (USE_LOCAL_BACKEND && devHost) API_URL = `http://${devHost}:3101/api`;
+// API_URL is imported from utils/api (single source of truth for the host).
 
 export default function Challenges() {
   const router = useRouter();

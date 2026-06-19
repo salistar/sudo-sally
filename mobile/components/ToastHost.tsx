@@ -56,6 +56,15 @@ export default function ToastHost() {
   const { c, r, s, type } = useTheme();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const seq = useRef(0);
+  // Per-toast auto-dismiss timers, so they can be cleared on manual dismiss
+  // and on unmount (otherwise a 6s timer could fire setState after unmount).
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Clear every outstanding timer when the host unmounts.
+  useEffect(() => () => {
+    Object.values(timers.current).forEach(clearTimeout);
+    timers.current = {};
+  }, []);
 
   // Web-only — phone shows modal popups inline already.
   const enabled = Platform.OS === 'web';
@@ -136,16 +145,18 @@ export default function ToastHost() {
   }, [enabled, t]);
 
   const push = (toast: Toast) => {
-    setToasts(prev => {
-      const next = [toast, ...prev].slice(0, MAX_VISIBLE);
-      return next;
-    });
-    setTimeout(() => {
+    setToasts(prev => [toast, ...prev].slice(0, MAX_VISIBLE));
+    timers.current[toast.id] = setTimeout(() => {
+      delete timers.current[toast.id];
       setToasts(prev => prev.filter(t => t.id !== toast.id));
     }, AUTO_DISMISS_MS);
   };
 
   const dismiss = (id: string) => {
+    if (timers.current[id]) {
+      clearTimeout(timers.current[id]);
+      delete timers.current[id];
+    }
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 

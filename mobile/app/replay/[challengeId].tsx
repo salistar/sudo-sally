@@ -26,8 +26,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../../utils/LanguageContext';
 import { useTheme } from '../../utils/theme';
-
-const API = 'https://api.sallysudo.com/api';
+import { API_URL } from '../../utils/api';
 
 // Demo replay used when /replay/demo is opened — lets us screenshot the
 // UI before any real game has been recorded. A real puzzle with both
@@ -169,7 +168,7 @@ export default function ReplayPage() {
     (async () => {
       try {
         const token = await AsyncStorage.getItem('sudoku_token');
-        const r = await fetch(`${API}/challenges/${challengeId}/replay`, {
+        const r = await fetch(`${API_URL}/challenges/${challengeId}/replay`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const j = await r.json();
@@ -187,23 +186,25 @@ export default function ReplayPage() {
   // advances one event at a time across both players. We don't actually
   // need a merged array for the boards (each renders from its own slice)
   // but we DO need `totalFrames` and `cursorMs` to drive playback.
-  const { totalFrames, frameAt, lastTime } = useMemo(() => {
-    if (!replay) return { totalFrames: 0, frameAt: (_: number) => 0, lastTime: 0 };
-    const events = [
-      ...replay.challengerMoves.map(m => ({ side: 'L' as const, t: m.t })),
-      ...replay.challengedMoves.map(m => ({ side: 'R' as const, t: m.t })),
-    ].sort((a, b) => a.t - b.t);
-    return {
-      totalFrames: events.length,
-      frameAt: (i: number) => events[Math.max(0, Math.min(events.length - 1, i))]?.t || 0,
-      lastTime: events[events.length - 1]?.t || 0,
-    };
+  const { events, totalFrames, lastTime } = useMemo(() => {
+    if (!replay) return { events: [] as Array<{ side: 'L' | 'R'; t: number; idx: number }>, totalFrames: 0, lastTime: 0 };
+    // One merged, stably-sorted timeline. Each event carries its side and that
+    // side's running index. Stepping the scrubber by 1 = exactly 1 board move,
+    // even when both players have a move at the SAME timestamp (the previous
+    // inclusive `<=` filter on both arrays revealed 2+ cells per step and let
+    // the frame counter drift from the actual board state).
+    const evs = [
+      ...replay.challengerMoves.map((m, idx) => ({ side: 'L' as const, t: m.t, idx })),
+      ...replay.challengedMoves.map((m, idx) => ({ side: 'R' as const, t: m.t, idx })),
+    ].sort((a, b) => a.t - b.t || (a.side === b.side ? a.idx - b.idx : a.side === 'L' ? -1 : 1));
+    return { events: evs, totalFrames: evs.length, lastTime: evs[evs.length - 1]?.t || 0 };
   }, [replay]);
 
-  // Compute per-side frame from the unified cursor frame.
-  const cursorMs = frame === 0 ? 0 : frameAt(frame - 1);
-  const leftFrame  = replay ? replay.challengerMoves.filter(m => m.t <= cursorMs).length : 0;
-  const rightFrame = replay ? replay.challengedMoves.filter(m => m.t <= cursorMs).length : 0;
+  // Per-side frame = how many of that side's moves fall within the first
+  // `frame` events. cursorMs = timestamp of the last revealed event.
+  const cursorMs = frame === 0 ? 0 : (events[frame - 1]?.t || 0);
+  const leftFrame  = useMemo(() => events.slice(0, frame).filter(e => e.side === 'L').length, [events, frame]);
+  const rightFrame = useMemo(() => events.slice(0, frame).filter(e => e.side === 'R').length, [events, frame]);
   const leftBoard  = useMemo(() => replay ? boardAtFrame(replay.puzzle, replay.challengerMoves, leftFrame)  : [], [replay, leftFrame]);
   const rightBoard = useMemo(() => replay ? boardAtFrame(replay.puzzle, replay.challengedMoves, rightFrame) : [], [replay, rightFrame]);
   const givens     = useMemo(() => replay ? replay.puzzle.split('').map(ch => parseInt(ch, 10) || 0) : [], [replay]);
