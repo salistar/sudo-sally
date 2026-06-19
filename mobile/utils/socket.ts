@@ -125,6 +125,8 @@ class SocketService {
       'opponent:progress',
       'player:completed',
       'player:abandoned',
+      // ── Global activity feed broadcast (fired when any 1v1 match finishes) ──
+      'activity:completed',
       // ── NEW: chat + WebRTC signaling ──
       'chat:message',
       'webrtc:offer',

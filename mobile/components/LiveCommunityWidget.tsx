@@ -15,9 +15,11 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { socketService } from '../utils/socket';
 
 const API = 'https://api.sallysudo.com/api';
 const REFRESH_MS = 15_000;
+const FEED_CAP = 12;
 
 type FeedRow = {
   id: string;
@@ -28,6 +30,7 @@ type FeedRow = {
   timeSpent: number; // seconds, lower is better
   errors: number;
   isDraw: boolean;
+  difficulty?: string;
 };
 
 type OnlineUser = {
@@ -53,24 +56,49 @@ function asUser(u: any): OnlineUser {
   };
 }
 
-function rowFromChallenge(c: any): FeedRow | null {
-  if (!c?.winner && !c?.isDraw) return null;
-  const challenger = c.challenger || {};
-  const challenged = c.challenged || {};
-  const winnerId = c.winner?._id || c.winner;
-  const w = String(challenger._id) === String(winnerId) ? challenger : challenged;
-  const l = String(challenger._id) === String(winnerId) ? challenged : challenger;
-  const winnerProgress = String(challenger._id) === String(winnerId) ? c.challengerProgress : c.challengedProgress;
+// Maps a GLOBAL activity-feed item (GET /api/challenges/feed/recent, or the
+// socket 'activity:completed' payload) to the widget's existing FeedRow shape.
+// Global items don't carry per-player time/errors, so those columns stay 0.
+function rowFromFeedItem(it: any): FeedRow | null {
+  if (!it) return null;
+  const challenger = it.challenger || {};
+  const challenged = it.challenged || {};
+  const isDraw = !!it.isDraw;
+  // Winner identity is matched by username (the feed has no ids); on a draw
+  // there's no winner so we fall back to challenger-vs-challenged ordering.
+  const winnerName = it.winner?.username;
+  let w = challenger;
+  let l = challenged;
+  if (!isDraw && winnerName) {
+    if (challenged.username === winnerName) { w = challenged; l = challenger; }
+    else { w = challenger; l = challenged; }
+  }
   return {
-    id: String(c._id),
+    id: String(it.id ?? `${challenger.username}-${challenged.username}-${it.at ?? ''}`),
     winnerName: w.username || '?',
     winnerAvatar: w.avatar || '🎮',
     loserName: l.username || '?',
     loserAvatar: l.avatar || '🎮',
-    timeSpent: winnerProgress?.timeSpent || 0,
-    errors: winnerProgress?.errors || 0,
-    isDraw: !!c.isDraw,
+    timeSpent: 0,
+    errors: 0,
+    isDraw,
+    difficulty: it.difficulty,
   };
+}
+
+// Fetches the real GLOBAL recent-match feed (all players, newest first).
+async function fetchGlobalFeed(): Promise<FeedRow[]> {
+  try {
+    const token = await AsyncStorage.getItem('sudoku_token');
+    if (!token) return [];
+    const res = await fetch(`${API}/challenges/feed/recent`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.json()).catch(() => null);
+    const items: any[] = res?.feed || [];
+    return items.slice(0, FEED_CAP).map(rowFromFeedItem).filter(Boolean) as FeedRow[];
+  } catch {
+    return [];
+  }
 }
 
 async function fetchStats(): Promise<Stats | null> {
@@ -84,15 +112,16 @@ async function fetchStats(): Promise<Stats | null> {
     ]);
     const onlineUsersRaw: any[] = onlineRes?.users || [];
     const active: any[] = myRes?.active || [];
-    const history: any[] = myRes?.history || [];
     const onlineUsers = onlineUsersRaw.slice(0, 5).map(asUser);
-    const feed = history.slice(0, 5).map(rowFromChallenge).filter(Boolean) as FeedRow[];
+    // NOTE: the recent-games feed is no longer derived here from the current
+    // user's own history — it now comes from the GLOBAL feed state (see the
+    // `feed` state + fetchGlobalFeed + 'activity:completed' socket handler).
     return {
       online: onlineUsersRaw.length,
       active: active.length,
       recentUsernames: onlineUsers.slice(0, 3).map(u => u.username),
       onlineUsers,
-      feed,
+      feed: [],
       fetchedAt: Date.now(),
     };
   } catch {
@@ -104,6 +133,12 @@ export default function LiveCommunityWidget() {
   const router = useRouter();
   const { t } = useLang();
   const [stats, setStats] = useState<Stats | null>(null);
+  // GLOBAL recent-match feed — initial state from GET /challenges/feed/recent,
+  // then kept live by the 'activity:completed' socket broadcast below.
+  const [feed, setFeed] = useState<FeedRow[]>([]);
+  // Count of matches that finished while the widget was mounted, surfaced as a
+  // "live" bump next to the section title.
+  const [liveCount, setLiveCount] = useState(0);
   const [age, setAge] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -116,6 +151,32 @@ export default function LiveCommunityWidget() {
     tick();
     const id = setInterval(tick, REFRESH_MS);
     return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  // GLOBAL feed: initial fetch + live socket updates. The handler prepends each
+  // freshly-finished match, guards against duplicate ids, caps the list, and
+  // bumps the "live" counter. Falls back to an empty feed on any failure.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const initial = await fetchGlobalFeed();
+      if (!cancelled) setFeed(initial);
+    })();
+
+    const onActivity = (data: any) => {
+      const row = rowFromFeedItem(data);
+      if (!row) return;
+      setFeed(prev => {
+        if (prev.some(r => r.id === row.id)) return prev; // de-dupe
+        return [row, ...prev].slice(0, FEED_CAP);
+      });
+      setLiveCount(n => n + 1);
+    };
+    socketService.on('activity:completed', onActivity);
+    return () => {
+      cancelled = true;
+      socketService.off('activity:completed', onActivity);
+    };
   }, []);
 
   // Age ticker — recompute "X seconds ago" every second so the freshness
@@ -256,21 +317,22 @@ export default function LiveCommunityWidget() {
         ))}
       </View>
 
-      {/* v3.11.5 sprint-5 — recent challenges feed.
-          Reads /api/challenges/my .history slice via the same fetch, shows
-          the last up to 5 finished games with winner / loser / time / errors.
-          Empty state CTA invites the user to be the first to fill the feed. */}
+      {/* GLOBAL recent-match feed.
+          Initial state from GET /api/challenges/feed/recent (all players,
+          newest first), then kept live by the 'activity:completed' socket
+          broadcast. Shows up to 12 finished games as "{winner} beat {loser}"
+          or "{a} vs {b} · draw". Empty state CTA invites the user to be first. */}
       <View style={{ marginTop: 16, padding: 18, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Text style={{ fontSize: 14 }}>📜</Text>
           <Text style={{ color: '#f9fafb', fontSize: 13, fontWeight: '800', letterSpacing: 0.4 }}>{t('recentGames')}</Text>
-          {stats?.feed && stats.feed.length > 0 && (
+          {feed.length > 0 && (
             <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginLeft: 'auto' }}>
-              {stats.feed.length} {t('resultsCount')}
+              {liveCount > 0 ? `+${liveCount} live · ` : ''}{feed.length} {t('resultsCount')}
             </Text>
           )}
         </View>
-        {(!stats || stats.feed.length === 0) ? (
+        {feed.length === 0 ? (
           <View style={{ paddingVertical: 18, alignItems: 'center' }}>
             <Text style={{ color: '#64748b', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
               {t('noGameFinished')}{'\n'}
@@ -278,10 +340,7 @@ export default function LiveCommunityWidget() {
             </Text>
           </View>
         ) : (
-          stats.feed.map(row => {
-            const m = Math.floor(row.timeSpent / 60);
-            const s = row.timeSpent % 60;
-            const timeStr = m > 0 ? `${m}min ${String(s).padStart(2, '0')}s` : `${s}s`;
+          feed.map(row => {
             return (
               <View
                 key={row.id}
@@ -304,10 +363,8 @@ export default function LiveCommunityWidget() {
                 </View>
                 <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '600' }} numberOfLines={1}>{row.loserName}</Text>
                 <View style={{ flex: 1 }} />
-                <Text style={{ color: '#cbd5e1', fontSize: 11, fontWeight: '700' }}>{timeStr}</Text>
-                <View style={{ width: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.08)', marginHorizontal: 4 }} />
-                <Text style={{ color: row.errors > 0 ? '#ef4444' : '#4ade80', fontSize: 11, fontWeight: '700' }}>
-                  {row.errors} ❌
+                <Text style={{ color: row.isDraw ? '#94a3b8' : '#cbd5e1', fontSize: 11, fontWeight: '700' }}>
+                  {row.difficulty || ''}
                 </Text>
               </View>
             );

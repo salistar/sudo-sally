@@ -20,6 +20,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLang } from '../../utils/LanguageContext';
 import { useTheme } from '../../utils/theme';
 import { API_URL } from '../../utils/api';
+import { formatClock } from '../../utils/format';
+
+type RecentMatch = {
+  outcome: 'win' | 'loss' | 'draw';
+  opponent: string;
+  opponentAvatar: string;
+  timeSpent: number; // seconds
+  errors: number;
+  difficulty: string;
+  at: string; // ISO
+};
 
 type PublicProfile = {
   username: string;
@@ -33,6 +44,7 @@ type PublicProfile = {
   gamesWon: number;
   bestStreak: number;
   currentStreak: number;
+  recentMatches?: RecentMatch[];
 };
 
 function formatJoined(iso?: string, lang: 'en' | 'fr' | 'ar' = 'en'): string {
@@ -276,6 +288,94 @@ export default function PublicProfile() {
             <Text style={{ color: c.gold, fontSize: 18, fontWeight: '900', ...type.mono }}>{profile.bestStreak}</Text>
           </View>
         </View>
+
+        {/* ── Recent matches ──────────────────────────────────── */}
+        {!!profile.recentMatches?.length && (
+          <View
+            style={{
+              marginTop: s.xl,
+              padding: s.lg, borderRadius: r.md,
+              backgroundColor: c.surface800,
+              borderWidth: 1, borderColor: c.border,
+            }}
+          >
+            <Text style={{ color: c.textMuted, ...type.eyebrow, marginBottom: s.md }}>
+              {t('recentMatches')}
+            </Text>
+            <View style={{ gap: s.sm }}>
+              {profile.recentMatches.map((m, i) => {
+                const pill =
+                  m.outcome === 'win'
+                    ? { bg: `${c.success}22`, border: c.success, color: c.success, label: t('matchWin') }
+                    : m.outcome === 'loss'
+                    ? { bg: `${c.error}22`, border: c.error, color: c.error, label: t('matchLoss') }
+                    : { bg: 'rgba(255,255,255,0.06)', border: c.border, color: c.textMuted, label: t('matchDraw') };
+                return (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: isDesktopWeb ? 'row' : 'column',
+                      alignItems: isDesktopWeb ? 'center' : 'flex-start',
+                      gap: s.md,
+                      padding: s.md, borderRadius: r.sm,
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      borderWidth: 1, borderColor: c.border,
+                    }}
+                  >
+                    {/* Outcome pill */}
+                    <View
+                      style={{
+                        paddingHorizontal: s.md, paddingVertical: 4,
+                        borderRadius: r.pill,
+                        backgroundColor: pill.bg,
+                        borderWidth: 1, borderColor: pill.border,
+                        minWidth: 64, alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: pill.color, ...type.eyebrow }}>{pill.label}</Text>
+                    </View>
+                    {/* Opponent */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s.sm, flex: 1, minWidth: 0 }}>
+                      <View
+                        style={{
+                          width: 32, height: 32, borderRadius: 16,
+                          backgroundColor: c.surface700,
+                          borderWidth: 1, borderColor: c.border,
+                          alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: 18 }}>{m.opponentAvatar}</Text>
+                      </View>
+                      <Text style={{ color: c.text, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
+                        {t('vsLabel')} @{m.opponent}
+                      </Text>
+                    </View>
+                    {/* Difficulty */}
+                    <View
+                      style={{
+                        paddingHorizontal: s.md, paddingVertical: 3,
+                        borderRadius: r.pill,
+                        backgroundColor: 'rgba(255,255,255,0.04)',
+                        borderWidth: 1, borderColor: c.border,
+                      }}
+                    >
+                      <Text style={{ color: c.textMuted, ...type.eyebrow }}>{m.difficulty}</Text>
+                    </View>
+                    {/* Time + errors */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s.md }}>
+                      <Text style={{ color: c.text, fontSize: 13, fontWeight: '700', ...type.mono }}>
+                        ⏱ {formatClock(m.timeSpent)}
+                      </Text>
+                      <Text style={{ color: c.textMuted, fontSize: 13, fontWeight: '700', ...type.mono }}>
+                        ✕ {m.errors}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </LinearGradient>
   );

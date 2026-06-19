@@ -422,18 +422,39 @@ exports.completeChallenge = async (req, res) => {
     challenge[progressKey].completed = true;
     challenge[progressKey].completedAt = new Date();
     
-    if (challenge[opponentKey].completed || challenge[opponentKey].abandoned) {
+    // True only for the SECOND player to finish → the match is now fully over.
+    // Used to emit the global activity broadcast exactly once.
+    const matchJustFinished = challenge[opponentKey].completed || challenge[opponentKey].abandoned;
+    if (matchJustFinished) {
       await determineWinner(challenge);
     }
-    
+
     await challenge.save();
-    
+
     await challenge.populate([
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' },
       { path: 'winner', select: 'username avatar' }
     ]);
-    
+
+    // sprint-32 — global activity feed: broadcast a sanitized "match finished"
+    // event to every connected client once both players are done. Powers the
+    // live community widget (previously it could only show the caller's own
+    // games). No board/solution leaked.
+    if (matchJustFinished) {
+      try {
+        const { broadcast } = require('../services/socketService');
+        broadcast('activity:completed', {
+          challenger: { username: challenge.challenger?.username, avatar: challenge.challenger?.avatar },
+          challenged: { username: challenge.challenged?.username, avatar: challenge.challenged?.avatar },
+          winner: challenge.winner ? { username: challenge.winner.username, avatar: challenge.winner.avatar } : null,
+          isDraw: !!challenge.isDraw,
+          difficulty: challenge.difficulty,
+          at: Date.now(),
+        });
+      } catch (_) { /* feed broadcast is best-effort */ }
+    }
+
     res.json({ success: true, challenge });
   } catch (error) {
     res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });

@@ -75,6 +75,37 @@ router.get('/by-username/:username', async (req, res) => {
       username: { $regex: '^' + safe + '$', $options: 'i' },
     }).select('username avatar level stars createdAt isOnline lastActive stats');
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // sprint-31 — public recent-matches for the profile page. The viewed user's
+    // last completed duels, from THEIR perspective (win/loss/draw vs opponent).
+    // Public-safe: no board/solution, only outcome + opponent + time/errors.
+    const Challenge = require('../models/Challenge');
+    const matches = await Challenge.find({
+      status: 'completed',
+      $or: [{ challenger: user._id }, { challenged: user._id }],
+    })
+      .populate('challenger', 'username avatar')
+      .populate('challenged', 'username avatar')
+      .populate('winner', 'username avatar')
+      .sort({ completedAt: -1 })
+      .limit(8);
+    const recentMatches = matches.map((c) => {
+      const meIsChallenger = String(c.challenger?._id) === String(user._id);
+      const me = meIsChallenger ? c.challengerProgress : c.challengedProgress;
+      const opp = meIsChallenger ? c.challenged : c.challenger;
+      const outcome = c.isDraw ? 'draw'
+        : (c.winner && String(c.winner._id) === String(user._id)) ? 'win' : 'loss';
+      return {
+        outcome,
+        opponent: opp?.username || '—',
+        opponentAvatar: opp?.avatar || '🎮',
+        timeSpent: me?.timeSpent || 0,
+        errors: me?.errors || 0,
+        difficulty: c.difficulty,
+        at: c.completedAt,
+      };
+    });
+
     res.json({
       success: true,
       user: {
@@ -90,6 +121,7 @@ router.get('/by-username/:username', async (req, res) => {
         gamesWon: user.stats?.gamesWon || 0,
         bestStreak: user.stats?.bestStreak || 0,
         currentStreak: user.stats?.currentStreak || 0,
+        recentMatches,
       },
     });
   } catch (error) {

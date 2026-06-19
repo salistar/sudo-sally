@@ -17,10 +17,25 @@ export default function Root({ children }: PropsWithChildren) {
         <title>SallySudo — real-time 1v1 Sudoku</title>
         <meta name="description" content="SallySudo is the modern Sudoku game with daily puzzles, ranked leaderboard and real-time 1v1 multiplayer duels with audio/video calls." />
         <meta name="theme-color" content="#0a0a1a" />
+        {/* Open Graph — link unfurls on Slack / Discord / Facebook / WhatsApp.
+            Static export = one shared head for every route (no SSR), so this is
+            the site-wide card. */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SallySudo" />
+        <meta property="og:locale" content="en" />
         <meta property="og:title" content="SallySudo — real-time 1v1 Sudoku" />
         <meta property="og:description" content="Daily puzzles, leaderboard, and real-time 1v1 duels with chat and calls." />
         <meta property="og:url" content="https://app.sallysudo.com" />
+        <meta property="og:image" content="https://app.sallysudo.com/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        {/* Twitter card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="SallySudo — real-time 1v1 Sudoku" />
+        <meta name="twitter:description" content="Daily puzzles, leaderboard, and real-time 1v1 duels with chat and calls." />
+        <meta name="twitter:image" content="https://app.sallysudo.com/og-image.png" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: webCss }} />
       </head>

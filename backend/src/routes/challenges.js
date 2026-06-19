@@ -99,6 +99,35 @@ router.get('/:challengeId/replay', auth, async (req, res) => {
   }
 });
 
+// sprint-32 — recent completed matches across ALL users. Powers the live
+// community feed's initial state; real-time updates arrive via the
+// 'activity:completed' socket broadcast. Declared BEFORE /:challengeId.
+router.get('/feed/recent', auth, async (req, res) => {
+  try {
+    const items = await Challenge.find({ status: 'completed' })
+      .populate('challenger', 'username avatar')
+      .populate('challenged', 'username avatar')
+      .populate('winner', 'username avatar')
+      .sort({ completedAt: -1 })
+      .limit(12);
+    res.json({
+      success: true,
+      feed: items.map((c) => ({
+        id: String(c._id),
+        challenger: { username: c.challenger?.username, avatar: c.challenger?.avatar },
+        challenged: { username: c.challenged?.username, avatar: c.challenged?.avatar },
+        winner: c.winner ? { username: c.winner.username, avatar: c.winner.avatar } : null,
+        isDraw: !!c.isDraw,
+        difficulty: c.difficulty,
+        at: c.completedAt,
+      })),
+    });
+  } catch (error) {
+    console.error('[feed/recent]', error);
+    res.status(500).json({ success: false, error: 'Failed to load feed' });
+  }
+});
+
 // Get specific challenge
 router.get('/:challengeId', auth, getChallenge);
 

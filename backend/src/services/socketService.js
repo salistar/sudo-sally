@@ -328,12 +328,21 @@ function notifyUser(odcUserId, event, payload) {
   return true;
 }
 
+// Broadcast an event to EVERY connected socket (global activity feed etc.).
+// Safe no-op before initializeSocket runs.
+function broadcast(event, payload) {
+  if (!_io) return false;
+  _io.emit(event, payload);
+  return true;
+}
+
 module.exports = {
   initializeSocket,
   getSocketForUser,
   isUserOnline,
   getOnlineUsersCount,
   notifyUser,
+  broadcast,
   connectedUsers,
   userSockets
 };

@@ -627,6 +627,11 @@ export const translations = {
     joined: 'JOINED',
     linkCopied: 'LINK COPIED',
     shareProfile: 'SHARE PROFILE',
+    recentMatches: 'Recent matches',
+    matchWin: 'WON',
+    matchLoss: 'LOST',
+    matchDraw: 'DRAW',
+    vsLabel: 'vs',
 
     // v3.11.15 sprint-20 — Real-time socket toasts
     toastChallengedYou: '⚔️ {name} challenged you',
@@ -1315,6 +1320,11 @@ export const translations = {
     joined: 'INSCRIT EN',
     linkCopied: 'LIEN COPIÉ',
     shareProfile: 'PARTAGER LE PROFIL',
+    recentMatches: 'Matchs récents',
+    matchWin: 'GAGNÉ',
+    matchLoss: 'PERDU',
+    matchDraw: 'NUL',
+    vsLabel: 'contre',
 
     // v3.11.15 sprint-20 — Real-time socket toasts
     toastChallengedYou: "⚔️ {name} t'a défié",
@@ -2003,6 +2013,11 @@ export const translations = {
     joined: 'انضم في',
     linkCopied: 'تم نسخ الرابط',
     shareProfile: 'شارك الملف',
+    recentMatches: 'المباريات الأخيرة',
+    matchWin: 'فوز',
+    matchLoss: 'خسارة',
+    matchDraw: 'تعادل',
+    vsLabel: 'ضد',
 
     // v3.11.15 sprint-20 — Real-time socket toasts
     toastChallengedYou: '⚔️ {name} تحدّاك',
