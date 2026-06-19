@@ -33,7 +33,7 @@
   color: #e2e8f0;
 }
 .lang-switcher .lang-chip.active {
-  background: #4ade80;
+  background: #7c5cff;
   color: #0a0a1a;
 }
 /* RTL — when <html dir="rtl"> is set, lay nav out right-to-left. */
@@ -74,21 +74,21 @@ html[dir="rtl"] .footer-grid {
   background: rgba(96, 165, 250, 0.1);
   border: 1px solid rgba(96, 165, 250, 0.3);
 }
-.nav-links a.nav-cta { padding: 9px 18px !important; box-shadow: 0 4px 16px rgba(34, 197, 94, 0.32); }
+.nav-links a.nav-cta { padding: 9px 18px !important; box-shadow: 0 4px 16px rgba(45, 212, 219, 0.32); }
 
 /* Sign in pill — sits right before Download, paired visually. */
 .nav-signin {
-  color: #4ade80 !important;
+  color: #7c5cff !important;
   font-weight: 700 !important;
   padding: 8px 16px !important;
   border-radius: 999px !important;
-  border: 1px solid rgba(74, 222, 128, 0.45);
+  border: 1px solid rgba(124, 92, 255, 0.45);
   margin-left: 6px;
   transition: background-color .15s, border-color .15s, color .15s, transform .15s;
 }
 .nav-signin:hover {
-  background: rgba(74, 222, 128, 0.14) !important;
-  border-color: rgba(74, 222, 128, 0.9);
+  background: rgba(124, 92, 255, 0.14) !important;
+  border-color: rgba(124, 92, 255, 0.9);
   transform: translateY(-1px);
 }
 
@@ -100,7 +100,7 @@ body.is-authed .auth-row { display: none; }
   max-width: 520px;
   padding: 22px;
   border-radius: 18px;
-  background: linear-gradient(160deg, rgba(74, 222, 128, 0.07), rgba(96, 165, 250, 0.04));
+  background: linear-gradient(160deg, rgba(124, 92, 255, 0.07), rgba(96, 165, 250, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -145,11 +145,11 @@ body.is-authed .auth-row { display: none; }
 .btn-auth .ico { font-size: 17px; }
 .btn-auth-signin {
   color: #06210f;
-  background: linear-gradient(135deg, #4ade80, #22c55e);
+  background: linear-gradient(135deg, #7c5cff, #2dd4db);
   border-color: transparent;
-  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.28);
+  box-shadow: 0 6px 20px rgba(45, 212, 219, 0.28);
 }
-.btn-auth-signin:hover { box-shadow: 0 10px 28px rgba(34, 197, 94, 0.4); }
+.btn-auth-signin:hover { box-shadow: 0 10px 28px rgba(45, 212, 219, 0.4); }
 .btn-auth-register {
   color: #e2e8f0;
   background: rgba(255, 255, 255, 0.05);
@@ -190,12 +190,16 @@ body.is-authed .auth-row { display: none; }
   --surface-2: rgba(255, 255, 255, 0.06);
   --surface-border: rgba(255, 255, 255, 0.08);
 
-  /* Accents */
-  --green-1: #4ade80;
-  --green-2: #22c55e;
-  --blue: #60a5fa;
+  /* Accents — Midnight Atlas (matches the app design system: aurora
+     violet → blue → cyan, with a warm gold highlight). The variable names
+     keep their legacy "green" identifiers so the 1500-line sheet didn't need
+     renaming, but the VALUES are now the violet/cyan palette. */
+  --green-1: #7c5cff;   /* primary — aurora violet */
+  --green-2: #2dd4db;   /* secondary — aurora cyan  */
+  --blue: #5b8def;
   --pink: #f472b6;
   --amber: #fbbf24;
+  --gold: #e5b567;      /* warm premium highlight */
 
   /* Text */
   --text: #ffffff;
@@ -203,7 +207,9 @@ body.is-authed .auth-row { display: none; }
   --muted-2: #64748b;
 
   /* Gradients */
-  --grad-green: linear-gradient(135deg, #4ade80, #22c55e);
+  --grad-green: linear-gradient(135deg, #7c5cff, #5b8def 55%, #2dd4db);
+  --grad-aurora: linear-gradient(135deg, #7c5cff, #5b8def, #2dd4db);
+  --grad-gold: linear-gradient(135deg, #e5b567, #d99a3f);
   --grad-bg: linear-gradient(160deg, #0a0a1a 0%, #12122a 45%, #1a1a3a 100%);
 
   /* Shape */
@@ -212,7 +218,7 @@ body.is-authed .auth-row { display: none; }
   --radius-lg: 28px;
 
   /* Glow */
-  --glow-green: 0 0 40px rgba(74, 222, 128, 0.25);
+  --glow-green: 0 0 40px rgba(124, 92, 255, 0.3);
 
   /* Layout */
   --maxw: 1160px;
@@ -318,8 +324,8 @@ section {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--green-1);
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.22);
+  background: rgba(124, 92, 255, 0.1);
+  border: 1px solid rgba(124, 92, 255, 0.22);
   padding: 6px 14px;
   border-radius: 999px;
   margin-bottom: 18px;
@@ -377,7 +383,7 @@ h2.section-title {
 }
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 36px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 12px 36px rgba(45, 212, 219, 0.4);
 }
 
 .btn-ghost {
@@ -492,7 +498,7 @@ h2.section-title {
   background: var(--grad-green);
   color: #06210f;
   font-weight: 700;
-  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.28);
+  box-shadow: 0 6px 20px rgba(45, 212, 219, 0.28);
 }
 .nav-links a.nav-cta:hover {
   transform: translateY(-2px);
@@ -645,7 +651,7 @@ h2.section-title {
   inset: -10%;
   background: radial-gradient(
     circle,
-    rgba(74, 222, 128, 0.22),
+    rgba(124, 92, 255, 0.22),
     transparent 65%
   );
   filter: blur(30px);
@@ -695,9 +701,9 @@ h2.section-title {
 }
 .sudoku-card .cell.filled {
   color: var(--green-1);
-  background: rgba(74, 222, 128, 0.08);
-  border-color: rgba(74, 222, 128, 0.28);
-  text-shadow: 0 0 18px rgba(74, 222, 128, 0.5);
+  background: rgba(124, 92, 255, 0.08);
+  border-color: rgba(124, 92, 255, 0.28);
+  text-shadow: 0 0 18px rgba(124, 92, 255, 0.5);
 }
 .sudoku-card .cell.pop {
   animation: cellPop 0.5s ease both;
@@ -744,7 +750,7 @@ h2.section-title {
 }
 .card:hover {
   transform: translateY(-6px);
-  border-color: rgba(74, 222, 128, 0.35);
+  border-color: rgba(124, 92, 255, 0.35);
   background: var(--surface-2);
 }
 .card .card-icon {
@@ -755,8 +761,8 @@ h2.section-title {
   justify-content: center;
   font-size: 1.6rem;
   border-radius: 14px;
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.2);
+  background: rgba(124, 92, 255, 0.1);
+  border: 1px solid rgba(124, 92, 255, 0.2);
   margin-bottom: 18px;
 }
 .card h3 {
@@ -913,7 +919,7 @@ h2.section-title {
   grid-template-columns: repeat(9, 1fr);
   gap: 1px;
   background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(74, 222, 128, 0.3);
+  border: 2px solid rgba(124, 92, 255, 0.3);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -933,7 +939,7 @@ h2.section-title {
   color: var(--blue);
 }
 .scr-board span.sel {
-  background: rgba(74, 222, 128, 0.18);
+  background: rgba(124, 92, 255, 0.18);
 }
 
 .scr-pad {
@@ -976,7 +982,7 @@ h2.section-title {
   font-size: 0.62rem;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(124, 92, 255, 0.15);
   color: var(--green-1);
 }
 .scr-levels .lvl.locked {
@@ -1016,7 +1022,7 @@ h2.section-title {
   background: #13132c;
 }
 .mini9 i.f {
-  background: rgba(74, 222, 128, 0.4);
+  background: rgba(124, 92, 255, 0.4);
 }
 .mini9.foe i.f {
   background: rgba(244, 114, 182, 0.4);
@@ -1104,8 +1110,8 @@ h2.section-title {
   position: relative;
   z-index: 1;
   text-align: center;
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.12), rgba(96, 165, 250, 0.1));
-  border: 1px solid rgba(74, 222, 128, 0.22);
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.12), rgba(96, 165, 250, 0.1));
+  border: 1px solid rgba(124, 92, 255, 0.22);
   border-radius: var(--radius-lg);
   padding: 56px 28px;
   box-shadow: var(--glow-green);
@@ -1215,7 +1221,7 @@ h2.section-title {
   grid-template-columns: repeat(9, 1fr);
   gap: 1px;
   background: rgba(255, 255, 255, 0.1);
-  border: 3px solid rgba(74, 222, 128, 0.4);
+  border: 3px solid rgba(124, 92, 255, 0.4);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: var(--glow-green);
@@ -1243,16 +1249,16 @@ h2.section-title {
   align-content: center;
 }
 .example-board span.hl {
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(124, 92, 255, 0.15);
 }
 /* 3x3 block separators */
 .example-board span:nth-child(9n + 3),
 .example-board span:nth-child(9n + 6) {
-  border-right: 2px solid rgba(74, 222, 128, 0.35);
+  border-right: 2px solid rgba(124, 92, 255, 0.35);
 }
 .example-board span:nth-child(n + 19):nth-child(-n + 27),
 .example-board span:nth-child(n + 46):nth-child(-n + 54) {
-  border-bottom: 2px solid rgba(74, 222, 128, 0.35);
+  border-bottom: 2px solid rgba(124, 92, 255, 0.35);
 }
 
 /* ============================================================
@@ -1384,7 +1390,7 @@ h2.section-title {
   transition: border-color 0.25s ease;
 }
 .faq-item.open {
-  border-color: rgba(74, 222, 128, 0.35);
+  border-color: rgba(124, 92, 255, 0.35);
 }
 .faq-q {
   width: 100%;
