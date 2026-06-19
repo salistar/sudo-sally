@@ -627,6 +627,15 @@ export const translations = {
     dailyStatYesterday: 'YESTERDAY',
     dailyStatBest: 'PERSONAL BEST',
     dailyStatThisMonth: 'THIS MONTH',
+
+    // v3.11.14 sprint-19 — Public profile /u/<username>
+    profileNotFound: 'Profile not found',
+    profileNotFoundHint: 'No SallySudo player goes by',
+    backToHome: 'Back to home',
+    offline: 'OFFLINE',
+    joined: 'JOINED',
+    linkCopied: 'LINK COPIED',
+    shareProfile: 'SHARE PROFILE',
   },
 
   fr: {
@@ -1254,6 +1263,15 @@ export const translations = {
     dailyStatYesterday: 'HIER',
     dailyStatBest: 'RECORD PERSO',
     dailyStatThisMonth: 'CE MOIS',
+
+    // v3.11.14 sprint-19 — Public profile /u/<username>
+    profileNotFound: 'Profil introuvable',
+    profileNotFoundHint: "Aucun joueur SallySudo ne s'appelle",
+    backToHome: "Retour à l'accueil",
+    offline: 'HORS LIGNE',
+    joined: 'INSCRIT EN',
+    linkCopied: 'LIEN COPIÉ',
+    shareProfile: 'PARTAGER LE PROFIL',
   },
 
   ar: {
@@ -1881,6 +1899,15 @@ export const translations = {
     dailyStatYesterday: 'أمس',
     dailyStatBest: 'أفضل قياسي',
     dailyStatThisMonth: 'هذا الشهر',
+
+    // v3.11.14 sprint-19 — Public profile /u/<username>
+    profileNotFound: 'الملف غير موجود',
+    profileNotFoundHint: 'لا يوجد لاعب SallySudo باسم',
+    backToHome: 'العودة للرئيسية',
+    offline: 'غير متصل',
+    joined: 'انضم في',
+    linkCopied: 'تم نسخ الرابط',
+    shareProfile: 'شارك الملف',
   }
 };
 

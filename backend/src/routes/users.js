@@ -58,6 +58,43 @@ router.get('/recent', auth, async (req, res) => {
   }
 });
 
+// ─── PUBLIC profile lookup by username — v3.11.14 sprint-19 ──
+// Powers /u/<username> pages: anyone can view another player's profile,
+// authed or not, with sanitized fields only (no email/password/settings).
+// Username match is case-insensitive so URLs are forgiving.
+// IMPORTANT: this route MUST stay above the `/:id` route below — Express
+// matches routes in declaration order, and "/:id" would otherwise eat it.
+router.get('/by-username/:username', async (req, res) => {
+  try {
+    const raw = (req.params.username || '').toString().trim();
+    if (!raw) return res.status(400).json({ error: 'Missing username' });
+    const safe = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({
+      username: { $regex: '^' + safe + '$', $options: 'i' },
+    }).select('username avatar level stars createdAt isOnline lastActive stats');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({
+      success: true,
+      user: {
+        username: user.username,
+        avatar: user.avatar || '🎮',
+        level: user.level || 1,
+        stars: user.stars || 0,
+        joinedAt: user.createdAt,
+        isOnline: !!user.isOnline,
+        lastActive: user.lastActive,
+        // Public-safe stats subset only.
+        gamesPlayed: user.stats?.gamesPlayed || 0,
+        gamesWon: user.stats?.gamesWon || 0,
+        bestStreak: user.stats?.bestStreak || 0,
+        currentStreak: user.stats?.currentStreak || 0,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all users (admin only)
 router.get('/', auth, async (req, res) => {
   try {
