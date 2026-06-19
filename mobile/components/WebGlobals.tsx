@@ -26,7 +26,7 @@ const ls = {
   set(k: string, v: string) { try { if (typeof window !== 'undefined') window.localStorage.setItem(k, v); } catch {} },
 };
 
-export default function WebGlobals() {
+export default function WebGlobals({ suppressOnboarding = false }: { suppressOnboarding?: boolean }) {
   const isWeb = Platform.OS === 'web';
   const { t, lang, isRTL } = useLang() as any;
 
@@ -42,7 +42,7 @@ export default function WebGlobals() {
   if (!isWeb) return null;
   return (
     <>
-      <Onboarding t={t} />
+      {!suppressOnboarding && <Onboarding t={t} />}
       <Changelog t={t} lang={lang} />
       <CookieBanner t={t} />
     </>

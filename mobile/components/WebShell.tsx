@@ -48,17 +48,27 @@ const SECONDARY: NavItem[] = [
   { key: 'settings', icon: '⚙️', tKey: 'settings',      route: '/settings' },
 ];
 
+// Public / auth / legal pages render STANDALONE — no app sidebar+header. They
+// have their own chrome (landing intro, auth forms, LegalLayout back-link), so
+// the 260px game shell would be wrong here.
+const BARE_ROUTES = new Set([
+  '/', '/welcome', '/splash', '/login', '/register',
+  '/about', '/pricing', '/privacy', '/terms', '/press',
+]);
+
 export default function WebShell({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
+  const path = usePathname();
   const isWeb = Platform.OS === 'web';
   const isDesktopWeb = isWeb && width >= BREAKPOINT;
+  const bare = BARE_ROUTES.has(path);
 
-  // Web-only global overlays (RTL <html dir>, onboarding, changelog, cookie
-  // banner) render on ALL web widths, not just the desktop shell.
+  // Web-only global overlays (RTL <html dir>, changelog, cookie banner) render
+  // on ALL web widths. The onboarding game-intro is suppressed on bare routes.
   return (
     <>
-      {isWeb && <WebGlobals />}
-      {isDesktopWeb ? <DesktopShell>{children}</DesktopShell> : <>{children}</>}
+      {isWeb && <WebGlobals suppressOnboarding={bare} />}
+      {(isDesktopWeb && !bare) ? <DesktopShell>{children}</DesktopShell> : <>{children}</>}
     </>
   );
 }
