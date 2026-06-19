@@ -369,9 +369,9 @@ export default function SettingsScreen() {
             
             <View style={styles.accountDivider} />
             
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.accountRow}
-              onPress={() => Alert.alert('Privacy Policy', 'Coming soon!')}
+              onPress={() => router.push('/privacy' as any)}
               activeOpacity={0.7}
             >
               <View style={styles.accountIconContainer}>
@@ -380,6 +380,23 @@ export default function SettingsScreen() {
               <View style={styles.accountInfo}>
                 <Text style={styles.accountLabel}>Privacy Policy</Text>
                 <Text style={styles.accountDesc}>How we handle your data</Text>
+              </View>
+              <Text style={styles.accountArrow}>→</Text>
+            </TouchableOpacity>
+
+            <View style={styles.accountDivider} />
+
+            <TouchableOpacity
+              style={styles.accountRow}
+              onPress={() => router.push('/terms' as any)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.accountIconContainer}>
+                <Text style={styles.accountIcon}>📄</Text>
+              </View>
+              <View style={styles.accountInfo}>
+                <Text style={styles.accountLabel}>Terms of Service</Text>
+                <Text style={styles.accountDesc}>The rules for using SallySudo</Text>
               </View>
               <Text style={styles.accountArrow}>→</Text>
             </TouchableOpacity>
