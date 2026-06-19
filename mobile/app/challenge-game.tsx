@@ -160,6 +160,25 @@ const socStyles = StyleSheet.create({
   label: { color: '#cbd5e1', fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });
 
+// v3.11.16 sprint-22 — Chess.com-style quick taunts
+const TAUNTS = ['GG', 'GL', '🔥', '😎', '🤔', '😅', '💩'];
+function QuickTaunts({ onSend }: { onSend: (s: string) => void }) {
+  return (
+    <View style={tauntStyles.row}>
+      {TAUNTS.map((tt) => (
+        <TouchableOpacity key={tt} onPress={() => onSend(tt)} activeOpacity={0.8} style={tauntStyles.chip}>
+          <Text style={tauntStyles.chipText}>{tt}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+const tauntStyles = StyleSheet.create({
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 4 },
+  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(124,92,255,0.12)', borderWidth: 1, borderColor: 'rgba(124,92,255,0.35)' },
+  chipText: { color: '#cbd5e1', fontSize: 13, fontWeight: '700' },
+});
+
 export default function ChallengeGame() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -560,6 +579,12 @@ export default function ChallengeGame() {
     const msg = { id: 'm_'+Math.random().toString(36).slice(2,8), from: currentUser?.username || 'You', text, ts: Date.now() };
     setChatMessages(prev => [...prev, msg]);
     setChatInput('');
+    try { socketService.sendChat(challengeId, { text }); } catch {}
+  };
+
+  const sendChatQuick = (text: string) => {
+    const msg = { id: 'm_'+Math.random().toString(36).slice(2,8), from: currentUser?.username || 'You', text, ts: Date.now() };
+    setChatMessages(prev => [...prev, msg]);
     try { socketService.sendChat(challengeId, { text }); } catch {}
   };
 
@@ -988,33 +1013,34 @@ export default function ChallengeGame() {
       <>
         {/* CHAT */}
         <View style={[styles.deckCol, styles.deckChat]}>
-          <Text style={styles.deckTitle}>💬 Chat</Text>
+          <Text style={styles.deckTitle}>💬 {t('chatRoomTag')}</Text>
           <ScrollView style={styles.deckChatList} contentContainerStyle={{ padding: 10, gap: 6 }}>
-            {chatMessages.length === 0 && <Text style={styles.deckEmpty}>Say hi to {opponent?.username || 'your opponent'}…</Text>}
+            {chatMessages.length === 0 && <Text style={styles.deckEmpty}>{t('chatSayHi')} {opponent?.username || '…'}</Text>}
             {chatMessages.map((m) => {
               const mine = m.from === (currentUser?.username || 'You');
               return (
                 <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
-                  <Text style={styles.chatFrom}>{m.from}</Text>
+                  <Text style={styles.chatFrom}>{mine ? t('chatYou') : m.from}</Text>
                   {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
                   {!!m.img && <Text style={[styles.chatText, { fontStyle: 'italic', opacity: 0.7 }]}>📷 image</Text>}
                 </View>
               );
             })}
           </ScrollView>
+          <QuickTaunts onSend={sendChatQuick} />
           <View style={styles.chatInputRow}>
             <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={styles.chatAttachIcon}>📎</Text></TouchableOpacity>
             <TextInput
               value={chatInput}
               onChangeText={setChatInput}
-              placeholder="Type a message…"
+              placeholder={t('chatPlaceholder')}
               placeholderTextColor="#475569"
               style={styles.chatInput}
               onSubmitEditing={sendChat}
               returnKeyType="send"
             />
             <TouchableOpacity style={styles.chatSend} onPress={sendChat}>
-              <Text style={styles.chatSendText}>Send</Text>
+              <Text style={styles.chatSendText}>{t('chatSend')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1413,22 +1439,23 @@ export default function ChallengeGame() {
             {panelTab === 'chat' && (
               <View style={styles.tabContent}>
                 <ScrollView style={styles.chatList} contentContainerStyle={{ padding: 12, gap: 8 }}>
-                  {chatMessages.length === 0 && <Text style={styles.chatEmpty}>No messages yet — say hi to {opponent.username || 'your opponent'}.</Text>}
+                  {chatMessages.length === 0 && <Text style={styles.chatEmpty}>{t('chatNoMessages')} {opponent?.username || '…'}</Text>}
                   {chatMessages.map(m => {
                     const mine = m.from === (currentUser?.username || 'You');
                     return (
                       <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
-                        <Text style={styles.chatFrom}>{m.from}</Text>
+                        <Text style={styles.chatFrom}>{mine ? t('chatYou') : m.from}</Text>
                         {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
                         {!!m.img && Platform.OS === 'web' && (<Text style={[styles.chatText, { fontStyle:'italic', opacity:0.7 }]}>📷 image — open the web build to see it inline</Text>)}
                       </View>
                     );
                   })}
                 </ScrollView>
+                <QuickTaunts onSend={sendChatQuick} />
                 <View style={styles.chatInputRow}>
                   <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={{ fontSize: 18 }}>📎</Text></TouchableOpacity>
-                  <TextInput value={chatInput} onChangeText={setChatInput} placeholder="Type a message…" placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
-                  <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700' }}>Send</Text></TouchableOpacity>
+                  <TextInput value={chatInput} onChangeText={setChatInput} placeholder={t('chatPlaceholder')} placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
+                  <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700' }}>{t('chatSend')}</Text></TouchableOpacity>
                 </View>
               </View>
             )}

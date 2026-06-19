@@ -659,6 +659,14 @@ export const translations = {
     frame: 'FRAME',
     speed: 'SPEED',
     watchReplay: 'WATCH REPLAY',
+    // sprint-22 chat
+    chatRoomTag: 'Chat',
+    chatSayHi: 'Say hi to',
+    chatNoMessages: 'No messages yet — say hi to',
+    chatPlaceholder: 'Type a message…',
+    chatSend: 'Send',
+    chatYou: 'You',
+    chatEmpty: 'your opponent',
   },
 
   fr: {
@@ -1318,6 +1326,14 @@ export const translations = {
     frame: 'IMAGE',
     speed: 'VITESSE',
     watchReplay: 'VOIR LE REPLAY',
+    // sprint-22 chat
+    chatRoomTag: 'Chat',
+    chatSayHi: 'Dis bonjour à',
+    chatNoMessages: 'Aucun message — dis bonjour à',
+    chatPlaceholder: 'Écrire un message…',
+    chatSend: 'Envoyer',
+    chatYou: 'Moi',
+    chatEmpty: 'ton adversaire',
   },
 
   ar: {
@@ -1977,6 +1993,14 @@ export const translations = {
     frame: 'الإطار',
     speed: 'السرعة',
     watchReplay: 'شاهد الإعادة',
+    // sprint-22 chat
+    chatRoomTag: 'دردشة',
+    chatSayHi: 'قل مرحبا لـ',
+    chatNoMessages: 'لا رسائل بعد — قل مرحبا لـ',
+    chatPlaceholder: 'اكتب رسالة…',
+    chatSend: 'إرسال',
+    chatYou: 'أنت',
+    chatEmpty: 'خصمك',
   }
 };
 
