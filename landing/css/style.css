@@ -1585,3 +1585,66 @@ h2.section-title {
   object-fit: cover;
   display: block;
 }
+
+/* ============================================================
+   v3.11.19 — Midnight Atlas polish pass (landing refonte+)
+   ============================================================ */
+
+/* LOGO FIX — keep the mark + "SallySudo" wordmark on ONE line, anchored
+   left; the link group may wrap on its own, never pushing the brand. */
+.site-header .nav { flex-wrap: nowrap; gap: 16px; align-items: center; }
+.brand { flex: 0 0 auto !important; white-space: nowrap; }
+.brand .logo-mark { display: block; flex: none; }
+.brand .wordmark { white-space: nowrap; line-height: 1; }
+.nav-links { flex-wrap: wrap; row-gap: 4px; justify-content: flex-end; }
+
+/* HERO — aurora gradient wordmark + a richer animated glow behind the card. */
+.hero { position: relative; overflow: hidden; }
+.hero::before {
+  content: '';
+  position: absolute; inset: -20% -10% auto auto;
+  width: 720px; height: 720px; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(closest-side, rgba(124, 92, 255, 0.22), transparent 70%),
+    radial-gradient(closest-side, rgba(45, 212, 219, 0.16), transparent 70%);
+  background-position: 60% 20%, 30% 60%;
+  background-repeat: no-repeat;
+  filter: blur(10px);
+  animation: auroraDrift 16s ease-in-out infinite alternate;
+}
+.hero > .container { position: relative; z-index: 1; }
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate3d(-40px, 30px, 0) scale(1.12); opacity: 1; }
+}
+.hero-copy h1 {
+  background: var(--grad-aurora);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  filter: drop-shadow(0 4px 26px rgba(124, 92, 255, 0.35));
+}
+.glow-ring {
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.42), rgba(45, 212, 219, 0.14) 45%, transparent 70%) !important;
+}
+
+/* BUTTONS — primary CTA uses the aurora gradient + glow, matching the app. */
+.btn-primary {
+  background: var(--grad-aurora) !important;
+  color: #0a0a1a !important;
+  border: 0 !important;
+  box-shadow: 0 8px 26px rgba(124, 92, 255, 0.38) !important;
+}
+.btn-primary:hover {
+  box-shadow: 0 14px 38px rgba(124, 92, 255, 0.52) !important;
+  transform: translateY(-2px);
+}
+.nav-links a.nav-cta { background: var(--grad-aurora) !important; color: #0a0a1a !important; }
+/* leftover dark-green text on the gradient sign-in button → dark navy */
+.btn-auth-signin { color: #0a0a1a !important; }
+
+/* Gradient accent on section titles' highlighted span, to echo the hero. */
+.text-grad {
+  background: var(--grad-aurora);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
