@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
 import { useTheme } from '../utils/theme';
 import { DailyChallenge } from '../utils/daily';
+import { formatDuration } from '../utils/format';
 
 type Props = {
   challenge: DailyChallenge | null;
@@ -30,12 +31,8 @@ type Props = {
   onPlay: () => void;
 };
 
-function fmtTime(seconds: number): string {
-  if (!seconds || seconds <= 0) return '—';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
+// m:SS with "—" fallback for 0/empty — shared util. Behaviour unchanged.
+const fmtTime = formatDuration;
 
 function todayLabel(lang: 'en' | 'fr' | 'ar'): string {
   try {

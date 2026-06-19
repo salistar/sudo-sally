@@ -6,6 +6,7 @@ import { storage, LevelData } from '../utils/storage';
 import BottomNav from '../components/BottomNav';
 import LevelsDesktopLayout from '../components/LevelsDesktopLayout';
 import * as Haptics from 'expo-haptics';
+import { formatClock } from '../utils/format';
 
 const FILE_NAME = '📁 [Levels.tsx]';
 
@@ -120,11 +121,8 @@ export default function Levels() {
     setSelectedDifficulty(prev => prev === diffKey ? null : diffKey);
   }, []);
 
-  const formatTime = useCallback((seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }, []);
+  // m:SS (unpadded minutes) — shared util. Behaviour unchanged.
+  const formatTime = formatClock;
 
   const filteredLevels = selectedDifficulty 
     ? levels.filter(l => l.difficulty === selectedDifficulty)

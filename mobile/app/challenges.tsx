@@ -20,6 +20,7 @@ import { useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import { formatClock } from '../utils/format';
 
 // ============ TYPES ============
 interface User {
@@ -376,11 +377,8 @@ export default function Challenges() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // m:SS (unpadded minutes) — shared util. Behaviour unchanged.
+  const formatTime = formatClock;
 
   // ============ LOADING STATE ============
   if (loading) {

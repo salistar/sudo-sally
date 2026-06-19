@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../../utils/LanguageContext';
 import { useTheme } from '../../utils/theme';
 import { API_URL } from '../../utils/api';
+import { formatClock, formatClockMs } from '../../utils/format';
 
 // Demo replay used when /replay/demo is opened — lets us screenshot the
 // UI before any real game has been recorded. A real puzzle with both
@@ -132,16 +133,10 @@ function boardAtFrame(puzzle: string, moves: Move[], frame: number): number[] {
   return grid;
 }
 
-function fmtTime(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  return `${m}:${String(s % 60).padStart(2, '0')}`;
-}
-
-function fmtTotalSec(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  return `${m}:${String(seconds % 60).padStart(2, '0')}`;
-}
+// m:SS from MILLISECONDS — shared util. Behaviour unchanged.
+const fmtTime = formatClockMs;
+// m:SS from SECONDS — shared util. Behaviour unchanged.
+const fmtTotalSec = formatClock;
 
 export default function ReplayPage() {
   const { challengeId } = useLocalSearchParams<{ challengeId: string }>();

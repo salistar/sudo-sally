@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLang } from '../utils/LanguageContext';
 import { useTheme } from '../utils/theme';
 import { LevelData } from '../utils/storage';
+import { formatDuration } from '../utils/format';
 
 type Props = {
   levels: LevelData[];
@@ -40,12 +41,8 @@ function diffColor(diff: string, c: any): string {
   }
 }
 
-function fmtTime(seconds: number): string {
-  if (!seconds) return '—';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
+// m:SS with "—" fallback for 0/empty — shared util. Behaviour unchanged.
+const fmtTime = formatDuration;
 
 export default function LevelsDesktopLayout({ levels, selectedDifficulty, onFilter, onLevel }: Props) {
   const { t } = useLang();
