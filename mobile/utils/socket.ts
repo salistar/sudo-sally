@@ -24,6 +24,9 @@ class SocketService {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  // Challenge rooms we belong to — re-joined automatically on every (re)connect
+  // so realtime + WebRTC signaling survive a dropped socket (sleep, reload, network blip).
+  private joinedChallenges: Set<string> = new Set();
 
   // ============ CONNECTION ============
   
@@ -62,7 +65,10 @@ class SocketService {
 
       this.socket = io(SOCKET_URL, {
         auth: { token: token as string },
-        transports: ['websocket'],
+        // Keep websocket first (native + most browsers), but fall back to
+        // long-polling so the web client still connects if the websocket
+        // upgrade is blocked (proxy / CORS) instead of erroring out forever.
+        transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
@@ -76,6 +82,9 @@ class SocketService {
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
+          // Re-join every challenge room we belong to. Covers reconnects AND the
+          // race where joinChallenge() ran before the socket finished connecting.
+          this.joinedChallenges.forEach(id => this.socket?.emit('challenge:join', id));
           resolve(true);
         });
 
@@ -133,6 +142,11 @@ class SocketService {
       'webrtc:answer',
       'webrtc:ice',
       'call:end',
+      // ── Live-stream handshake (request → opponent accepts → go live) ──
+      'live:request',
+      'live:accept',
+      'live:decline',
+      'live:end',
     ];
 
     events.forEach(event => {
@@ -175,11 +189,22 @@ class SocketService {
   // ============ EMIT METHODS ============
 
   joinChallenge(challengeId: string) {
+    // Remember the room so we re-join after any reconnect, and emit now if we
+    // already have a live socket (the 'connect' handler covers the not-yet-connected case).
+    this.joinedChallenges.add(challengeId);
     this.socket?.emit('challenge:join', challengeId);
   }
 
   leaveChallenge(challengeId: string) {
+    this.joinedChallenges.delete(challengeId);
     this.socket?.emit('challenge:leave', challengeId);
+  }
+
+  // Join a challenge room READ-ONLY (broadcast/spectator view). Not added to
+  // joinedChallenges (that set re-emits participant 'challenge:join' on
+  // reconnect); the /spectate view re-emits this itself on the 'connect' event.
+  spectateChallenge(challengeId: string) {
+    this.socket?.emit('challenge:spectate', challengeId);
   }
 
   sendChallenge(targetUserId: string, difficulty: string) {
@@ -196,6 +221,12 @@ class SocketService {
   emitWebRTCAnswer(challengeId: string, sdp: any)       { this.socket?.emit('webrtc:answer', { challengeId, sdp }); }
   emitWebRTCIce(challengeId: string, candidate: any)    { this.socket?.emit('webrtc:ice',    { challengeId, candidate }); }
   emitCallEnd(challengeId: string)                      { this.socket?.emit('call:end',      { challengeId }); }
+
+  // ── Live-stream handshake ──
+  emitLiveRequest(challengeId: string, platform = 'youtube') { this.socket?.emit('live:request', { challengeId, platform }); }
+  emitLiveAccept(challengeId: string)                        { this.socket?.emit('live:accept',  { challengeId }); }
+  emitLiveDecline(challengeId: string)                       { this.socket?.emit('live:decline', { challengeId }); }
+  emitLiveEnd(challengeId: string)                           { this.socket?.emit('live:end',     { challengeId }); }
 
   notifyAccepted(challengeId: string) {
     this.socket?.emit('challenge:accepted', { challengeId });

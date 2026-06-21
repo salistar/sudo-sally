@@ -99,6 +99,46 @@ router.get('/:challengeId/replay', auth, async (req, res) => {
   }
 });
 
+// LIVE spectate — lets a non-participant watch an ONGOING 1v1 (both boards +
+// names + times) for broadcasting. No `solution` is returned, so a spectator
+// can never be fed the answer. Realtime board updates arrive via the socket
+// 'challenge:spectate' room join. Declared BEFORE /:challengeId.
+router.get('/:challengeId/spectate', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.challengeId)) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
+    }
+    const c = await Challenge.findById(req.params.challengeId)
+      .populate('challenger', 'username avatar')
+      .populate('challenged', 'username avatar')
+      .populate('winner', 'username avatar');
+    if (!c) return res.status(404).json({ success: false, error: 'Challenge not found' });
+    res.json({
+      success: true,
+      spectate: {
+        challengeId: String(c._id),
+        puzzle: c.puzzle,
+        difficulty: c.difficulty,
+        status: c.status,
+        challenger: c.challenger,
+        challenged: c.challenged,
+        winner: c.winner,
+        challengerId: String(c.challenger?._id || c.challenger),
+        challengedId: String(c.challenged?._id || c.challenged),
+        challengerBoard: c.challengerProgress?.board || c.puzzle,
+        challengedBoard: c.challengedProgress?.board || c.puzzle,
+        challengerTime:  c.challengerProgress?.timeSpent || 0,
+        challengedTime:  c.challengedProgress?.timeSpent || 0,
+        challengerErrors: c.challengerProgress?.errors || 0,
+        challengedErrors: c.challengedProgress?.errors || 0,
+      },
+    });
+  } catch (e) {
+    console.error('[spectate]', e);
+    res.status(500).json({ success: false, error: 'Failed to load spectate' });
+  }
+});
+
 // sprint-32 — recent completed matches across ALL users. Powers the live
 // community feed's initial state; real-time updates arrive via the
 // 'activity:completed' socket broadcast. Declared BEFORE /:challengeId.

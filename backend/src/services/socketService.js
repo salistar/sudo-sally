@@ -91,6 +91,24 @@ function initializeSocket(io) {
       console.log(`📤 ${username} left challenge room: ${challengeId}`);
     });
 
+    // Spectate a challenge room (READ-ONLY). Any authenticated user may join to
+    // WATCH. Because a spectator never SENDS progress, `socket.to(room)` relays
+    // BOTH players' 'opponent:progress' to it → the /spectate broadcast view can
+    // render both live boards. A spectator still can't inject chat / WebRTC /
+    // live signaling (those require inRoom() AND are participant-driven).
+    socket.on('challenge:spectate', async (challengeId) => {
+      try {
+        if (typeof challengeId !== 'string') return;
+        const challenge = await Challenge.findById(challengeId).select('_id');
+        if (challenge) {
+          socket.join(`challenge:${challengeId}`);
+          console.log(`👁️ ${username} spectating challenge room: ${challengeId}`);
+        }
+      } catch (error) {
+        console.error('Error spectating challenge:', error);
+      }
+    });
+
     // ============ CHALLENGE FLOW EVENTS ============
 
     // Send challenge notification
@@ -246,6 +264,26 @@ function initializeSocket(io) {
     socket.on('call:end', ({ challengeId }) => {
       if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('call:end', { from: odcUserId });
+    });
+
+    // ============ LIVE-STREAM handshake ============
+    // One player asks to go live on a platform (e.g. YouTube); the broadcast
+    // only starts once the OPPONENT accepts. Pure relay within the room.
+    socket.on('live:request', ({ challengeId, platform }) => {
+      if (!inRoom(challengeId)) return;
+      socket.to(`challenge:${challengeId}`).emit('live:request', { from: odcUserId, fromName: username, platform: platform || 'youtube' });
+    });
+    socket.on('live:accept', ({ challengeId }) => {
+      if (!inRoom(challengeId)) return;
+      socket.to(`challenge:${challengeId}`).emit('live:accept', { from: odcUserId, fromName: username });
+    });
+    socket.on('live:decline', ({ challengeId }) => {
+      if (!inRoom(challengeId)) return;
+      socket.to(`challenge:${challengeId}`).emit('live:decline', { from: odcUserId, fromName: username });
+    });
+    socket.on('live:end', ({ challengeId }) => {
+      if (!inRoom(challengeId)) return;
+      socket.to(`challenge:${challengeId}`).emit('live:end', { from: odcUserId });
     });
 
     // ============ PRESENCE EVENTS ============

@@ -33,6 +33,15 @@ cd deploy
 # Build .env.prod from the environment when secrets are provided.
 if [ -n "${JWT_SECRET:-}" ]; then
   echo "▶ Writing deploy/.env.prod from environment secrets"
+  # Preserve YouTube/OAuth config across redeploys. These are NOT in CI secrets;
+  # they were set on the server. Prefer an env value if one is provided, else keep
+  # whatever is already in .env.prod so a redeploy never wipes the YouTube relay.
+  keep_var() {
+    local k="$1" v="${!1:-}"
+    if [ -z "$v" ] && [ -f .env.prod ]; then v="$(sed -n "s/^$k=//p" .env.prod | head -1)"; fi
+    [ -n "$v" ] && printf '%s=%s\n' "$k" "$v"
+  }
+  YT_ENV="$(keep_var GOOGLE_CLIENT_ID; keep_var GOOGLE_CLIENT_SECRET; keep_var GOOGLE_REDIRECT_URI; keep_var TOKEN_ENC_KEY)"
   {
     printf 'JWT_SECRET=%s\n'     "$JWT_SECRET"
     printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD:-}"
@@ -40,6 +49,7 @@ if [ -n "${JWT_SECRET:-}" ]; then
     printf 'UI_PASS=%s\n'        "${UI_PASS:-}"
     printf 'TURN_SHARED_SECRET=%s\n' "${TURN_SHARED_SECRET:-}"
     printf 'TURN_HOST=%s\n'      "${TURN_HOST:-turn.salistar.com}"
+    [ -n "$YT_ENV" ] && printf '%s\n' "$YT_ENV"
   } > .env.prod
   chmod 600 .env.prod
 fi

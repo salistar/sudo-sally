@@ -15,7 +15,20 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, index: true, sparse: true, unique: true },
   picture: { type: String },          // Google profile picture URL (optional)
   emailVerified: { type: Boolean, default: false },
-  
+
+  // ============ YOUTUBE LIVE (per-user OAuth, control-plane) ============
+  // Set when the user connects their YouTube channel. refreshToken is stored
+  // ENCRYPTED (AES-256-GCM, see services/youtubeService.js) — never plaintext,
+  // and `select:false` so it never leaks via a default User query.
+  youtube: {
+    connected: { type: Boolean, default: false },
+    channelId: { type: String },
+    channelTitle: { type: String },
+    refreshToken: { type: String, select: false },
+    scope: { type: String },
+    connectedAt: { type: Date },
+  },
+
   // ============ PROGRESSION ============
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },

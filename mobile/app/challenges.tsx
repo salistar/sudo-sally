@@ -684,8 +684,24 @@ export default function Challenges() {
                     <Text style={styles.name}>vs {opponent.username}</Text>
                     <Text style={styles.stats}>🎮 {t('inProgressLabel')}</Text>
                   </View>
-                  <View style={styles.playBtn}>
-                    <Text style={styles.playText}>▶️</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {/* 📺 Spectate view: both boards side-by-side, live */}
+                    <TouchableOpacity
+                      style={styles.spectateBtn}
+                      onPress={() => router.push(`/spectate/${ch._id}` as any)}
+                    >
+                      <Text style={styles.spectateText}>📺</Text>
+                    </TouchableOpacity>
+                    {/* 🔴 Broadcast this match to YouTube (composes both boards → relay) */}
+                    <TouchableOpacity
+                      style={styles.broadcastBtn}
+                      onPress={() => router.push(`/broadcast/${ch._id}` as any)}
+                    >
+                      <Text style={styles.spectateText}>🔴</Text>
+                    </TouchableOpacity>
+                    <View style={styles.playBtn}>
+                      <Text style={styles.playText}>▶️</Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -828,6 +844,9 @@ const styles = StyleSheet.create({
   cancelText: { color: '#94a3b8', fontWeight: '600' },
   playBtn: { backgroundColor: '#7c5cff', padding: 10, borderRadius: 20 },
   playText: { fontSize: 18 },
+  spectateBtn: { backgroundColor: 'rgba(255,0,0,0.14)', borderWidth: 1, borderColor: '#FF0000', padding: 9, borderRadius: 20 },
+  broadcastBtn: { backgroundColor: 'rgba(255,0,0,0.22)', borderWidth: 1, borderColor: '#FF0000', padding: 9, borderRadius: 20 },
+  spectateText: { fontSize: 16 },
   
   resultBadge: { padding: 10, borderRadius: 12 },
   winBadge: { backgroundColor: 'rgba(124,92,255,0.2)' },

@@ -146,6 +146,11 @@ export default function ReplayPage() {
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
 
+  // Board size that always fits the viewport. On phones the two boards stack,
+  // so each can use most of the width; on desktop we cap at 360 and show them
+  // side-by-side. Fixes digits being clipped off the right edge on mobile.
+  const boardSize = isDesktopWeb ? 360 : Math.min(width - 40, 380);
+
   const [replay, setReplay] = useState<Replay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [frame, setFrame] = useState(0);
@@ -280,8 +285,8 @@ export default function ReplayPage() {
 
         {/* ── PLAYER + BOARD COLUMNS ──────────────────────────── */}
         <View style={{ flexDirection: isDesktopWeb ? 'row' : 'column', gap: s.xl, alignItems: 'flex-start' }}>
-          <PlayerColumn side="L" replay={replay} board={leftBoard} givens={givens} moveIdx={leftFrame} c={c} r={r} s={s} type={type} t={t} />
-          <PlayerColumn side="R" replay={replay} board={rightBoard} givens={givens} moveIdx={rightFrame} c={c} r={r} s={s} type={type} t={t} />
+          <PlayerColumn side="L" replay={replay} board={leftBoard} givens={givens} moveIdx={leftFrame} c={c} r={r} s={s} type={type} t={t} boardSize={boardSize} />
+          <PlayerColumn side="R" replay={replay} board={rightBoard} givens={givens} moveIdx={rightFrame} c={c} r={r} s={s} type={type} t={t} boardSize={boardSize} />
         </View>
 
         {/* ── CONTROLS ────────────────────────────────────────── */}
@@ -361,7 +366,7 @@ function CtrlBtn({ label, onPress, accent, c, r, s }: { label: string; onPress: 
 }
 
 function PlayerColumn({
-  side, replay, board, givens, moveIdx, c, r, s, type, t,
+  side, replay, board, givens, moveIdx, c, r, s, type, t, boardSize,
 }: {
   side: 'L' | 'R';
   replay: Replay;
@@ -370,6 +375,7 @@ function PlayerColumn({
   moveIdx: number;
   c: any; r: any; s: any; type: any;
   t: (k: any) => string;
+  boardSize: number;
 }) {
   const player = side === 'L' ? replay.challenger : replay.challenged;
   const moves = side === 'L' ? replay.challengerMoves : replay.challengedMoves;
@@ -405,13 +411,12 @@ function PlayerColumn({
         </View>
       </View>
       {/* Board */}
-      <SudokuBoard board={board} givens={givens} highlight={lastCell} c={c} />
+      <SudokuBoard board={board} givens={givens} highlight={lastCell} c={c} size={boardSize} />
     </View>
   );
 }
 
-function SudokuBoard({ board, givens, highlight, c }: { board: number[]; givens: number[]; highlight: number; c: any }) {
-  const size = 360; // px
+function SudokuBoard({ board, givens, highlight, c, size = 360 }: { board: number[]; givens: number[]; highlight: number; c: any; size?: number }) {
   const cell = size / 9;
   return (
     <View style={{ width: size, height: size, alignSelf: 'center' }}>

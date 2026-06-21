@@ -45,6 +45,7 @@ const shopRoutes = require('./routes/shop');
 const statsRoutes = require('./routes/stats');
 const challengeRoutes = require('./routes/challenges');
 const turnRoutes = require('./routes/turn');
+const youtubeRoutes = require('./routes/youtube');
 
 const app = express();
 
@@ -107,6 +108,8 @@ app.use('/api/stats', statsRoutes);
 // NEW: Challenge routes
 app.use('/api/challenges', challengeRoutes);
 app.use('/api', turnRoutes);
+// YouTube Live control-plane (per-user OAuth)
+app.use('/api/youtube', youtubeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -236,7 +239,16 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.SOCKET_CORS_ORIGIN || '*',
+    // Browsers reject `Access-Control-Allow-Origin: *` combined with
+    // `Allow-Credentials: true`, which silently broke the web socket
+    // (handshake failed → no realtime, no WebRTC signaling). Reflect the
+    // specific allowlisted origin instead. Native apps send no Origin and
+    // are allowed through (they don't enforce CORS).
+    origin(origin, cb) {
+      if (process.env.NODE_ENV !== 'production') return cb(null, true);
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(null, false);
+    },
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -246,6 +258,15 @@ const io = new Server(server, {
 
 // Initialize Socket.io for real-time challenges
 initializeSocket(io);
+
+// Media relay (data-plane): WebSocket → ffmpeg → YouTube RTMP. Attaches to the
+// same HTTP server on /api/youtube/ingest. No-op if ffmpeg/ws missing.
+try {
+  const { initRelay } = require('./services/relayService');
+  initRelay(server);
+} catch (e) {
+  console.warn('Media relay not started:', e.message);
+}
 
 // ============================================================================
 // DATABASE CONNECTION & SERVER START

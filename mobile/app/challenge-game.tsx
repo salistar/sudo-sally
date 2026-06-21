@@ -62,7 +62,9 @@ const { width } = Dimensions.get('window');
 const IS_WEB = Platform.OS === 'web';
 // Cells sized so BOTH boards + the bottom deck + top call bar all fit on
 // a typical desktop viewport without the deck "eating" the boards.
-const CELL_SIZE = IS_WEB ? 42 : Math.max(22, Math.floor((Math.min(width, 480) - 24) / 9));
+// On mobile, keep the grid compact so the WHOLE board + the number pad are
+// visible together in one view (no scrolling needed to place a number).
+const CELL_SIZE = IS_WEB ? 42 : Math.max(20, Math.floor((Math.min(width, 360) - 84) / 9));
 
 type Board = (number | null)[][];
 
@@ -177,10 +179,14 @@ const tauntStyles = StyleSheet.create({
 });
 
 export default function ChallengeGame() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, stream } = useLocalSearchParams<{ id: string; stream?: string }>();
   const router = useRouter();
   const { t } = useLang();
   const challengeId = id as string;
+  // STREAM MODE (?stream=1): a broadcast-friendly view that shows BOTH boards
+  // side-by-side with each player's name + time, and nothing else. Reuses all
+  // the existing socket state — the normal gameplay screen is untouched.
+  const streamMode = stream === '1' || stream === 'true';
 
   // ============ STATE ============
   const [loading, setLoading] = useState(true);
@@ -219,6 +225,13 @@ export default function ChallengeGame() {
 
   const timerRef = useRef<NodeJS.Timeout>();
 
+  // Always-current snapshot of the game state. Socket listeners are registered
+  // ONCE and would otherwise read stale closure values — that bug made the
+  // result modal never appear for the player who finished FIRST and waited.
+  // Updated on every render so handlers always see live values.
+  const liveRef = useRef<any>({});
+  liveRef.current = { myCompleted, myTime, myErrors, opponentCompleted, opponentTime, opponentErrors, currentUser, isChallenger, challenge };
+
   // ============ CHAT / SHARE / CALL / RECORD UI STATE ============
   const [panelTab, setPanelTab] = useState<'chat' | 'call' | 'record' | 'share' | 'live'>('chat');
   const [panelOpen, setPanelOpen] = useState(false);
@@ -232,6 +245,12 @@ export default function ChallengeGame() {
   const recordStartRef = useRef<number>(0);
   const [recordingDurMs, setRecordingDurMs] = useState<number>(0);
   const fileInputRef = useRef<any>(null);
+
+  // ── Live-stream handshake: one player asks to go live, the broadcast only
+  //    starts once the OPPONENT accepts. ──
+  const [liveStatus, setLiveStatus] = useState<'off' | 'requesting' | 'live'>('off');
+  const [liveStreamer, setLiveStreamer] = useState<string | null>(null); // who is broadcasting (username)
+  const [incomingLive, setIncomingLive] = useState<{ fromName: string; platform: string } | null>(null);
 
   // ============ WEB — widen the #root for the dual-board layout ============
   useEffect(() => {
@@ -261,18 +280,31 @@ export default function ChallengeGame() {
       socketService.removeAllListeners('webrtc:answer');
       socketService.removeAllListeners('webrtc:ice');
       socketService.removeAllListeners('call:end');
+      socketService.removeAllListeners('live:request');
+      socketService.removeAllListeners('live:accept');
+      socketService.removeAllListeners('live:decline');
+      socketService.removeAllListeners('live:end');
       try { hangup(true); } catch {}
       stopRing();
     };
   }, [challengeId]);
 
-  // Timer
+  // Timer — ticks BOTH my clock and the opponent's while the match is live.
+  // The opponent's clock is snapped to the authoritative value whenever an
+  // `opponent:progress` event arrives; between events it advances locally so it
+  // never looks frozen. Each side freezes as soon as that player finishes, and
+  // everything stops on game over.
   useEffect(() => {
-    if (!gameOver && !myCompleted && challenge?.status === 'playing') {
-      timerRef.current = setInterval(() => setMyTime(t => t + 1), 1000);
+    if (gameOver || challenge?.status !== 'playing') {
+      clearInterval(timerRef.current);
+      return;
     }
+    timerRef.current = setInterval(() => {
+      if (!myCompleted) setMyTime(t => t + 1);
+      if (!opponentCompleted) setOpponentTime(t => t + 1);
+    }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [gameOver, myCompleted, challenge?.status]);
+  }, [gameOver, myCompleted, opponentCompleted, challenge?.status]);
 
   // ============ SOCKET LISTENERS ============
   const setupSocketListeners = () => {
@@ -283,6 +315,29 @@ export default function ChallengeGame() {
     socketService.on('webrtc:answer', (d: any) => handleAnswer(d));
     socketService.on('webrtc:ice',    (d: any) => handleIce(d));
     socketService.on('call:end',      () => hangup(false));
+
+    // ── Live-stream handshake ──
+    // Opponent asks to go live → show an Accept/Decline modal.
+    socketService.on('live:request', (d: any) => {
+      setIncomingLive({ fromName: d?.fromName || 'opponent', platform: d?.platform || 'youtube' });
+      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
+    });
+    // Opponent accepted MY request → I'm now live; open the platform's go-live page.
+    socketService.on('live:accept', (d: any) => {
+      setLiveStatus('live');
+      setLiveStreamer(liveRef.current.currentUser?.username || 'you');
+      setPopup({ type: 'success', title: '🔴 LIVE', message: 'Opponent accepted — you are now live on YouTube!' });
+      try { openExt(LIVE_LINKS.youtube); } catch {}
+    });
+    // Opponent declined my request.
+    socketService.on('live:decline', (d: any) => {
+      setLiveStatus('off');
+      setPopup({ type: 'error', title: 'Live declined', message: 'Your opponent declined the live request.' });
+    });
+    // Stream ended by the broadcaster.
+    socketService.on('live:end', () => {
+      setLiveStatus('off'); setLiveStreamer(null); setIncomingLive(null);
+    });
 
     // Chat messages from opponent (text + optional base64 image)
     socketService.on('chat:message', (data: any) => {
@@ -309,30 +364,35 @@ export default function ChallengeGame() {
       if (data.timeSpent !== undefined) setOpponentTime(data.timeSpent);
     });
 
-    // Opponent completed
+    // Opponent completed. Read live state (not the stale closure) so the
+    // result modal fires for the player who already finished and is waiting.
     socketService.on('player:completed', (data: any) => {
-      if (data.odcUserId !== currentUser?.id) {
+      if (data.odcUserId !== liveRef.current.currentUser?.id) {
         setOpponentCompleted(true);
         setOpponentTime(data.timeSpent);
         setOpponentErrors(data.errors);
-        if (myCompleted) determineWinner();
+        if (liveRef.current.myCompleted) determineWinner(data.timeSpent, data.errors);
       }
     });
 
-    // Opponent abandoned
+    // Opponent abandoned → I win. Read live currentUser; freeze clocks + show modal.
     socketService.on('player:abandoned', (data: any) => {
-      if (data.odcUserId !== currentUser?.id) {
+      if (data.odcUserId !== liveRef.current.currentUser?.id) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        clearInterval(timerRef.current);
+        setWinner(liveRef.current.currentUser?.id ?? null);
+        setPopup(null);
         setGameOver(true);
-        setWinner(currentUser?.id ?? null); // ✅ FIX: Use ?? null
         setShowResult(true);
       }
     });
 
-    // Final result
+    // Final result (authoritative from server)
     socketService.on('challenge:result', (data: any) => {
+      clearInterval(timerRef.current);
+      setWinner(data.winner ?? null);
+      setPopup(null);
       setGameOver(true);
-      setWinner(data.winner ?? null); // ✅ FIX: Use ?? null
       setShowResult(true);
     });
   };
@@ -390,6 +450,11 @@ export default function ChallengeGame() {
         headers: { Authorization: `Bearer ${token}` }
       });
       socketService.startGame(challengeId);
+      // The accepting client loads the challenge while it is still `accepted`
+      // and starts it here — flip the local status to `playing` so the clocks
+      // actually start ticking (otherwise the timer effect never runs for the
+      // player who accepted the duel).
+      setChallenge((prev: any) => prev ? { ...prev, status: 'playing' } : prev);
     } catch (error) {
       console.error('Error starting challenge:', error);
     }
@@ -525,37 +590,113 @@ export default function ChallengeGame() {
     }
   };
 
-  const determineWinner = () => {
-    const myScore = myTime + (myErrors * 30);
-    const oppScore = opponentTime + (opponentErrors * 30);
+  // Decide + reveal the result modal. Reads the LIVE snapshot (not stale
+  // closure values) and accepts the opponent's real finishing time/errors so
+  // both the winner and loser show correct times. Freezes both clocks.
+  const determineWinner = (oppTimeArg?: number, oppErrorsArg?: number) => {
+    const L = liveRef.current;
+    const oppT = oppTimeArg ?? L.opponentTime ?? 0;
+    const oppE = oppErrorsArg ?? L.opponentErrors ?? 0;
+
+    clearInterval(timerRef.current);          // stop both clocks
+    setOpponentTime(oppT);                     // freeze opponent clock to its real finish time
+    setOpponentErrors(oppE);
+
+    const myScore = (L.myTime ?? 0) + ((L.myErrors ?? 0) * 30);
+    const oppScore = oppT + (oppE * 30);
 
     if (myScore < oppScore) {
-      setWinner(currentUser?.id ?? null); // ✅ FIX: Use ?? null
+      setWinner(L.currentUser?.id ?? null);
     } else if (oppScore < myScore) {
-      // ✅ FIX: Use ?? null for potentially undefined values
-      const opponentId = isChallenger ? challenge?.challenged._id : challenge?.challenger._id;
+      const opponentId = L.isChallenger ? L.challenge?.challenged?._id : L.challenge?.challenger?._id;
       setWinner(opponentId ?? null);
     } else {
       setWinner(null); // Draw
     }
 
+    setPopup(null);          // dismiss the "waiting for opponent" popup
     setGameOver(true);
     setShowResult(true);
   };
 
-  const handleAbandon = async (autoLoss: boolean = false) => {
-    if (!autoLoss) {
-      Alert.alert(
-        `🏳️ ${t('abandonTitle')}`,
-        t('abandonConfirm'),
-        [
-          { text: t('cancel'), style: 'cancel' },
-          { text: t('abandon'), style: 'destructive', onPress: confirmAbandon }
-        ]
-      );
+  // ============ LIVE-STREAM handshake actions ============
+  // I ask my opponent to allow me to go live; the broadcast only starts once
+  // they accept (handled by the live:accept listener above).
+  const requestGoLive = () => {
+    if (liveStatus !== 'off') return;
+    setLiveStatus('requesting');
+    socketService.emitLiveRequest(challengeId, 'youtube');
+    setPopup({ type: 'info', title: '🔴 Go Live', message: 'Live request sent — waiting for your opponent to accept…' });
+  };
+  // Opponent (me) accepts the incoming live request → they go live.
+  const acceptIncomingLive = () => {
+    if (!incomingLive) return;
+    socketService.emitLiveAccept(challengeId);
+    setLiveStatus('live');
+    setLiveStreamer(incomingLive.fromName);
+    setIncomingLive(null);
+  };
+  const declineIncomingLive = () => {
+    socketService.emitLiveDecline(challengeId);
+    setIncomingLive(null);
+  };
+  const endLive = () => {
+    socketService.emitLiveEnd(challengeId);
+    setLiveStatus('off'); setLiveStreamer(null);
+  };
+
+  // ============ END-OF-MATCH CINEMA : replay interne + publication YouTube ============
+  // Re-watch the finished match move-by-move inside the app (web + mobile),
+  // no Google / no YouTube needed — drives the existing /replay viewer.
+  const watchReplay = () => { router.push(`/replay/${challengeId}` as any); };
+
+  // One tap on web → record the WHOLE match (screen) so it can be published to
+  // YouTube at the end. Browsers require a user gesture for getDisplayMedia, so
+  // this is a single tap rather than a silent auto-start; it auto-stops on game over.
+  const filmMatch = () => { if (IS_WEB && !isRecording) startRecording('screen'); };
+
+  // Publish the match to YouTube. We never upload on the user's behalf (that needs
+  // their own Google sign-in) — we hand the recorded clip to YouTube's upload page
+  // and let them sign in + publish. On web we first download the .webm so it is
+  // ready to drop into the uploader.
+  const publishMatchToYouTube = async () => {
+    if (IS_WEB && recordedUrl) {
+      try { await downloadRecording(); } catch {}
+      setPopup({ type: 'success', title: '📤 YouTube', message: 'Your match clip was downloaded. Sign in to YouTube and drop the file in to publish — then the match is watchable for everyone.' });
     } else {
-      confirmAbandon();
+      setPopup({ type: 'info', title: '📤 Publish to YouTube', message: IS_WEB
+        ? 'Tip: tap "🔴 Film this match" at the start so the whole game is captured, then publish here. Opening YouTube upload…'
+        : "Record the match with your phone's screen recorder, then upload it here. Opening YouTube upload…" });
     }
+    openExt('https://www.youtube.com/upload');
+  };
+
+  // Auto-stop the match recording the moment the result modal appears, so the
+  // clip is finalized and ready to publish without the user stopping it manually.
+  useEffect(() => {
+    if (showResult && isRecording) { try { stopRecording(); } catch {} }
+  }, [showResult]);
+
+  const handleAbandon = async (autoLoss: boolean = false) => {
+    if (autoLoss) { confirmAbandon(); return; }
+    // react-native-web does NOT implement Alert.alert → on web it was a silent
+    // no-op and confirmAbandon never ran (impossible to forfeit from the browser).
+    // Use the native confirm dialog on web, keep Alert.alert on iOS/Android.
+    if (IS_WEB) {
+      const ok = (typeof window !== 'undefined' && typeof window.confirm === 'function')
+        ? window.confirm(`🏳️ ${t('abandonTitle')}\n\n${t('abandonConfirm')}`)
+        : true;
+      if (ok) confirmAbandon();
+      return;
+    }
+    Alert.alert(
+      `🏳️ ${t('abandonTitle')}`,
+      t('abandonConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('abandon'), style: 'destructive', onPress: confirmAbandon }
+      ]
+    );
   };
 
   const confirmAbandon = async () => {
@@ -1090,6 +1231,31 @@ export default function ChallengeGame() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* LIVE — request-to-go-live handshake (opponent must ACCEPT first) */}
+        <View style={[styles.deckCol, styles.deckRec]}>
+          <Text style={styles.deckTitle}>🔴 Go Live</Text>
+          <Text style={styles.deckHint}>Go live on YouTube — your opponent must ACCEPT before the broadcast starts.</Text>
+          {liveStatus === 'live' ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 }}>
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444' }} />
+                <Text style={{ color: '#fff', fontWeight: '700' }}>🔴 {liveStreamer ? `${liveStreamer} is LIVE` : 'LIVE'} on YouTube</Text>
+              </View>
+              <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#ef4444', flexBasis: '100%' }]} onPress={endLive}>
+                <Text style={styles.recIcon}>⏹️</Text><Text style={styles.recText}>End live</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[styles.recBtn, { backgroundColor: liveStatus === 'requesting' ? '#64748b' : '#FF0000', flexBasis: '100%' }]}
+              disabled={liveStatus === 'requesting'}
+              onPress={requestGoLive}>
+              <Text style={styles.recIcon}>🔴</Text>
+              <Text style={styles.recText}>{liveStatus === 'requesting' ? 'Waiting for opponent…' : 'Ask opponent → Go Live'}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </>
     );
   }
@@ -1175,6 +1341,61 @@ export default function ChallengeGame() {
     );
   }
 
+  // ============ STREAM MODE — broadcast view: BOTH boards side-by-side ============
+  // Opened as ...challenge-game?id=<id>&stream=1 (e.g. on the phone we capture).
+  // Shows each player's name + time + live board, nothing else. Pure read of the
+  // existing socket state; the normal gameplay screen is unchanged.
+  if (streamMode) {
+    const sz = Math.min(Math.floor((width - 52) / 2), 330);
+    const cell = sz / 9;
+    const StreamBoard = ({ board, name, time, errors, win }: { board: Board; name: string; time: number; errors: number; win: boolean }) => (
+      <View style={{ alignItems: 'center', flex: 1 }}>
+        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '900' }} numberOfLines={1}>{win ? '🏆 ' : ''}{name}</Text>
+        <Text style={{ color: '#fbbf24', fontSize: 14, fontWeight: '700', marginTop: 2, marginBottom: 8, fontVariant: ['tabular-nums'] }}>⏱️ {formatTime(time)} · ❌ {errors}</Text>
+        <View style={{ width: sz, height: sz, backgroundColor: '#0a0a1a', borderWidth: 2, borderColor: '#4a4a6a', borderRadius: 6 }}>
+          {Array.from({ length: 9 }).map((_, r) => (
+            <View key={r} style={{ flexDirection: 'row', height: cell }}>
+              {Array.from({ length: 9 }).map((_, c) => {
+                const v = board?.[r]?.[c];
+                const given = initial?.[r]?.[c];
+                return (
+                  <View key={c} style={{ width: cell, height: cell, alignItems: 'center', justifyContent: 'center',
+                    borderRightWidth: (c + 1) % 3 === 0 && c < 8 ? 1.5 : StyleSheet.hairlineWidth, borderRightColor: '#4a4a6a',
+                    borderBottomWidth: (r + 1) % 3 === 0 && r < 8 ? 1.5 : StyleSheet.hairlineWidth, borderBottomColor: '#4a4a6a' }}>
+                    {!!v && v !== 0 && <Text style={{ color: given ? '#fff' : '#2dd4db', fontSize: cell * 0.55, fontWeight: given ? '800' : '700' }}>{v}</Text>}
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+    const meName = currentUser?.username || 'You';
+    const meWin = !!winner && winner === currentUser?.id;
+    const oppWin = !!winner && winner !== currentUser?.id;
+    return (
+      <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
+        <View style={{ flex: 1, paddingTop: 44, paddingHorizontal: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+            <Text style={{ color: '#fff', fontSize: 19, fontWeight: '900', letterSpacing: 0.5 }}>⚔️ SallySudo 1v1</Text>
+            {liveStatus === 'live' && <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveBadgeText}>LIVE</Text></View>}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center', alignItems: 'flex-start' }}>
+            <StreamBoard board={myBoard} name={meName} time={myTime} errors={myErrors} win={meWin} />
+            <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: '900', alignSelf: 'center' }}>VS</Text>
+            <StreamBoard board={opponentBoard} name={opponent?.username || 'Opponent'} time={opponentTime} errors={opponentErrors} win={oppWin} />
+          </View>
+          {gameOver && !!winner && (
+            <Text style={{ color: '#fbbf24', fontSize: 18, fontWeight: '900', textAlign: 'center', marginTop: 18 }}>
+              🏆 {winner === currentUser?.id ? meName : opponent?.username} {t('wonLabel') || 'wins'}!
+            </Text>
+          )}
+        </View>
+      </LinearGradient>
+    );
+  }
+
   // ============ RENDER ============
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
@@ -1184,7 +1405,14 @@ export default function ChallengeGame() {
           <Text style={styles.back}>← {t('back')}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>⚔️ {t('challenge')}</Text>
-        <Text style={styles.diff}>{challenge?.difficulty?.toUpperCase()}</Text>
+        {liveStatus === 'live' ? (
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveBadgeText}>LIVE</Text>
+          </View>
+        ) : (
+          <Text style={styles.diff}>{challenge?.difficulty?.toUpperCase()}</Text>
+        )}
       </View>
 
       {/* ============ TOP CALL BAR — always visible ============ */}
@@ -1192,7 +1420,7 @@ export default function ChallengeGame() {
         <View style={styles.topCallBtns}>
           {!callActive ? (
             <>
-              <Text style={styles.topCallLabel}>📞 Call your opponent — STUN + free TURN relay:</Text>
+              {IS_WEB && <Text style={styles.topCallLabel}>📞 Call your opponent — STUN + free TURN relay:</Text>}
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#2dd4db' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.callBtnSm, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video</Text></TouchableOpacity>
             </>
@@ -1210,8 +1438,14 @@ export default function ChallengeGame() {
             </>
           )}
         </View>
-        {/* Live / Share — right side of the top bar */}
+        {/* Live / Share — web only; hidden on mobile so the board + number pad
+            fit together in a single, playable view. */}
+        {IS_WEB && (
         <View style={styles.topSocialBlock}>
+          {/* Film the WHOLE match (one tap) so it can be published to YouTube at the end. */}
+          <TouchableOpacity style={styles.filmBtn} onPress={isRecording ? stopRecording : filmMatch}>
+            <Text style={styles.filmBtnText}>{isRecording ? '⏹️ Filming… stop' : '🔴 Film this match'}</Text>
+          </TouchableOpacity>
           <Text style={styles.topSocialLabel}>🔴 Live · ↗️ Share</Text>
           <View style={styles.topSocialRow}>
             <SocialBtn brand="youtube"   compact onPress={() => openExt(LIVE_LINKS.youtube)} />
@@ -1222,6 +1456,7 @@ export default function ChallengeGame() {
             <SocialBtn brand="twitter"   compact onPress={() => openExt(SHARE_LINKS.twitter)} />
           </View>
         </View>
+        )}
 
         {callActive && Platform.OS === 'web' && (
           <View style={styles.topCallVideos}>
@@ -1245,12 +1480,12 @@ export default function ChallengeGame() {
         {callActive && Platform.OS !== 'web' && (
           <View style={styles.topCallVideos}>
             {callKind === 'video' && RTCView && localStreamUrl && (
-              <RTCView streamURL={localStreamUrl} style={{ width: 120, height: 90, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" mirror />
+              <RTCView streamURL={localStreamUrl} style={{ width: 160, height: 120, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" mirror />
             )}
             {callKind === 'video'
               ? (RTCView && remoteStreamUrl
-                  ? <RTCView streamURL={remoteStreamUrl} style={{ width: 180, height: 130, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" />
-                  : <View style={{ width: 180, height: 130, borderRadius: 10, backgroundColor: '#0008', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#fff' }}>📹 waiting…</Text></View>)
+                  ? <RTCView streamURL={remoteStreamUrl} style={{ width: 160, height: 120, borderRadius: 10, backgroundColor: '#000' }} objectFit="cover" />
+                  : <View style={{ width: 160, height: 120, borderRadius: 10, backgroundColor: '#0008', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#fff' }}>📹 waiting…</Text></View>)
               : (<View style={styles.audioRemoteWrap}>
                   <Text style={styles.audioRemoteIcon}>🔊</Text>
                   <Text style={styles.audioRemoteName}>{opponent?.username || 'opponent'}</Text>
@@ -1381,6 +1616,16 @@ export default function ChallengeGame() {
               </View>
             )}
 
+            {/* ── Watch the match: in-app replay (no Google) + publish to YouTube ── */}
+            <View style={styles.cineRow}>
+              <TouchableOpacity style={[styles.cineBtn, { backgroundColor: '#7c5cff' }]} onPress={watchReplay}>
+                <Text style={styles.cineBtnText}>🎬 {t('watchReplay') !== 'watchReplay' ? t('watchReplay') : 'Revoir le match'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.cineBtn, { backgroundColor: '#FF0000' }]} onPress={publishMatchToYouTube}>
+                <Text style={styles.cineBtnText}>📤 {t('publishYouTube') !== 'publishYouTube' ? t('publishYouTube') : 'Publier sur YouTube'}</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/challenges')}>
               <Text style={styles.backBtnText}>{t('backToLobby')}</Text>
             </TouchableOpacity>
@@ -1420,6 +1665,31 @@ export default function ChallengeGame() {
               <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#2dd4db' }]} onPress={acceptIncomingCall}>
                 <Text style={styles.ringBtnIcon}>📞</Text>
                 <Text style={styles.ringBtnText}>Accept</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ============ INCOMING LIVE — opponent asks to go live; we accept/decline ============ */}
+      <Modal visible={!!incomingLive} transparent animationType="fade" onRequestClose={declineIncomingLive}>
+        <View style={styles.ringOverlay}>
+          <View style={styles.ringCard}>
+            <Text style={styles.ringPulse}>🔴</Text>
+            <Text style={styles.ringTitle}>Live request</Text>
+            <Text style={styles.ringSub}>
+              {(incomingLive?.fromName || opponent?.username || 'opponent')} wants to go live on{' '}
+              {incomingLive?.platform === 'youtube' ? 'YouTube' : (incomingLive?.platform || 'YouTube')}.{'\n'}
+              The stream starts only if you accept.
+            </Text>
+            <View style={styles.ringBtns}>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#ef4444' }]} onPress={declineIncomingLive}>
+                <Text style={styles.ringBtnIcon}>✖️</Text>
+                <Text style={styles.ringBtnText}>Decline</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#22c55e' }]} onPress={acceptIncomingLive}>
+                <Text style={styles.ringBtnIcon}>🔴</Text>
+                <Text style={styles.ringBtnText}>Accept &amp; go live</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1532,7 +1802,28 @@ export default function ChallengeGame() {
 
             {panelTab === 'live' && (
               <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Go live and stream your match. Each button opens the platform's "create live" page. (Direct broadcasting requires the platform's RTMP key + an OBS-like setup.)</Text>
+                <Text style={styles.tabHint}>Go live on YouTube — your opponent must ACCEPT before the broadcast starts.</Text>
+
+                {liveStatus === 'live' ? (
+                  <>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 }}>
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444' }} />
+                      <Text style={{ color: '#fff', fontWeight: '700' }}>🔴 {liveStreamer ? `${liveStreamer} is LIVE` : 'LIVE'} on YouTube</Text>
+                    </View>
+                    <TouchableOpacity style={[styles.callBtn, { backgroundColor: '#ef4444' }]} onPress={endLive}>
+                      <Text style={styles.callText}>⏹️ End live</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.callBtn, { backgroundColor: liveStatus === 'requesting' ? '#64748b' : '#FF0000', marginBottom: 12 }]}
+                    disabled={liveStatus === 'requesting'}
+                    onPress={requestGoLive}>
+                    <Text style={styles.callText}>{liveStatus === 'requesting' ? '⏳ Waiting for opponent to accept…' : '🔴 Ask opponent → Go Live (YouTube)'}</Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text style={[styles.tabHint, { marginTop: 10 }]}>Or open a platform's “create live” page directly:</Text>
                 <View style={styles.socialGrid}>
                   <SocialBtn brand="youtube" label="YouTube Live" onPress={() => openExt(LIVE_LINKS.youtube)} />
                   <SocialBtn brand="facebook" label="FB Live" onPress={() => openExt(LIVE_LINKS.facebook)} />
@@ -1556,6 +1847,9 @@ const styles = StyleSheet.create({
   back: { color: '#64748b', fontSize: 16 },
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
   diff: { color: '#fbbf24', fontSize: 11, backgroundColor: 'rgba(251,191,36,0.2)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF0000', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, gap: 5 },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+  liveBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
 
   scrollFlex: { flex: 1 },
   scroll: { padding: 10, paddingBottom: 20, alignItems: 'center' },
@@ -1613,6 +1907,11 @@ const styles = StyleSheet.create({
   rewardsText: { color: '#7c5cff', fontSize: 16, fontWeight: '700', marginTop: 3 },
   backBtn: { marginTop: 20, backgroundColor: '#7c5cff', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 },
   backBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
+  cineRow: { flexDirection: 'row', gap: 10, marginTop: 18, width: '100%', justifyContent: 'center', flexWrap: 'wrap' },
+  cineBtn: { paddingVertical: 11, paddingHorizontal: 16, borderRadius: 10, minWidth: 150, alignItems: 'center' },
+  cineBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  filmBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,0,0,0.14)', borderWidth: 1, borderColor: '#FF0000', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  filmBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 
   // ============ FLOATING TOOLS BUTTON ============
   fab: { position: 'absolute', right: 16, bottom: 22, width: 58, height: 58, borderRadius: 29, backgroundColor: '#7c5cff',
