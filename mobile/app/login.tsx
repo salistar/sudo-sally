@@ -233,7 +233,10 @@ export default function Login() {
 
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-      <View style={isDesktopWeb ? styles.desktopRow : undefined}>
+      {/* v3.11.35 — on native this wrapper had style=undefined (no flex) → it
+          collapsed to height 0 and the whole login form rendered blank (the
+          "black screen" after logout). flex:1 lets the ScrollView get height. */}
+      <View style={isDesktopWeb ? styles.desktopRow : { flex: 1 }}>
       <FormShell {...formShellProps}>
         <ContentShell {...contentShellProps}
           keyboardShouldPersistTaps="handled"

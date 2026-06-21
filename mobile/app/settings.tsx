@@ -112,8 +112,14 @@ export default function SettingsScreen() {
       confirmLabel: t('logout'),
       onConfirm: async () => {
         console.log(`${FILE_NAME} ✅ handleLogout() - Confirmed, clearing session...`);
-        await storage.logout();
-        router.replace('/login');
+        try { await storage.logout(); } catch {}
+        // Close the modal BEFORE navigating, then replace on the next tick.
+        // Navigating straight from the modal's onConfirm (with the Stack's
+        // 'fade' animation) left the screen black; closing first + a tick lets
+        // the modal unmount and the target screen paint cleanly. Go to /welcome
+        // (the canonical logged-out landing, with its own auth gate).
+        setPopup(null);
+        setTimeout(() => { try { router.replace('/welcome'); } catch {} }, 60);
       },
     });
   }, [router, t]);
@@ -437,7 +443,7 @@ export default function SettingsScreen() {
               </View>
               <View style={styles.accountInfo}>
                 <Text style={styles.dangerLabel}>{t('logout')}</Text>
-                <Text style={styles.dangerDesc}>Sign out of your account</Text>
+                <Text style={styles.dangerDesc}>{t('signOut')}</Text>
               </View>
             </TouchableOpacity>
 

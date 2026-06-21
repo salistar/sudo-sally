@@ -207,7 +207,9 @@ export default function Register() {
 
   return (
     <LinearGradient colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']} style={styles.container}>
-      <View style={isDesktopWeb ? styles.desktopRow : undefined}>
+      {/* v3.11.35 — flex:1 on native so the ScrollView form gets height (same
+          blank-screen fix as login.tsx). */}
+      <View style={isDesktopWeb ? styles.desktopRow : { flex: 1 }}>
       <FormShell {...formShellProps}>
         <ContentShell {...contentShellProps}
           keyboardShouldPersistTaps="handled"

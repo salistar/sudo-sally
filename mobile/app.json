@@ -2,7 +2,7 @@
   "expo": {
     "name": "SallySudo",
     "slug": "sudoku-sally-v3",
-    "version": "3.11.18",
+    "version": "3.11.35",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sudokusallyv3",
@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "com.sudokusally.v3",
-      "versionCode": 31118,
+      "versionCode": 31135,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a1a"
@@ -37,7 +37,11 @@
         "android.permission.BLUETOOTH"
       ]
     },
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "web": {
       "bundler": "metro",
       "output": "static",

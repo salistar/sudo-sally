@@ -5,11 +5,9 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { useLang } from '../utils/LanguageContext';
+import SallyMascot from '../components/SallyMascot';
 
 const { width } = Dimensions.get('window');
-
-// 3x3 mini sudoku motif for the logo. null = empty, number = filled (accent).
-const LOGO_GRID: (number | null)[] = [5, null, 9, null, 7, null, 2, null, 6];
 
 export default function Splash() {
   const router = useRouter();
@@ -76,20 +74,8 @@ export default function Splash() {
               colors={['rgba(124,92,255,0.18)', 'rgba(45,212,219,0.06)']}
               style={styles.logoCard}
             >
-              <View style={styles.grid}>
-                {LOGO_GRID.map((cell, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.cell,
-                      (i + 1) % 3 === 0 && i % 9 !== 8 ? null : null,
-                      cell != null && styles.cellFilled,
-                    ]}
-                  >
-                    {cell != null && <Text style={styles.cellText}>{cell}</Text>}
-                  </View>
-                ))}
-              </View>
+              {/* v3.11.35 — was a 3x3 number grid (old logo); now Sally the owl */}
+              <SallyMascot size={112} mode="wink" />
               {/* Corner accents */}
               <View style={[styles.corner, styles.cTL]} />
               <View style={[styles.corner, styles.cTR]} />
