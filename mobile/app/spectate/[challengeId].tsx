@@ -51,6 +51,26 @@ function rrect(ctx: any, x: number, y: number, w: number, h: number, r: number) 
   if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
   else { ctx.beginPath(); ctx.rect(x, y, w, h); }
 }
+// Sally the owl — the app's mascot/logo, drawn to match SallyMascot.tsx
+// (gradient body #5eead4→#7c5cff→#2dd4db, lilac belly, yellow beak).
+function drawOwl(ctx: any, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.fillStyle = '#7c5cff';
+  ctx.beginPath(); ctx.moveTo(cx - r * 0.7, cy - r * 0.55); ctx.lineTo(cx - r * 0.32, cy - r * 1.12); ctx.lineTo(cx - r * 0.05, cy - r * 0.5); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx + r * 0.7, cy - r * 0.55); ctx.lineTo(cx + r * 0.32, cy - r * 1.12); ctx.lineTo(cx + r * 0.05, cy - r * 0.5); ctx.closePath(); ctx.fill();
+  const bg = ctx.createLinearGradient(cx, cy - r, cx, cy + r);
+  bg.addColorStop(0, '#5eead4'); bg.addColorStop(0.6, '#7c5cff'); bg.addColorStop(1, '#2dd4db');
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.92, r, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ede9ff'; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.2, r * 0.54, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(cx - r * 0.38, cy - r * 0.16, r * 0.33, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + r * 0.38, cy - r * 0.16, r * 0.33, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#0a0a1a';
+  ctx.beginPath(); ctx.arc(cx - r * 0.38, cy - r * 0.16, r * 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + r * 0.38, cy - r * 0.16, r * 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.moveTo(cx, cy + r * 0.06); ctx.lineTo(cx - r * 0.14, cy + r * 0.3); ctx.lineTo(cx + r * 0.14, cy + r * 0.3); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
 function drawBoardC(ctx: any, x: number, y: number, size: number, board: number[], givens: number[]) {
   const cell = size / 9;
   // soft purple panel behind the board (echoes the app's logo card)
@@ -82,10 +102,11 @@ function drawBroadcastFrame(ctx: any, W: number, H: number, f: Frame) {
   const glow = ctx.createRadialGradient(W / 2, 52, 8, W / 2, 52, 240);
   glow.addColorStop(0, 'rgba(124,92,255,0.28)'); glow.addColorStop(1, 'rgba(124,92,255,0)');
   ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 130);
-  // SallySudo wordmark — same treatment as the app header
+  // SallySudo logo — owl mascot + wordmark, same lockup as the app header
+  drawOwl(ctx, W / 2 - 188, 42, 26);
   if ('letterSpacing' in ctx) try { ctx.letterSpacing = '3px'; } catch {}
   ctx.fillStyle = '#ffffff'; ctx.font = '900 42px Arial, sans-serif';
-  ctx.fillText('SallySudo', W / 2, 46);
+  ctx.fillText('SallySudo', W / 2 + 18, 46);
   if ('letterSpacing' in ctx) try { ctx.letterSpacing = '0px'; } catch {}
   // subtitle pill: ⚔️ 1v1  ·  ● LIVE
   const pillW = 200, pillX = W / 2 - pillW / 2, pillY = 78, pillH = 30;
