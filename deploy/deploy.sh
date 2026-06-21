@@ -32,27 +32,35 @@ cd deploy
 
 # Build .env.prod from the environment when secrets are provided.
 if [ -n "${JWT_SECRET:-}" ]; then
-  echo "▶ Writing deploy/.env.prod from environment secrets"
-  # Preserve YouTube/OAuth config across redeploys. These are NOT in CI secrets;
-  # they were set on the server. Prefer an env value if one is provided, else keep
-  # whatever is already in .env.prod so a redeploy never wipes the YouTube relay.
-  # NOTE: must always `return 0` — under `set -e`, a non-zero return from inside
-  # the YT_ENV command substitution would abort the whole deploy.
-  keep_var() {
-    local k="$1" v="${!1:-}"
+  echo "▶ Writing deploy/.env.prod (preferring values already live on this host)"
+  # Resolve each value preferring what the LIVE stack already uses, so a redeploy —
+  # even into a fresh checkout dir, or after the CI server target changed — never
+  # rotates secrets (which would log everyone out) or drops config set out-of-band
+  # on the server (e.g. the YouTube OAuth keys). Resolution order:
+  #   running sudoku-api container env  ->  existing .env.prod  ->  CI env var  ->  default
+  # Every helper must return 0 — a non-zero status inside the `{ } > .env.prod`
+  # block (or its substitutions) would abort the whole deploy under `set -e`.
+  running_env() { docker inspect sudoku-api --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | sed -n "s/^$1=//p" | head -1 || true; }
+  resolve() {
+    local k="$1" def="${2:-}" v
+    v="$(running_env "$k")"
     if [ -z "$v" ] && [ -f .env.prod ]; then v="$(sed -n "s/^$k=//p" .env.prod | head -1)"; fi
-    if [ -n "$v" ]; then printf '%s=%s\n' "$k" "$v"; fi
+    if [ -z "$v" ]; then v="${!k:-}"; fi
+    if [ -z "$v" ]; then v="$def"; fi
+    printf '%s=%s\n' "$k" "$v"
     return 0
   }
-  YT_ENV="$(keep_var GOOGLE_CLIENT_ID; keep_var GOOGLE_CLIENT_SECRET; keep_var GOOGLE_REDIRECT_URI; keep_var TOKEN_ENC_KEY)"
   {
-    printf 'JWT_SECRET=%s\n'     "$JWT_SECRET"
-    printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD:-}"
-    printf 'UI_USER=%s\n'        "${UI_USER:-sally}"
-    printf 'UI_PASS=%s\n'        "${UI_PASS:-}"
-    printf 'TURN_SHARED_SECRET=%s\n' "${TURN_SHARED_SECRET:-}"
-    printf 'TURN_HOST=%s\n'      "${TURN_HOST:-turn.salistar.com}"
-    [ -n "$YT_ENV" ] && printf '%s\n' "$YT_ENV"
+    resolve JWT_SECRET
+    resolve REDIS_PASSWORD
+    resolve UI_USER sally
+    resolve UI_PASS
+    resolve TURN_SHARED_SECRET
+    resolve TURN_HOST turn.salistar.com
+    resolve GOOGLE_CLIENT_ID
+    resolve GOOGLE_CLIENT_SECRET
+    resolve GOOGLE_REDIRECT_URI https://api.sallysudo.com/api/youtube/callback
+    resolve TOKEN_ENC_KEY
   } > .env.prod
   chmod 600 .env.prod
 fi

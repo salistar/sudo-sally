@@ -43,16 +43,26 @@ type Frame = {
   lName: string; rName: string; lTime: number; rTime: number; lErr: number; rErr: number;
   lBoard: number[]; rBoard: number[]; givens: number[]; winnerName: string | null; live: boolean;
 };
+// Brand: SallySudo uses #7c5cff (purple) as the primary accent, #0a0a1a→#1a1a3a
+// gradient bg, gold #fbbf24, cyan #2dd4db for player digits — matched here so the
+// broadcast looks like the rest of the app.
+const PURPLE = '#7c5cff';
+function rrect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  else { ctx.beginPath(); ctx.rect(x, y, w, h); }
+}
 function drawBoardC(ctx: any, x: number, y: number, size: number, board: number[], givens: number[]) {
   const cell = size / 9;
+  // soft purple panel behind the board (echoes the app's logo card)
+  ctx.fillStyle = 'rgba(124,92,255,0.06)'; rrect(ctx, x - 12, y - 12, size + 24, size + 24, 16); ctx.fill();
   ctx.fillStyle = '#0a0a1a'; ctx.fillRect(x, y, size, size);
   for (let i = 0; i <= 9; i++) {
     const major = i % 3 === 0;
-    ctx.strokeStyle = major ? '#5a5a82' : '#2a2a44'; ctx.lineWidth = major ? 2.5 : 1;
+    ctx.strokeStyle = major ? 'rgba(124,92,255,0.55)' : '#262640'; ctx.lineWidth = major ? 2.5 : 1;
     ctx.beginPath(); ctx.moveTo(x + i * cell, y); ctx.lineTo(x + i * cell, y + size); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x, y + i * cell); ctx.lineTo(x + size, y + i * cell); ctx.stroke();
   }
-  ctx.strokeStyle = '#4a4a6a'; ctx.lineWidth = 3; ctx.strokeRect(x, y, size, size);
+  ctx.strokeStyle = PURPLE; ctx.lineWidth = 3; ctx.strokeRect(x, y, size, size);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (let idx = 0; idx < 81; idx++) {
     const v = board[idx] || 0; if (!v) continue;
@@ -67,34 +77,45 @@ function drawBroadcastFrame(ctx: any, W: number, H: number, f: Frame) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#0a0a1a'); g.addColorStop(0.5, '#1a1a3a'); g.addColorStop(1, '#0f0f2a');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  // title + LIVE badge
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff'; ctx.font = '900 38px Arial, sans-serif';
-  ctx.fillText('⚔️  SallySudo 1v1', W / 2, 50);
+  // purple glow behind the wordmark (like the home logo's glow)
+  const glow = ctx.createRadialGradient(W / 2, 52, 8, W / 2, 52, 240);
+  glow.addColorStop(0, 'rgba(124,92,255,0.28)'); glow.addColorStop(1, 'rgba(124,92,255,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 130);
+  // SallySudo wordmark — same treatment as the app header
+  if ('letterSpacing' in ctx) try { ctx.letterSpacing = '3px'; } catch {}
+  ctx.fillStyle = '#ffffff'; ctx.font = '900 42px Arial, sans-serif';
+  ctx.fillText('SallySudo', W / 2, 46);
+  if ('letterSpacing' in ctx) try { ctx.letterSpacing = '0px'; } catch {}
+  // subtitle pill: ⚔️ 1v1  ·  ● LIVE
+  const pillW = 200, pillX = W / 2 - pillW / 2, pillY = 78, pillH = 30;
+  ctx.fillStyle = 'rgba(124,92,255,0.18)'; rrect(ctx, pillX, pillY, pillW, pillH, 15); ctx.fill();
+  ctx.fillStyle = '#c4b5fd'; ctx.font = '800 15px Arial, sans-serif';
+  ctx.fillText('⚔️ 1v1', pillX + 52, pillY + 16);
   if (f.live && !f.winnerName) {
-    ctx.fillStyle = '#FF0000'; const bw = 120, bx = W / 2 - bw / 2, by = 78;
-    ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(bx, by, bw, 30, 8) : ctx.rect(bx, by, bw, 30)); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bx + 22, by + 15, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.font = '800 16px Arial, sans-serif'; ctx.fillText('● LIVE', bx + bw / 2 + 8, by + 16);
+    ctx.fillStyle = '#FF3B3B'; ctx.beginPath(); ctx.arc(pillX + 120, pillY + 15, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fca5a5'; ctx.font = '800 14px Arial, sans-serif'; ctx.fillText('LIVE', pillX + 152, pillY + 16);
   }
-  const size = 440, gap = 120, totalW = size * 2 + gap, x0 = (W - totalW) / 2, boardY = 200;
+  const size = 432, gap = 130, totalW = size * 2 + gap, x0 = (W - totalW) / 2, boardY = 208;
   const sides = [
     { x: x0, name: f.lName, t: f.lTime, e: f.lErr, b: f.lBoard, win: f.winnerName === f.lName },
     { x: x0 + size + gap, name: f.rName, t: f.rTime, e: f.rErr, b: f.rBoard, win: f.winnerName === f.rName },
   ];
   for (const s of sides) {
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffffff'; ctx.font = '900 26px Arial, sans-serif';
-    ctx.fillText(`${s.win ? '🏆 ' : ''}${s.name}`, s.x + size / 2, boardY - 52);
+    ctx.fillStyle = s.win ? '#fbbf24' : '#ffffff'; ctx.font = '900 26px Arial, sans-serif';
+    ctx.fillText(`${s.win ? '🏆 ' : ''}${s.name}`, s.x + size / 2, boardY - 54);
     ctx.fillStyle = '#fbbf24'; ctx.font = '700 20px Arial, sans-serif';
-    ctx.fillText(`⏱️ ${fmt(s.t)}   ❌ ${s.e}`, s.x + size / 2, boardY - 22);
+    ctx.fillText(`⏱️ ${fmt(s.t)}   ❌ ${s.e}`, s.x + size / 2, boardY - 24);
     drawBoardC(ctx, s.x, boardY, size, s.b, f.givens);
   }
-  ctx.fillStyle = '#ef4444'; ctx.font = '900 30px Arial, sans-serif';
-  ctx.fillText('VS', W / 2, boardY + size / 2);
+  // VS in a purple chip at center
+  const cy = boardY + size / 2;
+  ctx.fillStyle = PURPLE; ctx.beginPath(); ctx.arc(W / 2, cy, 27, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.font = '900 22px Arial, sans-serif'; ctx.fillText('VS', W / 2, cy + 1);
   if (f.winnerName) {
     ctx.fillStyle = '#fbbf24'; ctx.font = '900 30px Arial, sans-serif';
-    ctx.fillText(`🏆 ${f.winnerName} wins!`, W / 2, boardY + size + 40);
+    ctx.fillText(`🏆 ${f.winnerName} wins!`, W / 2, boardY + size + 42);
   }
 }
 
