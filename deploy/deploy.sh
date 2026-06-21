@@ -36,10 +36,13 @@ if [ -n "${JWT_SECRET:-}" ]; then
   # Preserve YouTube/OAuth config across redeploys. These are NOT in CI secrets;
   # they were set on the server. Prefer an env value if one is provided, else keep
   # whatever is already in .env.prod so a redeploy never wipes the YouTube relay.
+  # NOTE: must always `return 0` — under `set -e`, a non-zero return from inside
+  # the YT_ENV command substitution would abort the whole deploy.
   keep_var() {
     local k="$1" v="${!1:-}"
     if [ -z "$v" ] && [ -f .env.prod ]; then v="$(sed -n "s/^$k=//p" .env.prod | head -1)"; fi
-    [ -n "$v" ] && printf '%s=%s\n' "$k" "$v"
+    if [ -n "$v" ]; then printf '%s=%s\n' "$k" "$v"; fi
+    return 0
   }
   YT_ENV="$(keep_var GOOGLE_CLIENT_ID; keep_var GOOGLE_CLIENT_SECRET; keep_var GOOGLE_REDIRECT_URI; keep_var TOKEN_ENC_KEY)"
   {
