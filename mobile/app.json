@@ -2,7 +2,7 @@
   "expo": {
     "name": "SallySudo",
     "slug": "sudoku-sally-v3",
-    "version": "3.11.35",
+    "version": "3.11.39",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sudokusallyv3",
@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "com.sudokusally.v3",
-      "versionCode": 31135,
+      "versionCode": 31139,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a1a"

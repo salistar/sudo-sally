@@ -15,7 +15,8 @@ import { View, Text, Dimensions, Platform, TouchableOpacity } from 'react-native
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../utils/api';
+import { API_URL, RELAY_WSS } from '../../utils/api';
+import { LIVE_PURPLE, rrect, drawOwl, fmt, drawSudokuBoard } from '../../utils/liveCompositor';
 import socketService from '../../utils/socket';
 
 const { width } = Dimensions.get('window');
@@ -33,110 +34,63 @@ function parseBoard(s: any): number[] {
   return new Array(81).fill(0);
 }
 
-const fmt = (s: number) => `${String(Math.floor((s || 0) / 60)).padStart(2, '0')}:${String((s || 0) % 60).padStart(2, '0')}`;
-
 // ── Canvas compositor (web only) ───────────────────────────────────────────
-// Draws BOTH live boards onto a 1280×720 canvas so the broadcast captures the
-// composed match view directly (canvas.captureStream) instead of the screen —
-// no getDisplayMedia dialog, and it works headlessly + inside a mobile WebView.
+// Draws BOTH live boards onto a 720×1280 PORTRAIT canvas (boards stacked
+// vertically) so the broadcast captures the composed match view directly
+// (canvas.captureStream) instead of the screen — no getDisplayMedia dialog,
+// and it works headlessly + inside a mobile WebView.
 type Frame = {
   lName: string; rName: string; lTime: number; rTime: number; lErr: number; rErr: number;
   lBoard: number[]; rBoard: number[]; givens: number[]; winnerName: string | null; live: boolean;
 };
-// Brand: SallySudo uses #7c5cff (purple) as the primary accent, #0a0a1a→#1a1a3a
-// gradient bg, gold #fbbf24, cyan #2dd4db for player digits — matched here so the
-// broadcast looks like the rest of the app.
-const PURPLE = '#7c5cff';
-function rrect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
-  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
-  else { ctx.beginPath(); ctx.rect(x, y, w, h); }
-}
-// Sally the owl — the app's mascot/logo, drawn to match SallyMascot.tsx
-// (gradient body #5eead4→#7c5cff→#2dd4db, lilac belly, yellow beak).
-function drawOwl(ctx: any, cx: number, cy: number, r: number) {
-  ctx.save();
-  ctx.fillStyle = '#7c5cff';
-  ctx.beginPath(); ctx.moveTo(cx - r * 0.7, cy - r * 0.55); ctx.lineTo(cx - r * 0.32, cy - r * 1.12); ctx.lineTo(cx - r * 0.05, cy - r * 0.5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(cx + r * 0.7, cy - r * 0.55); ctx.lineTo(cx + r * 0.32, cy - r * 1.12); ctx.lineTo(cx + r * 0.05, cy - r * 0.5); ctx.closePath(); ctx.fill();
-  const bg = ctx.createLinearGradient(cx, cy - r, cx, cy + r);
-  bg.addColorStop(0, '#5eead4'); bg.addColorStop(0.6, '#7c5cff'); bg.addColorStop(1, '#2dd4db');
-  ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.92, r, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ede9ff'; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.2, r * 0.54, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(cx - r * 0.38, cy - r * 0.16, r * 0.33, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + r * 0.38, cy - r * 0.16, r * 0.33, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#0a0a1a';
-  ctx.beginPath(); ctx.arc(cx - r * 0.38, cy - r * 0.16, r * 0.15, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + r * 0.38, cy - r * 0.16, r * 0.15, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.moveTo(cx, cy + r * 0.06); ctx.lineTo(cx - r * 0.14, cy + r * 0.3); ctx.lineTo(cx + r * 0.14, cy + r * 0.3); ctx.closePath(); ctx.fill();
-  ctx.restore();
-}
-function drawBoardC(ctx: any, x: number, y: number, size: number, board: number[], givens: number[]) {
-  const cell = size / 9;
-  // soft purple panel behind the board (echoes the app's logo card)
-  ctx.fillStyle = 'rgba(124,92,255,0.06)'; rrect(ctx, x - 12, y - 12, size + 24, size + 24, 16); ctx.fill();
-  ctx.fillStyle = '#0a0a1a'; ctx.fillRect(x, y, size, size);
-  for (let i = 0; i <= 9; i++) {
-    const major = i % 3 === 0;
-    ctx.strokeStyle = major ? 'rgba(124,92,255,0.55)' : '#262640'; ctx.lineWidth = major ? 2.5 : 1;
-    ctx.beginPath(); ctx.moveTo(x + i * cell, y); ctx.lineTo(x + i * cell, y + size); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x, y + i * cell); ctx.lineTo(x + size, y + i * cell); ctx.stroke();
-  }
-  ctx.strokeStyle = PURPLE; ctx.lineWidth = 3; ctx.strokeRect(x, y, size, size);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  for (let idx = 0; idx < 81; idx++) {
-    const v = board[idx] || 0; if (!v) continue;
-    const given = (givens[idx] || 0) > 0;
-    const r = Math.floor(idx / 9), c = idx % 9;
-    ctx.fillStyle = given ? '#ffffff' : '#2dd4db';
-    ctx.font = `${given ? '800' : '700'} ${Math.floor(cell * 0.55)}px Arial, sans-serif`;
-    ctx.fillText(String(v), x + c * cell + cell / 2, y + r * cell + cell / 2 + 1);
-  }
-}
+// Owl/board/clock primitives are shared (utils/liveCompositor); only the
+// portrait *layout* (boards stacked vertically) lives here.
+// PORTRAIT 720×1280 — the two boards are stacked VERTICALLY (player 1 on top,
+// player 2 below), not side-by-side.
 function drawBroadcastFrame(ctx: any, W: number, H: number, f: Frame) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#0a0a1a'); g.addColorStop(0.5, '#1a1a3a'); g.addColorStop(1, '#0f0f2a');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  // purple glow behind the wordmark (like the home logo's glow)
-  const glow = ctx.createRadialGradient(W / 2, 52, 8, W / 2, 52, 240);
-  glow.addColorStop(0, 'rgba(124,92,255,0.28)'); glow.addColorStop(1, 'rgba(124,92,255,0)');
-  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 130);
-  // SallySudo logo — owl mascot + wordmark, same lockup as the app header
-  drawOwl(ctx, W / 2 - 188, 42, 26);
+  const glow = ctx.createRadialGradient(W / 2, 56, 8, W / 2, 56, 260);
+  glow.addColorStop(0, 'rgba(124,92,255,0.30)'); glow.addColorStop(1, 'rgba(124,92,255,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, 150);
+  // SallySudo logo — owl + wordmark
+  drawOwl(ctx, W / 2 - 150, 50, 26);
   if ('letterSpacing' in ctx) try { ctx.letterSpacing = '3px'; } catch {}
   ctx.fillStyle = '#ffffff'; ctx.font = '900 42px Arial, sans-serif';
-  ctx.fillText('SallySudo', W / 2 + 18, 46);
+  ctx.fillText('SallySudo', W / 2 + 22, 54);
   if ('letterSpacing' in ctx) try { ctx.letterSpacing = '0px'; } catch {}
-  // subtitle pill: ⚔️ 1v1  ·  ● LIVE
-  const pillW = 200, pillX = W / 2 - pillW / 2, pillY = 78, pillH = 30;
-  ctx.fillStyle = 'rgba(124,92,255,0.18)'; rrect(ctx, pillX, pillY, pillW, pillH, 15); ctx.fill();
-  ctx.fillStyle = '#c4b5fd'; ctx.font = '800 15px Arial, sans-serif';
-  ctx.fillText('⚔️ 1v1', pillX + 52, pillY + 16);
+  const pillW = 200, pillX = W / 2 - pillW / 2, pillY = 92;
+  ctx.fillStyle = 'rgba(124,92,255,0.18)'; rrect(ctx, pillX, pillY, pillW, 30, 15); ctx.fill();
+  ctx.fillStyle = '#c4b5fd'; ctx.font = '800 15px Arial, sans-serif'; ctx.fillText('⚔️ 1v1', pillX + 52, pillY + 16);
   if (f.live && !f.winnerName) {
     ctx.fillStyle = '#FF3B3B'; ctx.beginPath(); ctx.arc(pillX + 120, pillY + 15, 4.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fca5a5'; ctx.font = '800 14px Arial, sans-serif'; ctx.fillText('LIVE', pillX + 152, pillY + 16);
   }
-  const size = 432, gap = 130, totalW = size * 2 + gap, x0 = (W - totalW) / 2, boardY = 208;
-  const sides = [
-    { x: x0, name: f.lName, t: f.lTime, e: f.lErr, b: f.lBoard, win: f.winnerName === f.lName },
-    { x: x0 + size + gap, name: f.rName, t: f.rTime, e: f.rErr, b: f.rBoard, win: f.winnerName === f.rName },
+  // Bigger boards: 460px each (max that fits two stacked + headers in 1280).
+  const size = 460, x0 = (W - size) / 2;
+  // by1=212 (board 212–672), VS at 706, by2=802 (board 802–1262)
+  const blocks = [
+    { by: 212, name: f.lName, t: f.lTime, e: f.lErr, b: f.lBoard, win: f.winnerName === f.lName },
+    { by: 802, name: f.rName, t: f.rTime, e: f.rErr, b: f.rBoard, win: f.winnerName === f.rName },
   ];
-  for (const s of sides) {
+  for (const s of blocks) {
     ctx.textAlign = 'center';
-    ctx.fillStyle = s.win ? '#fbbf24' : '#ffffff'; ctx.font = '900 26px Arial, sans-serif';
-    ctx.fillText(`${s.win ? '🏆 ' : ''}${s.name}`, s.x + size / 2, boardY - 54);
-    ctx.fillStyle = '#fbbf24'; ctx.font = '700 20px Arial, sans-serif';
-    ctx.fillText(`⏱️ ${fmt(s.t)}   ❌ ${s.e}`, s.x + size / 2, boardY - 24);
-    drawBoardC(ctx, s.x, boardY, size, s.b, f.givens);
+    ctx.fillStyle = s.win ? '#fbbf24' : '#ffffff'; ctx.font = '900 28px Arial, sans-serif';
+    ctx.fillText(`${s.win ? '🏆 ' : ''}${s.name}`, W / 2, s.by - 50);
+    ctx.fillStyle = '#fbbf24'; ctx.font = '700 22px Arial, sans-serif';
+    ctx.fillText(`⏱️ ${fmt(s.t)}   ❌ ${s.e}`, W / 2, s.by - 22);
+    drawSudokuBoard(ctx, x0, s.by, size, (r, c) => s.b[r * 9 + c], (r, c) => (f.givens[r * 9 + c] || 0) > 0);
   }
-  // VS in a purple chip at center
-  const cy = boardY + size / 2;
-  ctx.fillStyle = PURPLE; ctx.beginPath(); ctx.arc(W / 2, cy, 27, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ffffff'; ctx.font = '900 22px Arial, sans-serif'; ctx.fillText('VS', W / 2, cy + 1);
+  // VS chip (or winner banner) in the gap between the two stacked boards
+  const vy = 706;
   if (f.winnerName) {
     ctx.fillStyle = '#fbbf24'; ctx.font = '900 30px Arial, sans-serif';
-    ctx.fillText(`🏆 ${f.winnerName} wins!`, W / 2, boardY + size + 42);
+    ctx.fillText(`🏆 ${f.winnerName} wins!`, W / 2, vy);
+  } else {
+    ctx.fillStyle = LIVE_PURPLE; ctx.beginPath(); ctx.arc(W / 2, vy, 24, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.font = '900 24px Arial, sans-serif'; ctx.fillText('VS', W / 2, vy + 1);
   }
 }
 
@@ -269,7 +223,7 @@ export default function SpectatePage() {
     try {
       setBroadcast('starting');
       const token = await AsyncStorage.getItem('sudoku_token');
-      const W = 1280, H = 720;
+      const W = 720, H = 1280; // portrait — boards stacked vertically
       const canvas = (window as any).document.createElement('canvas');
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
@@ -287,7 +241,7 @@ export default function SpectatePage() {
           dst.stream.getAudioTracks().forEach((t: any) => stream.addTrack(t));
         }
       } catch {}
-      const ws = new WebSocket(`wss://api.sallysudo.com/api/youtube/ingest?token=${encodeURIComponent(token || '')}&challengeId=${challengeId}&privacy=unlisted`);
+      const ws = new WebSocket(`${RELAY_WSS}?token=${encodeURIComponent(token || '')}&challengeId=${challengeId}&privacy=unlisted`);
       ws.binaryType = 'arraybuffer';
       relayRef.current = { ws, stream, canvas, raf };
       ws.onmessage = (ev: any) => {

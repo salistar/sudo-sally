@@ -21,6 +21,12 @@ export const SERVER_URL = 'https://api.sallysudo.com';
 
 export const API_URL = `${SERVER_URL}/api`;
 
+// WebSocket relay endpoint for the YouTube live broadcaster (canvas → ffmpeg →
+// RTMP). Derived from SERVER_URL so the host is defined in exactly one place —
+// was re-hardcoded as `wss://api.sallysudo.com/...` in broadcast/spectate/
+// challenge-game (see live-compositor dedup).
+export const RELAY_WSS = `${SERVER_URL.replace(/^http/, 'ws')}/api/youtube/ingest`;
+
 class ApiService {
   private token: string | null = null;
 

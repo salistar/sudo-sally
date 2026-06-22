@@ -21,11 +21,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
-import { API_URL } from '../../utils/api';
+import { API_URL, RELAY_WSS } from '../../utils/api';
 import socketService from '../../utils/socket';
 
 const IS_WEB = Platform.OS === 'web';
-const RELAY_WSS = 'wss://api.sallysudo.com/api/youtube/ingest';
 
 function parseBoard(s: any): number[] {
   if (!s) return new Array(81).fill(0);
@@ -38,12 +37,13 @@ function parseBoard(s: any): number[] {
   return new Array(81).fill(0);
 }
 
-// Self-contained encoder page: draws the composed match on a 1280×720 canvas and
-// streams it to the relay. Exposes window.__start(token, cid) and window.__push(frame).
+// Self-contained encoder page: draws the composed match on a 720×1280 PORTRAIT
+// canvas (boards stacked vertically) and streams it to the relay.
+// Exposes window.__start(token, cid) and window.__push(frame).
 const ENCODER_HTML = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>html,body{margin:0;background:#0a0a1a;overflow:hidden}#c{width:100%;height:auto;display:block}</style></head>
-<body><canvas id="c" width="1280" height="720"></canvas><script>
-var W=1280,H=720,canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+<body><canvas id="c" width="720" height="1280"></canvas><script>
+var W=720,H=1280,canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 var F={lName:'Player 1',rName:'Player 2',lTime:0,rTime:0,lErr:0,rErr:0,lBoard:[],rBoard:[],givens:[],winnerName:null,live:true};
 function post(o){try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify(o));}catch(e){}}
 function fmt(s){s=s||0;return (''+Math.floor(s/60)).padStart(2,'0')+':'+(''+(s%60)).padStart(2,'0');}
@@ -70,28 +70,31 @@ function board(x,y,sz,b,g){var cell=sz/9;
  for(var idx=0;idx<81;idx++){var v=(b&&b[idx])||0;if(!v)continue;var gv=((g&&g[idx])||0)>0,r=Math.floor(idx/9),c=idx%9;
   ctx.fillStyle=gv?'#fff':'#2dd4db';ctx.font=(gv?'800 ':'700 ')+Math.floor(cell*0.55)+'px Arial';
   ctx.fillText(''+v,x+c*cell+cell/2,y+r*cell+cell/2+1);}}
+// PORTRAIT 720×1280 — the two boards are stacked VERTICALLY (player 1 top,
+// player 2 below), matching /spectate's drawBroadcastFrame.
 function frame(){var g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a0a1a');g.addColorStop(.5,'#1a1a3a');g.addColorStop(1,'#0f0f2a');
  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.textBaseline='middle';
- var glow=ctx.createRadialGradient(W/2,52,8,W/2,52,240);glow.addColorStop(0,'rgba(124,92,255,0.28)');glow.addColorStop(1,'rgba(124,92,255,0)');
- ctx.fillStyle=glow;ctx.fillRect(0,0,W,130);
- owl(W/2-188,42,26);
+ var glow=ctx.createRadialGradient(W/2,56,8,W/2,56,260);glow.addColorStop(0,'rgba(124,92,255,0.30)');glow.addColorStop(1,'rgba(124,92,255,0)');
+ ctx.fillStyle=glow;ctx.fillRect(0,0,W,150);
+ owl(W/2-150,50,26);
  if('letterSpacing' in ctx){try{ctx.letterSpacing='3px';}catch(e){}}
- ctx.fillStyle='#fff';ctx.font='900 42px Arial';ctx.fillText('SallySudo',W/2+18,46);
+ ctx.fillStyle='#fff';ctx.font='900 42px Arial';ctx.fillText('SallySudo',W/2+22,54);
  if('letterSpacing' in ctx){try{ctx.letterSpacing='0px';}catch(e){}}
- var pillW=200,pillX=W/2-pillW/2,pillY=78;
+ var pillW=200,pillX=W/2-pillW/2,pillY=92;
  ctx.fillStyle='rgba(124,92,255,0.18)';rr(pillX,pillY,pillW,30,15);ctx.fill();
  ctx.fillStyle='#c4b5fd';ctx.font='800 15px Arial';ctx.fillText('\\u2694\\uFE0F 1v1',pillX+52,pillY+16);
  if(F.live&&!F.winnerName){ctx.fillStyle='#FF3B3B';ctx.beginPath();ctx.arc(pillX+120,pillY+15,4.5,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#fca5a5';ctx.font='800 14px Arial';ctx.fillText('LIVE',pillX+152,pillY+16);}
- var sz=432,gap=130,x0=(W-(sz*2+gap))/2,bY=208;
- var sides=[{x:x0,n:F.lName,t:F.lTime,e:F.lErr,b:F.lBoard,w:F.winnerName===F.lName},{x:x0+sz+gap,n:F.rName,t:F.rTime,e:F.rErr,b:F.rBoard,w:F.winnerName===F.rName}];
- for(var i=0;i<2;i++){var s=sides[i];ctx.textAlign='center';ctx.fillStyle=s.w?'#fbbf24':'#fff';ctx.font='900 26px Arial';
-  ctx.fillText((s.w?'\\uD83C\\uDFC6 ':'')+s.n,s.x+sz/2,bY-54);
-  ctx.fillStyle='#fbbf24';ctx.font='700 20px Arial';ctx.fillText('\\u23F1\\uFE0F '+fmt(s.t)+'   \\u274C '+s.e,s.x+sz/2,bY-24);
-  board(s.x,bY,sz,s.b,F.givens);}
- var cy=bY+sz/2;ctx.fillStyle='#7c5cff';ctx.beginPath();ctx.arc(W/2,cy,27,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='900 22px Arial';ctx.fillText('VS',W/2,cy+1);
- if(F.winnerName){ctx.fillStyle='#fbbf24';ctx.font='900 30px Arial';ctx.fillText('\\uD83C\\uDFC6 '+F.winnerName+' wins!',W/2,bY+sz+42);}}
+ var sz=460,x0=(W-sz)/2;
+ var blocks=[{by:212,n:F.lName,t:F.lTime,e:F.lErr,b:F.lBoard,w:F.winnerName===F.lName},{by:802,n:F.rName,t:F.rTime,e:F.rErr,b:F.rBoard,w:F.winnerName===F.rName}];
+ for(var i=0;i<2;i++){var s=blocks[i];ctx.textAlign='center';ctx.fillStyle=s.w?'#fbbf24':'#fff';ctx.font='900 28px Arial';
+  ctx.fillText((s.w?'\\uD83C\\uDFC6 ':'')+s.n,W/2,s.by-50);
+  ctx.fillStyle='#fbbf24';ctx.font='700 22px Arial';ctx.fillText('\\u23F1\\uFE0F '+fmt(s.t)+'   \\u274C '+s.e,W/2,s.by-22);
+  board(x0,s.by,sz,s.b,F.givens);}
+ var vy=706;
+ if(F.winnerName){ctx.fillStyle='#fbbf24';ctx.font='900 30px Arial';ctx.fillText('\\uD83C\\uDFC6 '+F.winnerName+' wins!',W/2,vy);}
+ else{ctx.fillStyle='#7c5cff';ctx.beginPath();ctx.arc(W/2,vy,24,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='900 24px Arial';ctx.fillText('VS',W/2,vy+1);}}
 setInterval(frame,1000/15);frame();
 window.__push=function(o){try{F=Object.assign(F,o);}catch(e){}};
 var ws=null,mr=null,started=false;
@@ -231,8 +234,8 @@ export default function BroadcastPage() {
         {!!watchUrl && <Text style={{ color: '#2dd4db', fontSize: 12, marginTop: 6 }}>🔗 {watchUrl}</Text>}
       </View>
 
-      {/* the encoder canvas (also the live preview) */}
-      <View style={{ marginHorizontal: 12, borderRadius: 10, overflow: 'hidden', aspectRatio: 16 / 9, backgroundColor: '#0a0a1a' }}>
+      {/* the encoder canvas (also the live preview) — portrait 9:16 */}
+      <View style={{ marginHorizontal: 64, borderRadius: 10, overflow: 'hidden', aspectRatio: 9 / 16, backgroundColor: '#0a0a1a' }}>
         <WebView
           ref={webRef}
           originWhitelist={['*']}

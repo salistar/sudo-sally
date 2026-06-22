@@ -11,7 +11,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { socketService } from '../utils/socket';
-import { API_URL } from '../utils/api';
+import { API_URL, RELAY_WSS } from '../utils/api';
+import { LIVE_PURPLE, rrect, drawOwl, fmt, drawSudokuBoard, drawCamTile } from '../utils/liveCompositor';
 import { useLang } from '../utils/LanguageContext';
 import { useBoardKeyboard } from '../utils/useBoardKeyboard';
 import AppModal, { PopupData } from '../components/AppModal';
@@ -133,6 +134,62 @@ const BRANDS: Record<string, { color: string; bg?: string; Icon: React.FC; name:
   linkedin:  { color: '#0A66C2', Icon: LinkedinIcon,  name: 'LinkedIn' },
   twitter:   { color: '#000000', Icon: XIcon,         name: 'X' },
 };
+
+// ============ LIVE COMPOSITOR (web only) ============
+// Paints BOTH boards + BOTH call cameras + the live chat onto a 1280×720 canvas
+// and (with the mixed call audio) streams it to the relay → YouTube. This is the
+// ONLY place the cameras/chat can be composited into the broadcast, because they
+// live as DOM <video> elements + React state here; the native phone can't bridge
+// its WebRTC video into an encoder, so the connected *web* player is the streamer.
+// Shared owl/board/cam/clock primitives come from utils/liveCompositor; only the
+// landscape *layout* (boards + cameras + chat) is specific to this screen.
+function liveDrawFrame(ctx: any, W: number, H: number, d: any, localVideo: any, remoteVideo: any) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a0a1a'); g.addColorStop(.5, '#1a1a3a'); g.addColorStop(1, '#0f0f2a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // header: owl + wordmark + LIVE
+  drawOwl(ctx, W / 2 - 120, 36, 18);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if ('letterSpacing' in ctx) try { ctx.letterSpacing = '2px'; } catch (e) {}
+  ctx.fillStyle = '#fff'; ctx.font = '900 30px Arial, sans-serif'; ctx.fillText('SallySudo', W / 2 + 8, 38);
+  if ('letterSpacing' in ctx) try { ctx.letterSpacing = '0px'; } catch (e) {}
+  if (!d.winner) { ctx.fillStyle = '#FF3B3B'; ctx.beginPath(); ctx.arc(W / 2 + 108, 33, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fca5a5'; ctx.font = '800 14px Arial, sans-serif'; ctx.textAlign = 'left'; ctx.fillText('LIVE', W / 2 + 120, 38); }
+  // boards
+  const S = 360, by = 122, bxMe = 120, bxOpp = 560;
+  ctx.textAlign = 'center';
+  const meWin = d.winner && d.winner === d.myName, oppWin = d.winner && d.winner === d.oppName;
+  ctx.fillStyle = meWin ? '#fbbf24' : '#fff'; ctx.font = '900 22px Arial, sans-serif'; ctx.fillText((meWin ? '🏆 ' : '') + d.myName, bxMe + S / 2, by - 44);
+  ctx.fillStyle = '#fbbf24'; ctx.font = '700 17px Arial, sans-serif'; ctx.fillText('⏱ ' + fmt(d.myTime) + '   ❌ ' + d.myErr, bxMe + S / 2, by - 20);
+  drawSudokuBoard(ctx, bxMe, by, S, (r, c) => (d.myBoard && d.myBoard[r] ? d.myBoard[r][c] : null), (r, c) => !!(d.initial && d.initial[r] && d.initial[r][c]));
+  ctx.fillStyle = oppWin ? '#fbbf24' : '#fff'; ctx.font = '900 22px Arial, sans-serif'; ctx.fillText((oppWin ? '🏆 ' : '') + d.oppName, bxOpp + S / 2, by - 44);
+  ctx.fillStyle = '#fbbf24'; ctx.font = '700 17px Arial, sans-serif'; ctx.fillText('⏱ ' + fmt(d.oppTime) + '   ❌ ' + d.oppErr, bxOpp + S / 2, by - 20);
+  drawSudokuBoard(ctx, bxOpp, by, S, (r, c) => (d.oppBoard && d.oppBoard[r] ? d.oppBoard[r][c] : null), (r, c) => !!(d.initial && d.initial[r] && d.initial[r][c]));
+  // VS chip
+  const vx = (bxMe + S + bxOpp) / 2, vy = by + S / 2;
+  ctx.fillStyle = LIVE_PURPLE; ctx.beginPath(); ctx.arc(vx, vy, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '900 18px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('VS', vx, vy + 1);
+  // cameras below each board
+  const camW = 200, camH = 150, camY = by + S + 24;
+  drawCamTile(ctx, bxMe + (S - camW) / 2, camY, camW, camH, localVideo, d.myName);
+  drawCamTile(ctx, bxOpp + (S - camW) / 2, camY, camW, camH, remoteVideo, d.oppName);
+  // chat panel (right column)
+  const cx0 = 952, cy0 = 96, cw = 296, chH = 548;
+  ctx.fillStyle = 'rgba(124,92,255,0.06)'; rrect(ctx, cx0, cy0, cw, chH, 14); ctx.fill();
+  ctx.strokeStyle = 'rgba(124,92,255,0.3)'; ctx.lineWidth = 1.5; rrect(ctx, cx0, cy0, cw, chH, 14); ctx.stroke();
+  ctx.fillStyle = '#c4b5fd'; ctx.font = '800 16px Arial, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('💬 Chat', cx0 + 16, cy0 + 24);
+  const msgs = (d.chat || []).slice(-10); let ty = cy0 + 54;
+  for (const m of msgs) {
+    if (ty > cy0 + chH - 20) break;
+    ctx.fillStyle = '#a78bfa'; ctx.font = '700 12px Arial, sans-serif'; ctx.fillText(String(m.from || '').slice(0, 18), cx0 + 16, ty); ty += 16;
+    ctx.fillStyle = '#e2e8f0'; ctx.font = '400 13px Arial, sans-serif';
+    const text = String(m.text || (m.img ? '📷 image' : '')).slice(0, 90);
+    let line = ''; for (const w of text.split(' ')) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > cw - 32) { ctx.fillText(line, cx0 + 16, ty); ty += 15; line = w; } else line = test; }
+    if (line) { ctx.fillText(line, cx0 + 16, ty); ty += 15; }
+    ty += 9;
+  }
+  if (!msgs.length) { ctx.fillStyle = '#475569'; ctx.font = '400 13px Arial, sans-serif'; ctx.fillText('No messages yet…', cx0 + 16, cy0 + 54); }
+}
+
 function SocialBtn({ brand, label, onPress, compact }: { brand: keyof typeof BRANDS; label?: string; onPress: () => void; compact?: boolean }) {
   const b = BRANDS[brand];
   const Icon = b.Icon;
@@ -232,6 +289,17 @@ export default function ChallengeGame() {
   const liveRef = useRef<any>({});
   liveRef.current = { myCompleted, myTime, myErrors, opponentCompleted, opponentTime, opponentErrors, currentUser, isChallenger, challenge };
 
+  // Snapshot consumed by the live compositor draw loop (see startLiveBroadcast).
+  // Always-current (refs, not stale closures) so the 15fps loop sees live values.
+  const bcDataRef = useRef<any>({});
+  const oppNameSnap = (isChallenger ? challenge?.challenged?.username : challenge?.challenger?.username) || 'Opponent';
+  bcDataRef.current = {
+    myBoard, oppBoard: opponentBoard, initial,
+    myName: currentUser?.username || 'You', oppName: oppNameSnap,
+    myTime, oppTime: opponentTime, myErr: myErrors, oppErr: opponentErrors,
+    chat: chatMessages, winner: winner ? (winner === currentUser?.id ? (currentUser?.username || 'You') : oppNameSnap) : null,
+  };
+
   // ============ CHAT / SHARE / CALL / RECORD UI STATE ============
   const [panelTab, setPanelTab] = useState<'chat' | 'call' | 'record' | 'share' | 'live'>('chat');
   const [panelOpen, setPanelOpen] = useState(false);
@@ -251,6 +319,9 @@ export default function ChallengeGame() {
   const [liveStatus, setLiveStatus] = useState<'off' | 'requesting' | 'live'>('off');
   const [liveStreamer, setLiveStreamer] = useState<string | null>(null); // who is broadcasting (username)
   const [incomingLive, setIncomingLive] = useState<{ fromName: string; platform: string } | null>(null);
+  const [liveWatchUrl, setLiveWatchUrl] = useState<string | null>(null);
+  // Compositor handle (web broadcaster only): relay socket, recorder, draw loop.
+  const liveBcRef = useRef<any>({ ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null });
 
   // ============ WEB — widen the #root for the dual-board layout ============
   useEffect(() => {
@@ -285,6 +356,7 @@ export default function ChallengeGame() {
       socketService.removeAllListeners('live:decline');
       socketService.removeAllListeners('live:end');
       try { hangup(true); } catch {}
+      try { stopLiveBroadcast(); } catch {}
       stopRing();
     };
   }, [challengeId]);
@@ -322,12 +394,17 @@ export default function ChallengeGame() {
       setIncomingLive({ fromName: d?.fromName || 'opponent', platform: d?.platform || 'youtube' });
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
     });
-    // Opponent accepted MY request → I'm now live; open the platform's go-live page.
+    // Opponent accepted MY request → I'm the broadcaster. On web, start the real
+    // compositor stream (boards + cameras + chat + audio) to YouTube via the relay.
     socketService.on('live:accept', (d: any) => {
       setLiveStatus('live');
       setLiveStreamer(liveRef.current.currentUser?.username || 'you');
-      setPopup({ type: 'success', title: '🔴 LIVE', message: 'Opponent accepted — you are now live on YouTube!' });
-      try { openExt(LIVE_LINKS.youtube); } catch {}
+      if (IS_WEB) {
+        setPopup({ type: 'success', title: '🔴 LIVE', message: 'Opponent accepted — starting your YouTube stream (boards + cam + chat)…' });
+        try { startLiveBroadcast(); } catch (e) { console.log('[live] start err', e); }
+      } else {
+        setPopup({ type: 'info', title: '🔴 Live', message: 'The web player composites the full stream — keep playing here; your board + camera are in the broadcast.' });
+      }
     });
     // Opponent declined my request.
     socketService.on('live:decline', (d: any) => {
@@ -642,7 +719,75 @@ export default function ChallengeGame() {
   };
   const endLive = () => {
     socketService.emitLiveEnd(challengeId);
-    setLiveStatus('off'); setLiveStreamer(null);
+    stopLiveBroadcast();
+    setLiveStatus('off'); setLiveStreamer(null); setLiveWatchUrl(null);
+  };
+
+  // ── Real YouTube broadcast from the WEB: composite boards + both cameras +
+  //    chat onto a canvas, mix the call audio, and stream it to the relay
+  //    (→ ffmpeg → RTMP → YouTube). Only the connected web player can do this.
+  const startLiveBroadcast = async () => {
+    if (!IS_WEB || typeof document === 'undefined') return;
+    if (liveBcRef.current.ws) return;
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      if (!token) { setPopup({ type: 'error', title: 'Live', message: 'Not signed in.' }); return; }
+      const W = 1280, H = 720;
+      const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      liveBcRef.current.canvas = canvas;
+      const vstream: any = (canvas as any).captureStream(15);
+      // Mix local + remote call audio (best effort); fall back to a silent track.
+      let audioTracks: any[] = [];
+      try {
+        const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AC) {
+          const ac = new AC(); liveBcRef.current.ac = ac;
+          const dest = ac.createMediaStreamDestination();
+          let added = false;
+          [localStreamRef.current, remoteStreamRef.current].forEach((st: any) => {
+            try { if (st && st.getAudioTracks && st.getAudioTracks().length) { ac.createMediaStreamSource(st).connect(dest); added = true; } } catch (e) {}
+          });
+          if (!added) { const osc = ac.createOscillator(); const gn = ac.createGain(); gn.gain.value = 0.0001; osc.connect(gn); gn.connect(dest); osc.start(); }
+          audioTracks = dest.stream.getAudioTracks();
+        }
+      } catch (e) {}
+      const mixed: any = new MediaStream([...vstream.getVideoTracks(), ...audioTracks]);
+      const draw = () => { try { liveDrawFrame(ctx, W, H, bcDataRef.current, localVidRef.current, remoteVidRef.current); } catch (e) {} };
+      liveBcRef.current.raf = setInterval(draw, 1000 / 15); draw();
+      const ws = new WebSocket(`${RELAY_WSS}?token=${encodeURIComponent(token)}&challengeId=${encodeURIComponent(challengeId)}&privacy=unlisted`);
+      (ws as any).binaryType = 'arraybuffer'; liveBcRef.current.ws = ws;
+      ws.onmessage = (ev: any) => {
+        let m: any = {}; try { m = JSON.parse(ev.data); } catch (e) {}
+        if (m.type === 'ready') {
+          if (m.watchUrl) setLiveWatchUrl(m.watchUrl);
+          const Wn: any = window;
+          const cands = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
+          let mime = ''; for (const c of cands) { if (Wn.MediaRecorder && Wn.MediaRecorder.isTypeSupported(c)) { mime = c; break; } }
+          const mr = new Wn.MediaRecorder(mixed, mime ? { mimeType: mime, videoBitsPerSecond: 2500000 } : undefined);
+          mr.ondataavailable = (e: any) => { if (e.data && e.data.size && ws.readyState === 1) { e.data.arrayBuffer().then((b: ArrayBuffer) => { try { ws.send(b); } catch (_) {} }); } };
+          mr.start(1000); liveBcRef.current.mr = mr;
+          // Safety net: some browsers suspend the MediaRecorder timeslice timer
+          // when the tab loses focus, which can stall the YouTube feed. Force a
+          // periodic flush so encoded chunks keep reaching the relay.
+          liveBcRef.current.flush = setInterval(() => { try { if (mr.state === 'recording') mr.requestData(); } catch (e) {} }, 1000);
+        } else if (m.type === 'error') {
+          setPopup({ type: 'error', title: 'Live error', message: m.error || 'Could not start the YouTube stream (is this account’s channel connected?)' });
+          stopLiveBroadcast(); setLiveStatus('off');
+        }
+      };
+      ws.onerror = () => {};
+    } catch (e: any) { setPopup({ type: 'error', title: 'Live', message: String(e?.message || e) }); }
+  };
+  const stopLiveBroadcast = () => {
+    const b = liveBcRef.current;
+    try { b.flush && clearInterval(b.flush); } catch (e) {}
+    try { b.mr && b.mr.stop(); } catch (e) {}
+    try { b.ws && b.ws.readyState === 1 && b.ws.send(JSON.stringify({ type: 'stop' })); } catch (e) {}
+    try { b.ws && b.ws.close(); } catch (e) {}
+    try { b.raf && clearInterval(b.raf); } catch (e) {}
+    try { b.ac && b.ac.close && b.ac.close(); } catch (e) {}
+    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null };
   };
 
   // ============ END-OF-MATCH CINEMA : replay interne + publication YouTube ============
