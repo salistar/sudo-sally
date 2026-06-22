@@ -140,7 +140,9 @@ export default function SettingsScreen() {
 
   const handleContactSupport = useCallback(() => {
     console.log(`${FILE_NAME} 📧 handleContactSupport() - Opening support...`);
-    Alert.alert('Contact Support', 'Email us at support@sudokusally.com');
+    // Styled popup (works on web — Alert.alert is a no-op on react-native-web)
+    // + corrected brand domain (was the old sudokusally.com).
+    setPopup({ type: 'info', title: '📧 Contact', message: 'support@sallysudo.com' });
   }, []);
 
   // v3.7.2 — Regional indicator emojis (🇬🇧 🇫🇷 🇲🇦) don't render on Chrome

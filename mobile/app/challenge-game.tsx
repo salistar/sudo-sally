@@ -333,6 +333,9 @@ export default function ChallengeGame() {
   // Count of encoded segments actually pushed to the relay — a non-zero, rising
   // value is the honest proof that video frames are really reaching YouTube.
   const [liveFrames, setLiveFrames] = useState(0);
+  // Styled forfeit confirmation (replaces the bare window.confirm/Alert.alert
+  // that looked unbranded). Works identically on web + native.
+  const [showAbandon, setShowAbandon] = useState(false);
   // Compositor handle (web broadcaster only): relay socket, recorder, draw loop.
   const liveBcRef = useRef<any>({ ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null });
 
@@ -877,24 +880,10 @@ export default function ChallengeGame() {
 
   const handleAbandon = async (autoLoss: boolean = false) => {
     if (autoLoss) { confirmAbandon(); return; }
-    // react-native-web does NOT implement Alert.alert → on web it was a silent
-    // no-op and confirmAbandon never ran (impossible to forfeit from the browser).
-    // Use the native confirm dialog on web, keep Alert.alert on iOS/Android.
-    if (IS_WEB) {
-      const ok = (typeof window !== 'undefined' && typeof window.confirm === 'function')
-        ? window.confirm(`🏳️ ${t('abandonTitle')}\n\n${t('abandonConfirm')}`)
-        : true;
-      if (ok) confirmAbandon();
-      return;
-    }
-    Alert.alert(
-      `🏳️ ${t('abandonTitle')}`,
-      t('abandonConfirm'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { text: t('abandon'), style: 'destructive', onPress: confirmAbandon }
-      ]
-    );
+    // Branded confirmation modal (same on web + native). Replaces the old
+    // window.confirm/Alert.alert which were unstyled (and Alert.alert was a
+    // silent no-op on react-native-web).
+    setShowAbandon(true);
   };
 
   const confirmAbandon = async () => {
@@ -1733,7 +1722,12 @@ export default function ChallengeGame() {
           {/* YOUR board */}
           <View style={styles.boardWrap}>
             <Text style={styles.boardLabel}>{t('yourGrid')}</Text>
-            {renderBoard(myBoard, false)}
+            {myBoard.length > 0 ? renderBoard(myBoard, false) : (
+              <View style={styles.boardLoading}>
+                <ActivityIndicator color="#7c5cff" />
+                <Text style={styles.boardLoadingText}>{t('loadingBoard') !== 'loadingBoard' ? t('loadingBoard') : 'Chargement du plateau…'}</Text>
+              </View>
+            )}
           </View>
 
           {/* Numpad + tools (between the two boards so input is fast) */}
@@ -1762,7 +1756,12 @@ export default function ChallengeGame() {
           {/* OPPONENT board */}
           <View style={styles.boardWrap}>
             <Text style={styles.boardLabel}>{opponent.username}</Text>
-            {renderBoard(opponentBoard, true)}
+            {opponentBoard.length > 0 ? renderBoard(opponentBoard, true) : (
+              <View style={styles.boardLoading}>
+                <ActivityIndicator color="#7c5cff" />
+                <Text style={styles.boardLoadingText}>{t('loadingBoard') !== 'loadingBoard' ? t('loadingBoard') : 'Chargement du plateau…'}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -1861,6 +1860,27 @@ export default function ChallengeGame() {
       </View>{/* bodyRow */}
 
       <AppModal popup={popup} onClose={() => setPopup(null)} buttonLabel={t('gotIt')} />
+
+      {/* ============ ABANDON — branded forfeit confirmation (web + native) ============ */}
+      <Modal visible={showAbandon} transparent animationType="fade" onRequestClose={() => setShowAbandon(false)}>
+        <View style={styles.ringOverlay}>
+          <View style={[styles.ringCard, { borderColor: 'rgba(239,68,68,0.35)' }]}>
+            <View style={styles.abandonBadge}><Text style={styles.abandonBadgeIcon}>🏳️</Text></View>
+            <Text style={styles.ringTitle}>{t('abandonTitle')}</Text>
+            <Text style={styles.ringSub}>{t('abandonConfirm')}</Text>
+            <View style={styles.ringBtns}>
+              <TouchableOpacity style={[styles.ringBtn, styles.abandonCancelBtn]} onPress={() => setShowAbandon(false)} activeOpacity={0.85}>
+                <Text style={styles.ringBtnIcon}>↩️</Text>
+                <Text style={styles.ringBtnText}>{t('cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#ef4444' }]} onPress={() => { setShowAbandon(false); confirmAbandon(); }} activeOpacity={0.85}>
+                <Text style={styles.ringBtnIcon}>🏳️</Text>
+                <Text style={styles.ringBtnText}>{t('abandon')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ============ INCOMING CALL — ringing modal ============ */}
       <Modal visible={!!incomingOffer} transparent animationType="fade" onRequestClose={rejectIncomingCall}>
@@ -2240,6 +2260,14 @@ const styles = StyleSheet.create({
   ringBtn: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, minWidth: 110 },
   ringBtnIcon: { fontSize: 28 },
   ringBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  // Branded forfeit modal accents
+  abandonBadge: { width: 76, height: 76, borderRadius: 38, backgroundColor: 'rgba(239,68,68,0.14)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.5)', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  abandonBadgeIcon: { fontSize: 40 },
+  abandonCancelBtn: { backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  // Shown instead of a blank grid while the challenge data is still loading
+  // (e.g. slow network) — avoids the "boards disappeared" look.
+  boardLoading: { width: IS_WEB ? 396 : Math.min(width, 360) - 84, height: IS_WEB ? 396 : Math.min(width, 360) - 84, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: 'rgba(124,92,255,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(124,92,255,0.18)' },
+  boardLoadingText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
   deckTitle: { color: '#7c5cff', fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   deckHint: { color: '#94a3b8', fontSize: 11, lineHeight: 16 },
   // Web: chat card grows, list fills it. Native: chat is in the scrollview so
