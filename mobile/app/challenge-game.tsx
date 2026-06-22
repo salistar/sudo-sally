@@ -291,14 +291,12 @@ export default function ChallengeGame() {
 
   // Snapshot consumed by the live compositor draw loop (see startLiveBroadcast).
   // Always-current (refs, not stale closures) so the 15fps loop sees live values.
+  // NB: the `.current = {…}` assignment lives BELOW the chat-state declarations
+  // because it reads `chatMessages`. Assigning here referenced that state before
+  // its `useState` line — a use-before-declaration (TDZ) that threw
+  // "Cannot access '$e' before initialization" and blanked the entire screen on
+  // the web build (Hermes/native tolerated it; the web minifier did not).
   const bcDataRef = useRef<any>({});
-  const oppNameSnap = (isChallenger ? challenge?.challenged?.username : challenge?.challenger?.username) || 'Opponent';
-  bcDataRef.current = {
-    myBoard, oppBoard: opponentBoard, initial,
-    myName: currentUser?.username || 'You', oppName: oppNameSnap,
-    myTime, oppTime: opponentTime, myErr: myErrors, oppErr: opponentErrors,
-    chat: chatMessages, winner: winner ? (winner === currentUser?.id ? (currentUser?.username || 'You') : oppNameSnap) : null,
-  };
 
   // ============ CHAT / SHARE / CALL / RECORD UI STATE ============
   const [panelTab, setPanelTab] = useState<'chat' | 'call' | 'record' | 'share' | 'live'>('chat');
@@ -306,6 +304,15 @@ export default function ChallengeGame() {
   const [deckOpen, setDeckOpen] = useState(true);  // collapse/expand the right sidebar
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; from: string; text?: string; img?: string; ts: number }>>([]);
   const [chatInput, setChatInput] = useState('');
+
+  // Now that every snapshotted state exists, build the live-compositor frame data.
+  const oppNameSnap = (isChallenger ? challenge?.challenged?.username : challenge?.challenger?.username) || 'Opponent';
+  bcDataRef.current = {
+    myBoard, oppBoard: opponentBoard, initial,
+    myName: currentUser?.username || 'You', oppName: oppNameSnap,
+    myTime, oppTime: opponentTime, myErr: myErrors, oppErr: opponentErrors,
+    chat: chatMessages, winner: winner ? (winner === currentUser?.id ? (currentUser?.username || 'You') : oppNameSnap) : null,
+  };
   const [isRecording, setIsRecording] = useState(false);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const mediaRecorderRef = useRef<any>(null);
@@ -316,12 +323,18 @@ export default function ChallengeGame() {
 
   // ── Live-stream handshake: one player asks to go live, the broadcast only
   //    starts once the OPPONENT accepts. ──
-  const [liveStatus, setLiveStatus] = useState<'off' | 'requesting' | 'live'>('off');
+  // 'connecting' = opponent accepted but the relay hasn't confirmed the YouTube
+  // broadcast yet; we only show "LIVE" once the relay replies `ready`, so the UI
+  // never claims to be live before frames can actually flow.
+  const [liveStatus, setLiveStatus] = useState<'off' | 'requesting' | 'connecting' | 'live'>('off');
   const [liveStreamer, setLiveStreamer] = useState<string | null>(null); // who is broadcasting (username)
   const [incomingLive, setIncomingLive] = useState<{ fromName: string; platform: string } | null>(null);
   const [liveWatchUrl, setLiveWatchUrl] = useState<string | null>(null);
+  // Count of encoded segments actually pushed to the relay — a non-zero, rising
+  // value is the honest proof that video frames are really reaching YouTube.
+  const [liveFrames, setLiveFrames] = useState(0);
   // Compositor handle (web broadcaster only): relay socket, recorder, draw loop.
-  const liveBcRef = useRef<any>({ ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null });
+  const liveBcRef = useRef<any>({ ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null });
 
   // ============ WEB — widen the #root for the dual-board layout ============
   useEffect(() => {
@@ -397,12 +410,15 @@ export default function ChallengeGame() {
     // Opponent accepted MY request → I'm the broadcaster. On web, start the real
     // compositor stream (boards + cameras + chat + audio) to YouTube via the relay.
     socketService.on('live:accept', (d: any) => {
-      setLiveStatus('live');
       setLiveStreamer(liveRef.current.currentUser?.username || 'you');
       if (IS_WEB) {
-        setPopup({ type: 'success', title: '🔴 LIVE', message: 'Opponent accepted — starting your YouTube stream (boards + cam + chat)…' });
+        // Don't claim "LIVE" yet — only after the relay confirms `ready`
+        // (startLiveBroadcast flips it to 'live'). Until then it's 'connecting'.
+        setLiveStatus('connecting');
+        setPopup({ type: 'success', title: '🔴 Connexion live', message: 'Opponent accepted — connecting your YouTube stream (boards + cam + chat)…' });
         try { startLiveBroadcast(); } catch (e) { console.log('[live] start err', e); }
       } else {
+        setLiveStatus('live');
         setPopup({ type: 'info', title: '🔴 Live', message: 'The web player composites the full stream — keep playing here; your board + camera are in the broadcast.' });
       }
     });
@@ -728,10 +744,14 @@ export default function ChallengeGame() {
   //    (→ ffmpeg → RTMP → YouTube). Only the connected web player can do this.
   const startLiveBroadcast = async () => {
     if (!IS_WEB || typeof document === 'undefined') return;
-    if (liveBcRef.current.ws) return;
+    if (liveBcRef.current.ws) { console.log('[live] already broadcasting'); return; }
     try {
+      console.log('[live] starting broadcast…');
+      setLiveFrames(0);
+      liveBcRef.current.ready = false;
       const token = await AsyncStorage.getItem('sudoku_token');
-      if (!token) { setPopup({ type: 'error', title: 'Live', message: 'Not signed in.' }); return; }
+      console.log('[live] token present:', !!token);
+      if (!token) { setPopup({ type: 'error', title: 'Live', message: 'Not signed in.' }); setLiveStatus('off'); return; }
       const W = 1280, H = 720;
       const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
@@ -743,6 +763,9 @@ export default function ChallengeGame() {
         const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (AC) {
           const ac = new AC(); liveBcRef.current.ac = ac;
+          // A backgrounded tab opens the AudioContext suspended — resume it so the
+          // mixed audio track produces samples (YouTube needs a live audio track).
+          try { if (ac.state === 'suspended' && ac.resume) ac.resume(); } catch (e) {}
           const dest = ac.createMediaStreamDestination();
           let added = false;
           [localStreamRef.current, remoteStreamRef.current].forEach((st: any) => {
@@ -755,39 +778,69 @@ export default function ChallengeGame() {
       const mixed: any = new MediaStream([...vstream.getVideoTracks(), ...audioTracks]);
       const draw = () => { try { liveDrawFrame(ctx, W, H, bcDataRef.current, localVidRef.current, remoteVidRef.current); } catch (e) {} };
       liveBcRef.current.raf = setInterval(draw, 1000 / 15); draw();
+      console.log('[live] opening relay WS…');
       const ws = new WebSocket(`${RELAY_WSS}?token=${encodeURIComponent(token)}&challengeId=${encodeURIComponent(challengeId)}&privacy=unlisted`);
       (ws as any).binaryType = 'arraybuffer'; liveBcRef.current.ws = ws;
+      ws.onopen = () => console.log('[live] relay WS OPEN — awaiting broadcast…');
+      // If the relay never confirms `ready` in 15s, fail honestly instead of
+      // sitting forever on a "connecting" state.
+      liveBcRef.current.watchdog = setTimeout(() => {
+        if (!liveBcRef.current.ready) {
+          console.log('[live] relay timeout — no ready');
+          setPopup({ type: 'error', title: 'Live', message: 'Le flux n’a pas pu démarrer (relais YouTube injoignable). Réessaie.' });
+          stopLiveBroadcast(); setLiveStatus('off');
+        }
+      }, 15000);
       ws.onmessage = (ev: any) => {
         let m: any = {}; try { m = JSON.parse(ev.data); } catch (e) {}
         if (m.type === 'ready') {
+          console.log('[live] relay READY →', m.watchUrl);
+          liveBcRef.current.ready = true;
+          if (liveBcRef.current.watchdog) { clearTimeout(liveBcRef.current.watchdog); liveBcRef.current.watchdog = null; }
           if (m.watchUrl) setLiveWatchUrl(m.watchUrl);
+          setLiveStatus('live');   // ← only NOW do we claim LIVE
           const Wn: any = window;
           const cands = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
           let mime = ''; for (const c of cands) { if (Wn.MediaRecorder && Wn.MediaRecorder.isTypeSupported(c)) { mime = c; break; } }
           const mr = new Wn.MediaRecorder(mixed, mime ? { mimeType: mime, videoBitsPerSecond: 2500000 } : undefined);
-          mr.ondataavailable = (e: any) => { if (e.data && e.data.size && ws.readyState === 1) { e.data.arrayBuffer().then((b: ArrayBuffer) => { try { ws.send(b); } catch (_) {} }); } };
+          mr.ondataavailable = (e: any) => {
+            if (e.data && e.data.size && ws.readyState === 1) {
+              setLiveFrames((f) => f + 1);   // honest "frames flowing" counter
+              e.data.arrayBuffer().then((b: ArrayBuffer) => { try { ws.send(b); } catch (_) {} });
+            }
+          };
           mr.start(1000); liveBcRef.current.mr = mr;
-          // Safety net: some browsers suspend the MediaRecorder timeslice timer
-          // when the tab loses focus, which can stall the YouTube feed. Force a
-          // periodic flush so encoded chunks keep reaching the relay.
-          liveBcRef.current.flush = setInterval(() => { try { if (mr.state === 'recording') mr.requestData(); } catch (e) {} }, 1000);
+          // Force a flush twice a second so encoded chunks keep reaching the relay
+          // even when the tab is backgrounded (browsers throttle the timeslice timer).
+          liveBcRef.current.flush = setInterval(() => { try { if (mr.state === 'recording') mr.requestData(); } catch (e) {} }, 500);
         } else if (m.type === 'error') {
+          console.log('[live] relay ERROR:', m.error);
           setPopup({ type: 'error', title: 'Live error', message: m.error || 'Could not start the YouTube stream (is this account’s channel connected?)' });
           stopLiveBroadcast(); setLiveStatus('off');
         }
       };
-      ws.onerror = () => {};
-    } catch (e: any) { setPopup({ type: 'error', title: 'Live', message: String(e?.message || e) }); }
+      ws.onerror = () => { console.log('[live] relay WS error event'); };
+      ws.onclose = () => {
+        console.log('[live] relay WS closed (ready=' + liveBcRef.current.ready + ')');
+        // Closed before we ever went live → surface the failure, don't hang.
+        if (!liveBcRef.current.ready) { stopLiveBroadcast(); setLiveStatus('off'); }
+      };
+    } catch (e: any) {
+      console.log('[live] exception:', e);
+      setPopup({ type: 'error', title: 'Live', message: String(e?.message || e) });
+      setLiveStatus('off');
+    }
   };
   const stopLiveBroadcast = () => {
     const b = liveBcRef.current;
+    try { b.watchdog && clearTimeout(b.watchdog); } catch (e) {}
     try { b.flush && clearInterval(b.flush); } catch (e) {}
     try { b.mr && b.mr.stop(); } catch (e) {}
     try { b.ws && b.ws.readyState === 1 && b.ws.send(JSON.stringify({ type: 'stop' })); } catch (e) {}
     try { b.ws && b.ws.close(); } catch (e) {}
     try { b.raf && clearInterval(b.raf); } catch (e) {}
     try { b.ac && b.ac.close && b.ac.close(); } catch (e) {}
-    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null };
+    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null };
   };
 
   // ============ END-OF-MATCH CINEMA : replay interne + publication YouTube ============
@@ -1387,10 +1440,24 @@ export default function ChallengeGame() {
                 <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444' }} />
                 <Text style={{ color: '#fff', fontWeight: '700' }}>🔴 {liveStreamer ? `${liveStreamer} is LIVE` : 'LIVE'} on YouTube</Text>
               </View>
+              {/* Honest signal: only green once real encoded segments are leaving the browser. */}
+              <Text style={{ color: liveFrames > 0 ? '#34d399' : '#fbbf24', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>
+                {liveFrames > 0 ? `📡 ${liveFrames} segments envoyés — le flux monte` : '⏳ en attente des premières frames…'}
+              </Text>
+              {!!liveWatchUrl && (
+                <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#7c5cff', flexBasis: '100%', marginBottom: 8 }]} onPress={() => openExt(liveWatchUrl)}>
+                  <Text style={styles.recIcon}>▶️</Text><Text style={styles.recText}>Ouvrir le live YouTube</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={[styles.recBtn, { backgroundColor: '#ef4444', flexBasis: '100%' }]} onPress={endLive}>
                 <Text style={styles.recIcon}>⏹️</Text><Text style={styles.recText}>End live</Text>
               </TouchableOpacity>
             </>
+          ) : liveStatus === 'connecting' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 }}>
+              <ActivityIndicator color="#fbbf24" />
+              <Text style={{ color: '#fbbf24', fontWeight: '700' }}>Connexion au flux YouTube…</Text>
+            </View>
           ) : (
             <TouchableOpacity
               style={[styles.recBtn, { backgroundColor: liveStatus === 'requesting' ? '#64748b' : '#FF0000', flexBasis: '100%' }]}
@@ -1987,7 +2054,12 @@ export default function ChallengeGame() {
 
 // ============ STYLES ============
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  // On web the route container must own the full viewport height, otherwise the
+  // flex chain (container → bodyRow → board scroll / deck) collapses to content
+  // height and the middle board column ends short with dead space below it,
+  // while the left nav + right deck look taller. Pinning 100vh makes all three
+  // columns the same length.
+  container: IS_WEB ? ({ flex: 1, height: '100vh', maxHeight: '100vh', overflow: 'hidden' } as any) : { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, paddingTop: 50 },
   back: { color: '#64748b', fontSize: 16 },
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
