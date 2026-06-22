@@ -65,10 +65,14 @@ class SocketService {
 
       this.socket = io(SOCKET_URL, {
         auth: { token: token as string },
-        // Keep websocket first (native + most browsers), but fall back to
-        // long-polling so the web client still connects if the websocket
-        // upgrade is blocked (proxy / CORS) instead of erroring out forever.
-        transports: ['websocket', 'polling'],
+        // Connect with long-polling FIRST, then transparently upgrade to a
+        // websocket. Listing 'websocket' first made the browser client retry a
+        // failing WS handshake forever ("websocket error") behind the Caddy/HTTP2
+        // proxy and never fall back — so the web socket never connected and the
+        // Online list / challenge events were dead. Polling always connects
+        // through the proxy (verified: /socket.io polling returns 200 + CORS),
+        // and Engine.IO upgrades to WS afterwards when it can. Native is fine too.
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
