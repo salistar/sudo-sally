@@ -529,10 +529,18 @@ export default function ChallengeGame() {
 
         // Start if accepted
         if (ch.status === 'accepted') await startChallenge();
+      } else {
+        // Challenge not found / not a participant / expired (backend returned
+        // { error }). DON'T strand the player on an empty board — explain and
+        // send them back to the lobby instead of an endless "loading" grid.
+        console.warn('[challenge] load failed:', data?.error);
+        setPopup({ type: 'error', title: t('error'), message: data?.error || t('failedLoadChallenge') });
+        setTimeout(() => { try { router.replace('/challenges'); } catch {} }, 1600);
       }
     } catch (error) {
       console.error('Error loading challenge:', error);
       setPopup({ type: 'error', title: t('error'), message: t('failedLoadChallenge') });
+      setTimeout(() => { try { router.replace('/challenges'); } catch {} }, 1600);
     } finally {
       setLoading(false);
     }
