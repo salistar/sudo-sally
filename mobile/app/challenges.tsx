@@ -3,7 +3,7 @@
  * Shows online users, received/sent challenges, active games, and history
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   RefreshControl, ActivityIndicator, Modal, Platform, TextInput
@@ -58,6 +58,11 @@ export default function Challenges() {
   const [loading, setLoading] = useState(true);
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [pendingNav, setPendingNav] = useState<string | null>(null);
+  // Navigating into the match must wait for the popup's fade-out to finish:
+  // pushing a route while the transparent <Modal animationType="fade"> is still
+  // closing leaves a stuck black overlay (same class as the old logout bug).
+  const navLockRef = useRef(false);
+  const navTimerRef = useRef<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [sentChallenges, setSentChallenges] = useState<Challenge[]>([]);
@@ -97,6 +102,7 @@ export default function Challenges() {
     loadData();
     
     return () => {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
       socketService.removeAllListeners('challenge:received');
       socketService.removeAllListeners('challenge:accepted');
       socketService.removeAllListeners('challenge:declined');
@@ -118,12 +124,17 @@ export default function Challenges() {
         loadMyChallenges();
       });
 
-      // Challenge accepted
+      // Challenge accepted → switch the challenger straight into the match.
+      // Show a brief "opponent ready" confirmation, then auto-navigate so the
+      // player doesn't have to tap "Got it" (and never sees a stuck modal).
       socketService.on('challenge:accepted', (data: any) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setPendingNav(`/challenge-game?id=${data.challengeId}`);
+        const target = `/challenge-game?id=${data.challengeId}`;
+        setPendingNav(target);
         setPopup({ type: 'success', title: t('challengeAccepted'), message: t('opponentReady') });
         loadMyChallenges();
+        if (navTimerRef.current) clearTimeout(navTimerRef.current);
+        navTimerRef.current = setTimeout(() => goToGame(target), 900);
       });
 
       // Challenge declined
@@ -369,13 +380,25 @@ export default function Challenges() {
     }
   };
 
-  const closePopup = () => {
+  // Close the popup, THEN (after its fade-out) navigate — never push a route
+  // while the transparent Modal is still animating closed, or it leaves a black
+  // overlay. Idempotent so the auto-nav timer and a manual tap can't double-fire.
+  const goToGame = (target: string) => {
+    if (!target || navLockRef.current) return;
+    navLockRef.current = true;
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
     setPopup(null);
-    if (pendingNav) {
-      const target = pendingNav;
-      setPendingNav(null);
-      router.push(target as any);
-    }
+    setPendingNav(null);
+    navTimerRef.current = setTimeout(() => {
+      navTimerRef.current = null;
+      navLockRef.current = false;
+      try { router.push(target as any); } catch {}
+    }, 320);
+  };
+
+  const closePopup = () => {
+    if (pendingNav) goToGame(pendingNav);
+    else setPopup(null);
   };
 
   // m:SS (unpadded minutes) — shared util. Behaviour unchanged.
@@ -439,7 +462,7 @@ export default function Challenges() {
             </View>
           </View>
         </Modal>
-        <AppModal popup={popup} onClose={() => { setPopup(null); if (pendingNav) { router.push(pendingNav as any); setPendingNav(null); } }} buttonLabel={t('gotIt')} />
+        <AppModal popup={popup} onClose={closePopup} buttonLabel={t('gotIt')} />
       </LinearGradient>
     );
   }
