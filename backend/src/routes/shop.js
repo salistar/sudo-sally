@@ -42,8 +42,14 @@ router.post('/buy', auth, async (req, res) => {
     if (item.type === 'theme') {
       user.unlockedThemes.push(itemId);
     } else if (item.type === 'powerup') {
+      // BUG FIX: the User schema field is `powerups` (hint/freeze/check), not
+      // `ownedPowerups` — the old code threw on every powerup purchase.
       const powerupKey = item.powerupData.effect;
-      user.ownedPowerups[powerupKey] = (user.ownedPowerups[powerupKey] || 0) + item.powerupData.quantity;
+      if (user.powerups[powerupKey] === undefined) {
+        return res.status(400).json({ error: 'Unknown powerup' });
+      }
+      user.powerups[powerupKey] = (user.powerups[powerupKey] || 0) + item.powerupData.quantity;
+      user.markModified('powerups'); // nested object — force Mongoose to persist
     }
     
     await user.save();

@@ -19,18 +19,24 @@ function recordMoves(challenge, progressKey, newBoardStr) {
     const prevGrid = prog.board
       ? (typeof prog.board === 'string' ? JSON.parse(prog.board) : prog.board)
       : null;
-    const puzzle = String(challenge.puzzle || '');
-    const solution = String(challenge.solution || '');
+    // puzzle/solution are stored as JSON 2D arrays — parse them and index by
+    // [row][col]. (Bug M3: the old code did String(...)[cell], indexing the JSON
+    // TEXT — so given-cell skipping and the err flag were computed against `[`,
+    // `,`, digits of the JSON, producing garbage replay move data.)
+    let puzzleGrid = null, solGrid = null;
+    try { puzzleGrid = JSON.parse(challenge.puzzle); } catch (_) {}
+    try { solGrid = JSON.parse(challenge.solution); } catch (_) {}
     const startedAt = challenge.startedAt ? new Date(challenge.startedAt).getTime() : Date.now();
     const t = Math.max(0, Date.now() - startedAt);
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
         const cell = row * 9 + col;
-        if ((Number(puzzle[cell]) || 0) !== 0) continue;   // skip given cells
+        const given = puzzleGrid ? (Number(puzzleGrid[row]?.[col]) || 0) : 0;
+        if (given !== 0) continue;                           // skip given cells
         const newVal = Number(newGrid[row]?.[col]) || 0;
         const prevVal = prevGrid ? (Number(prevGrid[row]?.[col]) || 0) : 0;
         if (newVal === prevVal) continue;                   // no change here
-        const solVal = Number(solution[cell]) || 0;
+        const solVal = solGrid ? (Number(solGrid[row]?.[col]) || 0) : 0;
         moves.push({ cell, value: newVal, t, err: newVal !== 0 && newVal !== solVal });
         if (moves.length >= 500) { prog.moves = moves; return; }
       }
@@ -416,46 +422,52 @@ exports.completeChallenge = async (req, res) => {
     const opponentKey = isChallenger ? 'challengedProgress' : 'challengerProgress';
 
     recordMoves(challenge, progressKey, board);   // capture the final placements
+
+    // Persist THIS player's progress atomically (scoped to their own sub-doc),
+    // so it records regardless of who wins the settle race below.
+    await Challenge.updateOne({ _id: challengeId }, { $set: {
+      [`${progressKey}.board`]: board,
+      [`${progressKey}.timeSpent`]: timeSpent,
+      [`${progressKey}.errors`]: errors,
+      [`${progressKey}.completed`]: true,
+      [`${progressKey}.completedAt`]: new Date(),
+      [`${progressKey}.moves`]: challenge[progressKey].moves,
+    } });
+    // Keep the in-memory doc consistent for determineWinner's decision.
     challenge[progressKey].board = board;
     challenge[progressKey].timeSpent = timeSpent;
     challenge[progressKey].errors = errors;
     challenge[progressKey].completed = true;
-    challenge[progressKey].completedAt = new Date();
-    
-    // True only for the SECOND player to finish → the match is now fully over.
-    // Used to emit the global activity broadcast exactly once.
-    const matchJustFinished = challenge[opponentKey].completed || challenge[opponentKey].abandoned;
-    if (matchJustFinished) {
-      await determineWinner(challenge);
-    }
 
-    await challenge.save();
+    // First player to complete a valid board wins the speed duel — settle the
+    // match NOW (don't wait for the opponent, who may never finish). The
+    // opponent is told via 'challenge:finished'→'challenge:result' and freezes.
+    // determineWinner's atomic playing→completed claim is the SINGLE source of
+    // truth; we do NOT full-doc save() afterwards (that re-persisted this
+    // caller's in-memory winner even when it LOST the race → clobber, bug C2).
+    await determineWinner(challenge);
 
-    await challenge.populate([
+    // Re-read the authoritative settled doc for the response + activity feed.
+    const settled = await Challenge.findById(challengeId).populate([
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' },
       { path: 'winner', select: 'username avatar' }
     ]);
 
-    // sprint-32 — global activity feed: broadcast a sanitized "match finished"
-    // event to every connected client once both players are done. Powers the
-    // live community widget (previously it could only show the caller's own
-    // games). No board/solution leaked.
-    if (matchJustFinished) {
-      try {
-        const { broadcast } = require('../services/socketService');
-        broadcast('activity:completed', {
-          challenger: { username: challenge.challenger?.username, avatar: challenge.challenger?.avatar },
-          challenged: { username: challenge.challenged?.username, avatar: challenge.challenged?.avatar },
-          winner: challenge.winner ? { username: challenge.winner.username, avatar: challenge.winner.avatar } : null,
-          isDraw: !!challenge.isDraw,
-          difficulty: challenge.difficulty,
-          at: Date.now(),
-        });
-      } catch (_) { /* feed broadcast is best-effort */ }
-    }
+    // Global activity feed: sanitized "match finished" broadcast. No board/solution.
+    try {
+      const { broadcast } = require('../services/socketService');
+      broadcast('activity:completed', {
+        challenger: { username: settled.challenger?.username, avatar: settled.challenger?.avatar },
+        challenged: { username: settled.challenged?.username, avatar: settled.challenged?.avatar },
+        winner: settled.winner ? { username: settled.winner.username, avatar: settled.winner.avatar } : null,
+        isDraw: !!settled.isDraw,
+        difficulty: settled.difficulty,
+        at: Date.now(),
+      });
+    } catch (_) { /* feed broadcast is best-effort */ }
 
-    res.json({ success: true, challenge });
+    res.json({ success: true, challenge: settled });
   } catch (error) {
     res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
@@ -481,26 +493,37 @@ exports.abandonChallenge = async (req, res) => {
     
     const isChallenger = challenge.challenger.toString() === req.user.id;
     const progressKey = isChallenger ? 'challengerProgress' : 'challengedProgress';
-    
-    challenge[progressKey].abandoned = true;
-    challenge[progressKey].board = challenge.solution;
-    
     const winnerId = isChallenger ? challenge.challenged : challenge.challenger;
-    challenge.winner = winnerId;
-    challenge.loser = req.user.id;
-    challenge.status = 'completed';
-    challenge.completedAt = new Date();
-    
-    await challenge.save();
-    await updateUserStats(challenge);
-    
-    await challenge.populate([
+
+    // ATOMIC settle (mirrors determineWinner): flip playing→completed in ONE op.
+    // The old code did a non-atomic findOne + save + unconditional
+    // updateUserStats — so a concurrent completeChallenge that already settled
+    // the match would be double-awarded AND have its winner overwritten by the
+    // abandon. Only the request that wins this claim credits stats.
+    const claimed = await Challenge.findOneAndUpdate(
+      { _id: challengeId, status: 'playing' },
+      { $set: {
+          status: 'completed',
+          completedAt: new Date(),
+          winner: winnerId,
+          loser: req.user.id,
+          [`${progressKey}.abandoned`]: true,
+          [`${progressKey}.board`]: challenge.solution,
+        } },
+      { new: true }
+    );
+    if (!claimed) {
+      return res.status(409).json({ error: 'Challenge already settled' });
+    }
+    await updateUserStats(claimed);
+
+    await claimed.populate([
       { path: 'challenger', select: 'username avatar level stars' },
       { path: 'challenged', select: 'username avatar level stars' },
       { path: 'winner', select: 'username avatar' }
     ]);
-    
-    res.json({ success: true, challenge, message: 'Challenge abandoned' });
+
+    res.json({ success: true, challenge: claimed, message: 'Challenge abandoned' });
   } catch (error) {
     res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
   }
@@ -571,10 +594,19 @@ async function determineWinner(challenge) {
     challenge.loser = challenge.challenged;
   } else if (cp.abandoned && cdp.abandoned) {
     challenge.isDraw = true;
+  } else if (cp.completed && !cdp.completed) {
+    // First to complete a valid board wins the speed duel: the challenger
+    // finished while the challenged has neither finished nor abandoned.
+    challenge.winner = challenge.challenger;
+    challenge.loser = challenge.challenged;
+  } else if (cdp.completed && !cp.completed) {
+    challenge.winner = challenge.challenged;
+    challenge.loser = challenge.challenger;
   } else {
+    // Both completed (rare near-simultaneous tie) → fastest score wins.
     const challengerScore = cp.timeSpent + (cp.errors * 30);
     const challengedScore = cdp.timeSpent + (cdp.errors * 30);
-    
+
     if (challengerScore < challengedScore) {
       challenge.winner = challenge.challenger;
       challenge.loser = challenge.challenged;
@@ -629,4 +661,8 @@ async function updateUserStats(challenge) {
       }
     });
   }
+}
+// Test-only export hatch: expose pure helpers for unit testing (no public surface change).
+if (process.env.NODE_ENV === 'test') {
+  module.exports._test = { generateSudokuPuzzle, recordMoves, determineWinner };
 }

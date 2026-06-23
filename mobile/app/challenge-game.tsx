@@ -687,7 +687,19 @@ export default function ChallengeGame() {
       if (opponentCompleted) {
         determineWinner();
       } else {
-        setPopup({ type: 'success', title: t('completedExcl'), message: t('waitingOpponentFinish') });
+        // First to complete a valid board wins the speed duel immediately.
+        // Tell the opponent authoritatively (backend relays this as
+        // 'challenge:result', so THEIR client resolves to "defeated" too),
+        // then reveal MY victory modal. errors are already < 3 here (3 errors
+        // auto-abandons earlier), so the board is a legitimate win.
+        const L = liveRef.current;
+        const opponentId = L.isChallenger ? L.challenge?.challenged?._id : L.challenge?.challenger?._id;
+        socketService.notifyFinished(challengeId, L.currentUser?.id ?? null, opponentId ?? null, false);
+        clearInterval(timerRef.current);
+        setPopup(null);
+        setWinner(L.currentUser?.id ?? null);
+        setGameOver(true);
+        setShowResult(true);
       }
     } catch (error) {
       console.error('Error completing challenge:', error);
@@ -755,7 +767,12 @@ export default function ChallengeGame() {
   //    (→ ffmpeg → RTMP → YouTube). Only the connected web player can do this.
   const startLiveBroadcast = async () => {
     if (!IS_WEB || typeof document === 'undefined') return;
-    if (liveBcRef.current.ws) { console.log('[live] already broadcasting'); return; }
+    // Double-fire guard: the `ws` check alone is insufficient because an `await`
+    // (token read) runs before `ws` is assigned, so two `live:accept` events
+    // (Accept tapped twice / relay re-emit on reconnect) both pass it → two
+    // broadcasts + two ffmpeg, one leaked. `starting` is set SYNCHRONOUSLY here.
+    if (liveBcRef.current.ws || liveBcRef.current.starting) { console.log('[live] already broadcasting'); return; }
+    liveBcRef.current.starting = true;
     try {
       console.log('[live] starting broadcast…');
       setLiveFrames(0);
@@ -840,6 +857,10 @@ export default function ChallengeGame() {
       console.log('[live] exception:', e);
       setPopup({ type: 'error', title: 'Live', message: String(e?.message || e) });
       setLiveStatus('off');
+    } finally {
+      // Setup finished (ws registered or failed) — release the synchronous
+      // guard; re-entry is now governed by liveBcRef.current.ws.
+      liveBcRef.current.starting = false;
     }
   };
   const stopLiveBroadcast = () => {
@@ -851,7 +872,7 @@ export default function ChallengeGame() {
     try { b.ws && b.ws.close(); } catch (e) {}
     try { b.raf && clearInterval(b.raf); } catch (e) {}
     try { b.ac && b.ac.close && b.ac.close(); } catch (e) {}
-    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null };
+    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null, starting: false };
   };
 
   // ============ END-OF-MATCH CINEMA : replay interne + publication YouTube ============
@@ -2094,7 +2115,12 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
   liveBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
 
-  scrollFlex: { flex: 1 },
+  // Native: ScrollView fills the screen and scrolls internally.
+  // Web: do NOT clamp to flex:1 — that bounds it to the leftover height of the
+  // fixed-height DesktopShell box and clips the 2nd board + numpad below the
+  // fold. Let it grow to natural height so the OUTER shell scroller (overflowY)
+  // scrolls the whole page and BOTH boards + numpad are fully visible.
+  scrollFlex: IS_WEB ? {} : { flex: 1 },
   scroll: { padding: 10, paddingBottom: 20, alignItems: 'center' },
 
   vs: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 14, marginBottom: 12 },
@@ -2225,7 +2251,7 @@ const styles = StyleSheet.create({
 
   // ============ BODY ROW — web: ScrollView (main) | deck (right sidebar) ============
   bodyRow: IS_WEB
-    ? { flex: 1, flexDirection: 'row', alignItems: 'stretch', minHeight: 0 }
+    ? { flexDirection: 'row', alignItems: 'flex-start' }
     : { flex: 1, flexDirection: 'column' },
 
   // ============ DECK — web: right sidebar block; native: inline INSIDE scroll ============

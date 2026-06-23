@@ -275,10 +275,13 @@ try {
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sudoku_sally';
 
+// Skip the real DB connection + port bind under test, so supertest can import
+// `app` and drive it against an in-memory Mongo without opening a socket.
+if (process.env.NODE_ENV !== 'test')
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    
+
     // Use server.listen instead of app.listen for Socket.io
     server.listen(PORT, () => {
       console.log('============================================');

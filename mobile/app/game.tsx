@@ -53,6 +53,10 @@ export default function Game() {
   const [history, setHistory] = useState<{board: Board; row: number; col: number}[]>([]);
   const [result, setResult] = useState<{ type: 'win' | 'gameover'; time: number; stars: number; xp: number; leveledUpTo?: number; unlocked?: Achievement[] } | null>(null);
   const timerRef = useRef<NodeJS.Timeout>();
+  // The game timer interval is created once and closes over `paused` from the
+  // first render (always false). Reading a ref inside the interval fixes pause.
+  const pausedRef = useRef(false);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   console.log(`${FILE_NAME} 📊 State initialized - errors: ${errors}, hints: ${hints}, time: ${time}, paused: ${paused}, notesMode: ${notesMode}`);
 
@@ -94,7 +98,7 @@ export default function Game() {
     
     console.log(`${FILE_NAME} ⏱️ useEffect() - Starting game timer...`);
     timerRef.current = setInterval(() => {
-      if (!paused) setTime(t => t + 1);
+      if (!pausedRef.current) setTime(t => t + 1);
     }, 1000);
     
     return () => {

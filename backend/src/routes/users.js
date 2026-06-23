@@ -133,6 +133,9 @@ router.get('/by-username/:username', async (req, res) => {
 // Get all users (admin only)
 router.get('/', auth, async (req, res) => {
   try {
+    // Was reachable by ANY authenticated user (incl. guests) → mass email/PII
+    // dump. Restrict to admins.
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Not authorized' });
     const users = await User.find().select('-password');
     res.json({ success: true, users, count: users.length });
   } catch (error) {
@@ -144,7 +147,11 @@ router.get('/', auth, async (req, res) => {
 // Get user by ID
 router.get('/:id', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    // Non-owners get only public fields. Previously this returned email,
+    // googleId, settings, role… to any authed user → PII/email harvesting (IDOR).
+    const isOwner = req.user.id === req.params.id || req.user.role === 'admin';
+    const projection = isOwner ? '-password' : 'username avatar level stars xp stats createdAt';
+    const user = await User.findById(req.params.id).select(projection);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ success: true, user });
   } catch (error) {
@@ -199,7 +206,13 @@ router.delete('/:id', auth, async (req, res) => {
 // Update settings
 router.put('/:id/settings', auth, async (req, res) => {
   try {
+    // Was missing the ownership guard → any user could rewrite another user's
+    // settings, and a non-existent :id threw a null-deref 500 (error-spam DoS).
+    if (req.user.id !== req.params.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
     const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
     user.settings = { ...user.settings, ...req.body };
     await user.save();
     res.json({ success: true, settings: user.settings });

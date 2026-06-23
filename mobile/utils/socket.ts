@@ -268,6 +268,13 @@ class SocketService {
     this.socket?.emit('challenge:abandoned', { challengeId });
   }
 
+  // Declare the match result. The first player to complete a valid board emits
+  // this; the backend relays it as 'challenge:result' to the room so BOTH
+  // clients resolve the winner/loser and show the result modal.
+  notifyFinished(challengeId: string, winner: string | null, loser: string | null, isDraw: boolean) {
+    this.socket?.emit('challenge:finished', { challengeId, winner, loser, isDraw });
+  }
+
   requestOnlineUsers() {
     this.socket?.emit('users:list');
   }
