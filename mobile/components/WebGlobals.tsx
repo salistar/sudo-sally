@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useLang } from '../utils/LanguageContext';
 import { useTheme } from '../utils/theme';
 import { CHANGELOG, CURRENT_VERSION } from '../utils/changelog';
+import SallyMascot from './SallyMascot';
 
 const K_ONBOARDED = '@sallysudo_onboarded';
 const K_CONSENT   = '@sallysudo_consent';
@@ -83,7 +84,12 @@ function Onboarding({ t }: { t: (k: any) => string }) {
     <Backdrop>
       <Card c={c} r={r}>
         <View style={{ alignItems: 'center', gap: s.md }}>
-          <Text style={{ fontSize: 54 }}>{sl.icon}</Text>
+          {/* Welcome slide shows the real SallySudo owl mascot (the old 🧩
+              puzzle-piece read as a stray/old logo); other slides keep their
+              topical emoji. */}
+          {i === 0
+            ? <SallyMascot size={92} mode="wink" />
+            : <Text style={{ fontSize: 54 }}>{sl.icon}</Text>}
           <Text style={{ color: c.textStrong, fontSize: 22, fontWeight: '900', textAlign: 'center' }}>{sl.title}</Text>
           <Text style={{ color: c.text, ...type.body, textAlign: 'center', lineHeight: 22 }}>{sl.body}</Text>
         </View>
