@@ -46,6 +46,7 @@ const statsRoutes = require('./routes/stats');
 const challengeRoutes = require('./routes/challenges');
 const turnRoutes = require('./routes/turn');
 const youtubeRoutes = require('./routes/youtube');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 
@@ -110,6 +111,8 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api', turnRoutes);
 // YouTube Live control-plane (per-user OAuth)
 app.use('/api/youtube', youtubeRoutes);
+// UGC moderation reports (Google Play policy)
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

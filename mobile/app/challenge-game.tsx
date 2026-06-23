@@ -975,6 +975,39 @@ export default function ChallengeGame() {
     input.click();
   };
 
+  // ============ MODERATION (Google Play UGC policy) — report / block opponent ============
+  const oppIdFor = (): string | undefined =>
+    (isChallenger ? challenge?.challenged?._id : challenge?.challenger?._id);
+  const reportOpponent = async (reason: string) => {
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      await fetch(`${API_URL}/reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reportedUser: oppIdFor(), challengeId, reason, context: 'duel' }),
+      });
+      setPopup({ type: 'success', title: '🚩 Signalé', message: 'Merci. Ce signalement va être examiné par notre équipe.' });
+    } catch (e) {
+      setPopup({ type: 'error', title: 'Signalement', message: 'Échec du signalement. Réessaie.' });
+    }
+  };
+  const blockOpponent = async () => {
+    const oid = oppIdFor();
+    if (!oid) return;
+    try {
+      const token = await AsyncStorage.getItem('sudoku_token');
+      await fetch(`${API_URL}/users/${oid}/block`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      setPopup({ type: 'success', title: '🚫 Bloqué', message: 'Vous ne serez plus mis en relation avec ce joueur.' });
+    } catch (e) {
+      setPopup({ type: 'error', title: 'Blocage', message: 'Échec du blocage. Réessaie.' });
+    }
+  };
+  const confirmBlock = () => setPopup({
+    type: 'error', title: '🚫 Bloquer ce joueur ?',
+    message: 'Il ne pourra plus vous défier, et vous non plus.',
+    confirmLabel: 'Bloquer', onConfirm: blockOpponent,
+  });
+
   /**
    * Record the match. `mode` = 'audio' (mic-only, default) or 'cam' (mic + webcam).
    * Bug-fix vs previous version:
@@ -1394,6 +1427,15 @@ export default function ChallengeGame() {
             })}
           </ScrollView>
           <QuickTaunts onSend={sendChatQuick} />
+          {/* UGC moderation (Google Play policy): report / block the opponent */}
+          <View style={styles.modRow}>
+            <TouchableOpacity style={styles.modBtn} onPress={() => reportOpponent('inappropriate')}>
+              <Text style={styles.modBtnText}>🚩 Signaler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modBtn} onPress={confirmBlock}>
+              <Text style={styles.modBtnText}>🚫 Bloquer</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.chatInputRow}>
             <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={styles.chatAttachIcon}>📎</Text></TouchableOpacity>
             <TextInput
@@ -2308,6 +2350,10 @@ const styles = StyleSheet.create({
     ? { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, flex: 1, minHeight: 120 }
     : { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, height: 220 },
   deckEmpty: { color: '#64748b', fontSize: 12, textAlign: 'center', padding: 12 },
+  // UGC moderation row (report / block) inside the chat deck
+  modRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 4, paddingTop: 6, paddingBottom: 2 },
+  modBtn: { flex: 1, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', borderRadius: 10, paddingVertical: 7, alignItems: 'center' },
+  modBtnText: { color: '#fca5a5', fontSize: 11, fontWeight: '700' },
 
   // ============ SOCIAL GRID ============
   socialGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center', paddingVertical: 10 },

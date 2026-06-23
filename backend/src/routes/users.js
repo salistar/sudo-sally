@@ -222,4 +222,37 @@ router.put('/:id/settings', auth, async (req, res) => {
   }
 });
 
+// ============ MODERATION: block / unblock (Google Play UGC policy) ============
+// Block another user — they can no longer challenge or be challenged by me.
+router.post('/:id/block', auth, async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot block yourself' });
+    await User.findByIdAndUpdate(req.user.id, { $addToSet: { blockedUsers: req.params.id } });
+    res.json({ success: true, blocked: req.params.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
+  }
+});
+
+router.post('/:id/unblock', auth, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { $pull: { blockedUsers: req.params.id } });
+    res.json({ success: true, unblocked: req.params.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
+  }
+});
+
+router.get('/me/blocked', auth, async (req, res) => {
+  try {
+    const me = await User.findById(req.user.id).select('+blockedUsers').populate('blockedUsers', 'username avatar');
+    res.json({ success: true, blocked: me?.blockedUsers || [] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message });
+  }
+});
+
 module.exports = router;

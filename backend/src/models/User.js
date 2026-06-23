@@ -72,7 +72,12 @@ const userSchema = new mongoose.Schema({
     achievementId: String,
     unlockedAt: { type: Date, default: Date.now }
   }],
-  
+
+  // ============ MODERATION (Google Play UGC policy) ============
+  // Users this account has blocked — they can't challenge/be challenged or
+  // appear in each other's lobby. select:false so the list never leaks publicly.
+  blockedUsers: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [], select: false },
+
   // ============ SETTINGS ============
   settings: {
     language: { type: String, default: 'en' },

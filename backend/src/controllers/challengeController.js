@@ -133,7 +133,19 @@ exports.sendChallenge = async (req, res) => {
       }
     }
     const resolvedTargetId = targetUser._id;
-    
+
+    // UGC moderation: refuse the challenge if a block exists in either direction.
+    // (blockedUsers is select:false but is still queryable in a filter.)
+    const blockExists = await User.exists({
+      $or: [
+        { _id: req.user.id, blockedUsers: resolvedTargetId },
+        { _id: resolvedTargetId, blockedUsers: req.user.id },
+      ],
+    });
+    if (blockExists) {
+      return res.status(403).json({ error: 'Cannot challenge — a block is in place' });
+    }
+
     const existingChallenge = await Challenge.findOne({
       $or: [
         { challenger: req.user.id, challenged: resolvedTargetId },

@@ -132,3 +132,33 @@ describe('Security fixes', () => {
     expect(r.status).toBe(403);   // 0 games won < 10
   });
 });
+
+// ============ MODERATION (UGC) — report + block ============
+describe('Moderation (UGC)', () => {
+  test('submit a report → 201', async () => {
+    const a = await reg('rep_a'); const b = await reg('rep_b');
+    const r = await request(app).post('/api/reports').set(auth(a.token))
+      .send({ reportedUser: b.id, reason: 'harassment', detail: 'abusive chat', context: 'chat' });
+    expect(r.status).toBe(201);
+    expect(r.body.reportId).toBeTruthy();
+  });
+  test('block prevents challenging in BOTH directions', async () => {
+    const a = await reg('blk_a'); const b = await reg('blk_b');
+    expect((await request(app).post(`/api/users/${b.id}/block`).set(auth(a.token))).status).toBe(200);
+    const c1 = await request(app).post('/api/challenges/send').set(auth(a.token)).send({ targetUsername: b.username, difficulty: 'easy' });
+    expect(c1.status).toBe(403);
+    const c2 = await request(app).post('/api/challenges/send').set(auth(b.token)).send({ targetUsername: a.username, difficulty: 'easy' });
+    expect(c2.status).toBe(403);
+  });
+  test('cannot block yourself', async () => {
+    const a = await reg('blkself');
+    expect((await request(app).post(`/api/users/${a.id}/block`).set(auth(a.token))).status).toBe(400);
+  });
+  test('unblock restores challenging', async () => {
+    const a = await reg('unb_a'); const b = await reg('unb_b');
+    await request(app).post(`/api/users/${b.id}/block`).set(auth(a.token));
+    await request(app).post(`/api/users/${b.id}/unblock`).set(auth(a.token));
+    const c = await request(app).post('/api/challenges/send').set(auth(a.token)).send({ targetUsername: b.username, difficulty: 'easy' });
+    expect(c.status).toBe(201);
+  });
+});

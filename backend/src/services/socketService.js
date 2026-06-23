@@ -53,11 +53,11 @@ function initializeSocket(io) {
     connectedUsers.set(socket.id, { odcUserId, username });
     userSockets.set(odcUserId, socket.id);
     
-    // Update user online status in DB
-    await User.findByIdAndUpdate(odcUserId, { 
-      isOnline: true, 
-      lastActive: new Date() 
-    });
+    // Update user online status in DB (guarded — a rejected DB op in an async
+    // socket handler is an unhandledRejection that can crash the worker).
+    try {
+      await User.findByIdAndUpdate(odcUserId, { isOnline: true, lastActive: new Date() });
+    } catch (e) { console.error('socket connect status update failed:', e?.message); }
     
     // Broadcast to all users that this user is online
     io.emit('user:online', { 
@@ -290,35 +290,37 @@ function initializeSocket(io) {
 
     // Heartbeat to keep user active
     socket.on('heartbeat', async () => {
-      await User.findByIdAndUpdate(odcUserId, { lastActive: new Date() });
+      try { await User.findByIdAndUpdate(odcUserId, { lastActive: new Date() }); } catch (e) {}
     });
 
     // Get online users list
     socket.on('users:list', async () => {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const onlineUsers = await User.find({
-        _id: { $ne: odcUserId },
-        isOnline: true,
-        lastActive: { $gte: fiveMinutesAgo }
-      }).select('username avatar level stars');
-      
-      socket.emit('users:online', onlineUsers);
+      try {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const onlineUsers = await User.find({
+          _id: { $ne: odcUserId },
+          isOnline: true,
+          lastActive: { $gte: fiveMinutesAgo }
+        }).select('username avatar level stars');
+        socket.emit('users:online', onlineUsers);
+      } catch (e) { console.error('users:list failed:', e?.message); }
     });
 
     // ============ DISCONNECT HANDLER ============
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${username} (${odcUserId})`);
-      
-      // Remove from connected lists
+
+      // Remove from connected lists. Only clear the user→socket mapping if THIS
+      // socket still owns it (L2: with a 2nd device the later socket overwrote
+      // the map; the first one disconnecting must NOT drop the live one).
       connectedUsers.delete(socket.id);
-      userSockets.delete(odcUserId);
-      
-      // Update user offline status
-      await User.findByIdAndUpdate(odcUserId, { 
-        isOnline: false,
-        lastActive: new Date()
-      });
-      
+      if (userSockets.get(odcUserId) === socket.id) userSockets.delete(odcUserId);
+
+      // Update user offline status (guarded — see connect handler).
+      try {
+        await User.findByIdAndUpdate(odcUserId, { isOnline: false, lastActive: new Date() });
+      } catch (e) { console.error('socket disconnect status update failed:', e?.message); }
+
       // Broadcast offline status
       io.emit('user:offline', { odcUserId, username });
     });
