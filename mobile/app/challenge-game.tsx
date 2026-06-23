@@ -2082,12 +2082,10 @@ export default function ChallengeGame() {
 
 // ============ STYLES ============
 const styles = StyleSheet.create({
-  // On web the route container must own the full viewport height, otherwise the
-  // flex chain (container → bodyRow → board scroll / deck) collapses to content
-  // height and the middle board column ends short with dead space below it,
-  // while the left nav + right deck look taller. Pinning 100vh makes all three
-  // columns the same length.
-  container: IS_WEB ? ({ flex: 1, height: '100vh', maxHeight: '100vh', overflow: 'hidden' } as any) : { flex: 1 },
+  // NOTE: do NOT pin height:100vh + overflow:hidden here — it makes the game
+  // page un-scrollable on web (the two stacked boards extend below the fold and
+  // could no longer be reached). Keep the page free to grow + scroll like before.
+  container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, paddingTop: 50 },
   back: { color: '#64748b', fontSize: 16 },
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
