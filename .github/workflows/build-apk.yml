@@ -11,7 +11,24 @@ permissions:
   contents: write   # needed to attach the APK to a Release on tags
 
 jobs:
+  # Gate: the APK/AAB is only built if ALL tests pass first.
+  test:
+    name: Tests gate (must pass before build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Backend tests + coverage threshold
+        working-directory: backend
+        run: npm install --no-audit --no-fund && NODE_ENV=test npx jest --coverage --ci
+      - name: Mobile unit tests
+        working-directory: mobile
+        run: npm install --no-audit --no-fund --legacy-peer-deps && npx jest --ci
+
   build:
+    needs: test          # ← build/deploy blocked unless the tests gate is green
     runs-on: ubuntu-latest
     defaults:
       run:

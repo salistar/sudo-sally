@@ -1,14 +1,12 @@
-name: Deploy to server (gowithsally-prod)
+name: Deploy to server (legacy gowithsally-prod)
 
+# SUPERSEDED: production now runs on srv3 (sallysudo.com) and is deployed
+# manually (docker cp + commit + restart) gated by scripts/predeploy.sh.
+# This legacy SSH deploy targeted the decommissioned gowithsally box, so the
+# automatic push trigger was REMOVED (it failed on every push). Kept as
+# manual-only (workflow_dispatch) in case the SSH deploy is revived — and it
+# now requires the tests gate to pass first.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "landing/**"
-      - "deploy/**"
-      - "mobile/**"                     # web build of the app lives in mobile/
-      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +14,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    name: Tests gate (must pass before deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Backend tests + coverage threshold
+        working-directory: backend
+        run: npm install --no-audit --no-fund && NODE_ENV=test npx jest --coverage --ci
+      - name: Mobile unit tests
+        working-directory: mobile
+        run: npm install --no-audit --no-fund --legacy-peer-deps && npx jest --ci
+
   deploy:
+    needs: test          # ← deploy blocked unless the tests gate is green
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH (build & restart the sudoku stack)
