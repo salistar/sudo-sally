@@ -55,8 +55,16 @@ exports.getWeekly = async (req, res) => {
 exports.getUserRank = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    const higherRanked = await User.countDocuments({ stars: { $gt: user.stars } });
-    
+    // Rank must use the SAME ordering as GET /leaderboard (stars desc, then
+    // stats.gamesWon desc) — otherwise everyone tied on stars gets the same
+    // rank, which doesn't match their actual row in the board.
+    const higherRanked = await User.countDocuments({
+      $or: [
+        { stars: { $gt: user.stars } },
+        { stars: user.stars, 'stats.gamesWon': { $gt: user.stats?.gamesWon || 0 } },
+      ],
+    });
+
     res.json({
       success: true,
       rank: higherRanked + 1,

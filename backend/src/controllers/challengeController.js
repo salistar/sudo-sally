@@ -397,10 +397,14 @@ exports.updateProgress = async (req, res) => {
     const isChallenger = challenge.challenger.toString() === req.user.id;
     const progressKey = isChallenger ? 'challengerProgress' : 'challengedProgress';
 
+    // Clamp client-supplied counters — a tampered client could send negative
+    // timeSpent/errors to win the both-completed score tiebreak (time + errors*30).
+    const safeTime = Math.max(0, Math.floor(Number(timeSpent) || 0));
+    const safeErrors = Math.max(0, Math.floor(Number(errors) || 0));
     recordMoves(challenge, progressKey, board);   // diff BEFORE overwriting board
     challenge[progressKey].board = board;
-    challenge[progressKey].timeSpent = timeSpent;
-    challenge[progressKey].errors = errors;
+    challenge[progressKey].timeSpent = safeTime;
+    challenge[progressKey].errors = safeErrors;
 
     await challenge.save();
 
@@ -435,20 +439,24 @@ exports.completeChallenge = async (req, res) => {
 
     recordMoves(challenge, progressKey, board);   // capture the final placements
 
+    // Clamp counters (anti-tamper — negative time/errors would win the tiebreak).
+    const safeTime = Math.max(0, Math.floor(Number(timeSpent) || 0));
+    const safeErrors = Math.max(0, Math.floor(Number(errors) || 0));
+
     // Persist THIS player's progress atomically (scoped to their own sub-doc),
     // so it records regardless of who wins the settle race below.
     await Challenge.updateOne({ _id: challengeId }, { $set: {
       [`${progressKey}.board`]: board,
-      [`${progressKey}.timeSpent`]: timeSpent,
-      [`${progressKey}.errors`]: errors,
+      [`${progressKey}.timeSpent`]: safeTime,
+      [`${progressKey}.errors`]: safeErrors,
       [`${progressKey}.completed`]: true,
       [`${progressKey}.completedAt`]: new Date(),
       [`${progressKey}.moves`]: challenge[progressKey].moves,
     } });
     // Keep the in-memory doc consistent for determineWinner's decision.
     challenge[progressKey].board = board;
-    challenge[progressKey].timeSpent = timeSpent;
-    challenge[progressKey].errors = errors;
+    challenge[progressKey].timeSpent = safeTime;
+    challenge[progressKey].errors = safeErrors;
     challenge[progressKey].completed = true;
 
     // First player to complete a valid board wins the speed duel — settle the
@@ -647,12 +655,15 @@ async function determineWinner(challenge) {
 
 // Helper: Update user stats
 async function updateUserStats(challenge) {
+  // Every settled match counts toward stats.challengesPlayed for BOTH players
+  // (was never incremented → the 'challenges_played' achievement was unwinnable
+  // and draws advanced no counter).
   if (challenge.isDraw) {
     await User.findByIdAndUpdate(challenge.challenger, {
-      $inc: { xp: 30, coins: 15 }
+      $inc: { xp: 30, coins: 15, 'stats.challengesPlayed': 1 }
     });
     await User.findByIdAndUpdate(challenge.challenged, {
-      $inc: { xp: 30, coins: 15 }
+      $inc: { xp: 30, coins: 15, 'stats.challengesPlayed': 1 }
     });
   } else if (challenge.winner && challenge.loser) {
     const rw = challenge.rewards || {};
@@ -661,7 +672,8 @@ async function updateUserStats(challenge) {
         xp: rw.winnerXP ?? 100,
         coins: rw.winnerCoins ?? 50,
         stars: 3,
-        'stats.challengesWon': 1
+        'stats.challengesWon': 1,
+        'stats.challengesPlayed': 1
       }
     });
 
@@ -669,7 +681,8 @@ async function updateUserStats(challenge) {
       $inc: {
         xp: rw.loserXP ?? 20,
         coins: rw.loserCoins ?? 5,
-        'stats.challengesLost': 1
+        'stats.challengesLost': 1,
+        'stats.challengesPlayed': 1
       }
     });
   }

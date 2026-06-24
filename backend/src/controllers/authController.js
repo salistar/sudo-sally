@@ -226,7 +226,10 @@ exports.googleAuth = async (req, res) => {
     });
   } catch (e) {
     console.log('[auth/google] failed:', e?.message || e);
-    res.status(401).json({ error: 'Google sign-in failed', detail: String(e?.message || e) });
+    res.status(401).json({
+      error: 'Google sign-in failed',
+      detail: process.env.NODE_ENV === 'production' ? undefined : String(e?.message || e),
+    });
   }
 };
 

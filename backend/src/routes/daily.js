@@ -66,7 +66,8 @@ router.post('/complete', auth, async (req, res) => {
     const coinsReward = 30 + (user.dailyChallenge.streak * 5);
     user.xp += xpReward;
     user.coins += coinsReward;
-    
+    user.level = user.calculateLevel();   // keep level in sync (solo does this too)
+
     await user.save();
     
     res.json({ 

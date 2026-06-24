@@ -93,8 +93,9 @@ exports.completeGame = async (req, res) => {
   try {
     const { gameId, won, timeSpent, errors, hintsUsed, stars, board } = req.body;
 
-    const game = await Game.findOne({ _id: gameId, user: req.user.id });
-    if (!game) {
+    // Load once to validate ownership + read level/isDaily for reward math.
+    const existing = await Game.findOne({ _id: gameId, user: req.user.id });
+    if (!existing) {
       return res.status(404).json({ error: 'Game not found' });
     }
 
@@ -106,56 +107,75 @@ exports.completeGame = async (req, res) => {
     const safeHints  = Math.max(0, Math.floor(Number(hintsUsed) || 0));
 
     // A win is only honored when the client submits a board that is a complete,
-    // valid Sudoku. Older clients that send no board fall back to trusting the
-    // `won` flag (but stars/rewards are still clamped above).
+    // valid Sudoku. Older clients that send no board fall back to the `won` flag.
     const reallyWon = board != null ? (!!won && isCompleteValidSudoku(board)) : !!won;
 
-    game.status = reallyWon ? 'won' : 'lost';
-    game.completedAt = new Date();
-    game.timeSpent = safeTime;
-    game.errors = safeErrors;
-    game.hintsUsed = safeHints;
-    game.stars = reallyWon ? safeStars : 0;
+    // A legitimate win NEVER grants 0 reward — floor the star multiplier at 1.
+    const baseXP = 10 + (existing.level * 2);
+    const baseCoins = 5 + existing.level;
+    const starMult = Math.max(1, safeStars);
+    const xpEarned = reallyWon ? baseXP * starMult : 0;
+    const coinsEarned = reallyWon ? baseCoins * starMult : 0;
 
-    // Calculate rewards
-    if (reallyWon) {
-      const baseXP = 10 + (game.level * 2);
-      const baseCoins = 5 + game.level;
-      game.xpEarned = baseXP * safeStars;
-      game.coinsEarned = baseCoins * safeStars;
-
-      // Update user
-      const user = await User.findById(req.user.id);
-      user.xp += game.xpEarned;
-      user.coins += game.coinsEarned;
-      user.stars += safeStars;
-      user.stats.gamesPlayed++;
-      user.stats.gamesWon++;
-      user.stats.totalTime += safeTime;
-      user.stats.hintsUsed += safeHints;
-      user.stats.currentStreak++;
-      user.stats.bestStreak = Math.max(user.stats.bestStreak, user.stats.currentStreak);
-
-      if (safeErrors === 0) user.stats.perfectGames++;
-      if (!user.completedLevels.includes(game.level)) {
-        user.completedLevels.push(game.level);
-      }
-
-      user.level = user.calculateLevel();
-      await user.save();
-    } else {
-      const user = await User.findById(req.user.id);
-      user.stats.gamesPlayed++;
-      user.stats.currentStreak = 0;
-      await user.save();
+    // IDEMPOTENT + ATOMIC: only the FIRST completion (status still 'playing')
+    // credits rewards. A double-tap / network retry / concurrent call finds
+    // status !== 'playing' → claim returns null → NO re-credit (was an unlimited
+    // economy/leaderboard exploit).
+    const game = await Game.findOneAndUpdate(
+      { _id: gameId, user: req.user.id, status: 'playing' },
+      { $set: {
+        status: reallyWon ? 'won' : 'lost',
+        completedAt: new Date(),
+        timeSpent: safeTime,
+        errors: safeErrors,
+        hintsUsed: safeHints,
+        stars: reallyWon ? safeStars : 0,
+        xpEarned,
+        coinsEarned,
+      } },
+      { new: true }
+    );
+    if (!game) {
+      // Already settled → return the recorded result, credit nothing again.
+      return res.json({
+        success: true,
+        game: existing,
+        alreadyCompleted: true,
+        rewards: { xp: existing.xpEarned, coins: existing.coinsEarned, stars: existing.stars },
+      });
     }
 
-    await game.save();
+    // Credit via atomic $inc (no read-modify-write race). Daily games (BUG-7)
+    // never touch the solo win-streak or completedLevels.
+    const inc = { xp: xpEarned, coins: coinsEarned, 'stats.gamesPlayed': 1 };
+    const ops = { $inc: inc };
+    if (reallyWon) {
+      inc.stars = safeStars;
+      inc['stats.gamesWon'] = 1;
+      inc['stats.totalTime'] = safeTime;
+      inc['stats.hintsUsed'] = safeHints;
+      if (safeErrors === 0) inc['stats.perfectGames'] = 1;
+      if (!game.isDaily) {
+        inc['stats.currentStreak'] = 1;
+        ops.$addToSet = { completedLevels: game.level };
+      }
+    } else if (!game.isDaily) {
+      ops.$set = { 'stats.currentStreak': 0 };
+    }
+    await User.updateOne({ _id: req.user.id }, ops);
+
+    // Recompute derived fields (level + bestStreak) from the post-$inc values via
+    // a TARGETED update (never save() the whole doc — that would clobber the $inc).
+    const u = await User.findById(req.user.id);
+    await User.updateOne({ _id: req.user.id }, { $set: {
+      level: u.calculateLevel(),
+      'stats.bestStreak': Math.max(u.stats.bestStreak || 0, u.stats.currentStreak || 0),
+    } });
 
     res.json({
       success: true,
       game,
-      rewards: { xp: game.xpEarned, coins: game.coinsEarned, stars: game.stars }
+      rewards: { xp: xpEarned, coins: coinsEarned, stars: game.stars }
     });
   } catch (error) {
     console.error(error);

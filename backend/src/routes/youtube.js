@@ -55,11 +55,15 @@ router.get('/auth-url', auth, async (req, res) => {
 // ── GET /api/youtube/callback (Google redirect, no auth header) ─────────────
 router.get('/callback', async (req, res) => {
   const { code, state, error } = req.query;
+  // HTML-escape everything reflected into this PUBLIC, no-auth page (was a
+  // reflected XSS: ?error=<script>… executed on api.sallysudo.com).
+  const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) =>
+    ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
   const fail = (msg) => res
     .status(400)
     .send(`<html><body style="font-family:sans-serif;background:#0a0a1a;color:#fff;text-align:center;padding-top:80px">
-      <h2>❌ YouTube connection failed</h2><p>${msg}</p></body></html>`);
-  if (error) return fail(String(error));
+      <h2>❌ YouTube connection failed</h2><p>${esc(msg)}</p></body></html>`);
+  if (error) return fail('Authorization was denied or cancelled.');
   if (!code || !state) return fail('Missing code/state');
   if (!yt.isConfigured()) return fail('Server not configured');
 
@@ -92,7 +96,7 @@ router.get('/callback', async (req, res) => {
     return res.redirect(`${WEB_RETURN}?youtube=connected`);
   } catch (e) {
     console.error('YouTube callback error:', e.message);
-    return fail(e.message);
+    return fail(process.env.NODE_ENV === 'production' ? 'Connection failed, please retry.' : e.message);
   }
 });
 

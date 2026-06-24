@@ -459,10 +459,13 @@ describe('YouTube control-plane coverage (mocked Google)', () => {
     expect(r.status).toBe(400);
     expect(r.text).toContain('Missing code/state');
   });
-  test('GET /callback: Google returned ?error=access_denied → 400', async () => {
-    const r = await request(app).get('/api/youtube/callback').query({ error: 'access_denied' });
+  test('GET /callback: Google returned ?error → 400, raw value NOT reflected (XSS-safe)', async () => {
+    // SEC-1 fix: the public callback must NOT reflect attacker-controlled query
+    // back into the HTML. A script payload must be neither executed nor echoed raw.
+    const r = await request(app).get('/api/youtube/callback').query({ error: '<script>alert(1)</script>' });
     expect(r.status).toBe(400);
-    expect(r.text).toContain('access_denied');
+    expect(r.text).not.toContain('<script>alert(1)</script>');   // not reflected
+    expect(r.text).toContain('Authorization was denied');         // generic message
   });
   test('GET /callback: invalid/expired state → 400', async () => {
     const r = await request(app).get('/api/youtube/callback').query({ code: 'c', state: 'not-a-jwt' });
