@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert, Modal,
-  Dimensions, ScrollView, ActivityIndicator, Platform, TextInput, Linking
+  Dimensions, ScrollView, ActivityIndicator, Platform, TextInput, Linking, AppState
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -338,6 +338,9 @@ export default function ChallengeGame() {
   const [showAbandon, setShowAbandon] = useState(false);
   // Compositor handle (web broadcaster only): relay socket, recorder, draw loop.
   const liveBcRef = useRef<any>({ ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null });
+  // Dedicated ref for the go-live request timeout. NOT stored on liveRef (which
+  // is reassigned every render, line ~290) — that would lose the handle.
+  const liveReqTimeoutRef = useRef<any>(null);
 
   // ============ WEB — widen the #root for the dual-board layout ============
   useEffect(() => {
@@ -377,6 +380,31 @@ export default function ChallengeGame() {
     };
   }, [challengeId]);
 
+  // PS-12 (Google Play): camera / mic / live broadcast MUST stop when the app is
+  // backgrounded or the screen locks. The screen is NOT unmounted on background,
+  // so without this the call + broadcast keep capturing → a policy violation.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'background' || s === 'inactive') {
+        try { if (liveBcRef.current.ws || liveStatus !== 'off') { socketService.emitLiveEnd(challengeId); stopLiveBroadcast(); setLiveStatus('off'); setLiveStreamer(null); } } catch {}
+        try { if (callActive) hangup(true); } catch {}
+        try { if (isRecording) stopRecording(); } catch {}
+      }
+    });
+    return () => { try { sub.remove(); } catch {} };
+  }, [callActive, isRecording, liveStatus, challengeId]);
+
+  // A finished duel must NOT keep streaming to YouTube (it was running until the
+  // relay's 4h hard cap). Tear the broadcast down deterministically on game over.
+  useEffect(() => {
+    if (!gameOver) return;
+    if (liveBcRef.current.ws || liveStatus !== 'off') {
+      try { socketService.emitLiveEnd(challengeId); } catch {}
+      stopLiveBroadcast();
+      setLiveStatus('off'); setLiveStreamer(null);
+    }
+  }, [gameOver]);
+
   // Timer — ticks BOTH my clock and the opponent's while the match is live.
   // The opponent's clock is snapped to the authoritative value whenever an
   // `opponent:progress` event arrives; between events it advances locally so it
@@ -413,6 +441,7 @@ export default function ChallengeGame() {
     // Opponent accepted MY request → I'm the broadcaster. On web, start the real
     // compositor stream (boards + cameras + chat + audio) to YouTube via the relay.
     socketService.on('live:accept', (d: any) => {
+      clearLiveReqTimeout();
       setLiveStreamer(liveRef.current.currentUser?.username || 'you');
       if (IS_WEB) {
         // Don't claim "LIVE" yet — only after the relay confirms `ready`
@@ -427,12 +456,17 @@ export default function ChallengeGame() {
     });
     // Opponent declined my request.
     socketService.on('live:decline', (d: any) => {
+      clearLiveReqTimeout();
       setLiveStatus('off');
       setPopup({ type: 'error', title: 'Live declined', message: 'Your opponent declined the live request.' });
     });
-    // Stream ended by the broadcaster.
+    // Stream ended (by EITHER party — either player can stop a broadcast that
+    // includes them; a consent requirement). stopLiveBroadcast() is a safe no-op
+    // if THIS client wasn't the broadcaster.
     socketService.on('live:end', () => {
-      setLiveStatus('off'); setLiveStreamer(null); setIncomingLive(null);
+      clearLiveReqTimeout();
+      try { stopLiveBroadcast(); } catch {}
+      setLiveStatus('off'); setLiveStreamer(null); setIncomingLive(null); setLiveWatchUrl(null);
     });
 
     // Chat messages from opponent (text + optional base64 image)
@@ -738,11 +772,19 @@ export default function ChallengeGame() {
   // ============ LIVE-STREAM handshake actions ============
   // I ask my opponent to allow me to go live; the broadcast only starts once
   // they accept (handled by the live:accept listener above).
+  const clearLiveReqTimeout = () => { try { if (liveReqTimeoutRef.current) { clearTimeout(liveReqTimeoutRef.current); liveReqTimeoutRef.current = null; } } catch {} };
   const requestGoLive = () => {
     if (liveStatus !== 'off') return;
     setLiveStatus('requesting');
     socketService.emitLiveRequest(challengeId, 'youtube');
     setPopup({ type: 'info', title: '🔴 Go Live', message: 'Live request sent — waiting for your opponent to accept…' });
+    // Don't get stuck on 'requesting' forever if the opponent never answers
+    // (app closed / left the room). Reset after 30s. Cleared on accept/decline.
+    clearLiveReqTimeout();
+    liveReqTimeoutRef.current = setTimeout(() => {
+      setLiveStatus('off');
+      setPopup({ type: 'error', title: 'Live', message: 'Aucune réponse de ton adversaire — réessaie.' });
+    }, 30000);
   };
   // Opponent (me) accepts the incoming live request → they go live.
   const acceptIncomingLive = () => {
@@ -757,6 +799,7 @@ export default function ChallengeGame() {
     setIncomingLive(null);
   };
   const endLive = () => {
+    clearLiveReqTimeout();
     socketService.emitLiveEnd(challengeId);
     stopLiveBroadcast();
     setLiveStatus('off'); setLiveStreamer(null); setLiveWatchUrl(null);
@@ -804,6 +847,7 @@ export default function ChallengeGame() {
         }
       } catch (e) {}
       const mixed: any = new MediaStream([...vstream.getVideoTracks(), ...audioTracks]);
+      liveBcRef.current.stream = mixed;   // keep a handle so stop can release the captureStream tracks
       const draw = () => { try { liveDrawFrame(ctx, W, H, bcDataRef.current, localVidRef.current, remoteVidRef.current); } catch (e) {} };
       liveBcRef.current.raf = setInterval(draw, 1000 / 15); draw();
       console.log('[live] opening relay WS…');
@@ -849,9 +893,14 @@ export default function ChallengeGame() {
       };
       ws.onerror = () => { console.log('[live] relay WS error event'); };
       ws.onclose = () => {
-        console.log('[live] relay WS closed (ready=' + liveBcRef.current.ready + ')');
-        // Closed before we ever went live → surface the failure, don't hang.
-        if (!liveBcRef.current.ready) { stopLiveBroadcast(); setLiveStatus('off'); }
+        // This fires ONLY on an UNEXPECTED drop — stopLiveBroadcast() detaches
+        // this handler before an intentional stop, so we never show a false
+        // "connection lost" on a user-ended live. Tear down + tell the truth.
+        const wasReady = liveBcRef.current.ready;
+        console.log('[live] relay WS dropped (ready=' + wasReady + ')');
+        stopLiveBroadcast();
+        setLiveStatus('off'); setLiveStreamer(null);
+        setPopup({ type: 'error', title: 'Live', message: wasReady ? 'La connexion au flux a été perdue.' : 'Le flux n’a pas pu démarrer. Réessaie.' });
       };
     } catch (e: any) {
       console.log('[live] exception:', e);
@@ -868,11 +917,15 @@ export default function ChallengeGame() {
     try { b.watchdog && clearTimeout(b.watchdog); } catch (e) {}
     try { b.flush && clearInterval(b.flush); } catch (e) {}
     try { b.mr && b.mr.stop(); } catch (e) {}
-    try { b.ws && b.ws.readyState === 1 && b.ws.send(JSON.stringify({ type: 'stop' })); } catch (e) {}
-    try { b.ws && b.ws.close(); } catch (e) {}
+    // Detach onclose/onerror BEFORE closing so an intentional stop doesn't
+    // trip the "connection lost" handler.
+    try { if (b.ws) { b.ws.onclose = null; b.ws.onerror = null; if (b.ws.readyState === 1) b.ws.send(JSON.stringify({ type: 'stop' })); b.ws.close(); } } catch (e) {}
     try { b.raf && clearInterval(b.raf); } catch (e) {}
+    // Stop the canvas captureStream + mixed-audio tracks (were leaking — the
+    // capture track stayed 'live' after stop).
+    try { b.stream && b.stream.getTracks && b.stream.getTracks().forEach((t: any) => { try { t.stop(); } catch (e) {} }); } catch (e) {}
     try { b.ac && b.ac.close && b.ac.close(); } catch (e) {}
-    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null, starting: false };
+    liveBcRef.current = { ws: null, mr: null, raf: null, canvas: null, ac: null, flush: null, ready: false, watchdog: null, starting: false, stream: null };
   };
 
   // ============ END-OF-MATCH CINEMA : replay interne + publication YouTube ============
@@ -1979,11 +2032,13 @@ export default function ChallengeGame() {
         <View style={styles.ringOverlay}>
           <View style={styles.ringCard}>
             <Text style={styles.ringPulse}>🔴</Text>
-            <Text style={styles.ringTitle}>Live request</Text>
+            <Text style={styles.ringTitle}>Go live publicly on YouTube?</Text>
             <Text style={styles.ringSub}>
-              {(incomingLive?.fromName || opponent?.username || 'opponent')} wants to go live on{' '}
-              {incomingLive?.platform === 'youtube' ? 'YouTube' : (incomingLive?.platform || 'YouTube')}.{'\n'}
-              The stream starts only if you accept.
+              {(incomingLive?.fromName || opponent?.username || 'Your opponent')} wants to stream this match live on{' '}
+              {incomingLive?.platform === 'youtube' ? 'YouTube' : (incomingLive?.platform || 'YouTube')}.{'\n\n'}
+              If you accept, this match is broadcast live and anyone can watch:
+              <Text style={{ fontWeight: '700' }}> your Sudoku board, your name, the chat, and — if a call is active — your camera and microphone</Text> become part of the public stream.{'\n\n'}
+              You can stop the live at any time.
             </Text>
             <View style={styles.ringBtns}>
               <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#ef4444' }]} onPress={declineIncomingLive}>
@@ -1992,7 +2047,7 @@ export default function ChallengeGame() {
               </TouchableOpacity>
               <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#22c55e' }]} onPress={acceptIncomingLive}>
                 <Text style={styles.ringBtnIcon}>🔴</Text>
-                <Text style={styles.ringBtnText}>Accept &amp; go live</Text>
+                <Text style={styles.ringBtnText}>Accept &amp; stream</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2055,15 +2110,17 @@ export default function ChallengeGame() {
                 ) : (
                   <>
                     <Text style={[styles.tabHint, { color: '#7c5cff' }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call active{callError ? ` — ${callError}` : ''}</Text>
+                    {/* BUG-P2-3: refs removed — these elements live inside a
+                        visible={false} Modal but RN-Web still mounts them, so the
+                        ref={localVidRef}/{remoteVidRef} here used to STEAL the refs
+                        from the visible call bar (attachLocal/attachRemote),
+                        blanking the remote tile + the broadcast's remote cam. The
+                        visible bar is the single source of those refs now. */}
                     {callKind === 'video' && Platform.OS === 'web' && (
                       <View style={styles.videoRow}>
-                        {React.createElement('video', { ref: localVidRef, autoPlay: true, playsInline: true, muted: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
-                        {React.createElement('video', { ref: remoteVidRef, autoPlay: true, playsInline: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
+                        {React.createElement('video', { autoPlay: true, playsInline: true, muted: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
+                        {React.createElement('video', { autoPlay: true, playsInline: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
                       </View>
-                    )}
-                    {callKind === 'audio' && Platform.OS === 'web' && (
-                      // Hidden audio element so the remote audio actually plays
-                      <View>{React.createElement('audio', { ref: remoteVidRef, autoPlay: true, style: { display: 'none' } })}</View>
                     )}
                     <View style={styles.callRow}>
                       <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={() => hangup(true)}><Text style={styles.callIcon}>📵</Text><Text style={styles.callText}>Hang up</Text></TouchableOpacity>

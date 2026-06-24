@@ -17,8 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.sudokusally.v3",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Sudoku Sally to access your camera so you can video-call your opponent during a challenge.",
-        "NSMicrophoneUsageDescription": "Allow Sudoku Sally to access your microphone so you can talk to your opponent during a challenge."
+        "NSCameraUsageDescription": "Allow Sudoku Sally to access your camera to video-call your opponent during a challenge. If you and your opponent both choose to go live, this video may be streamed publicly to YouTube.",
+        "NSMicrophoneUsageDescription": "Allow Sudoku Sally to access your microphone to talk to your opponent during a challenge. If you and your opponent both choose to go live, this audio may be streamed publicly to YouTube."
       }
     },
     "android": {
@@ -54,8 +54,8 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "cameraPermission": "Allow Sudoku Sally to access your camera so you can video-call your opponent during a challenge.",
-          "microphonePermission": "Allow Sudoku Sally to access your microphone so you can talk to your opponent during a challenge."
+          "cameraPermission": "Allow Sudoku Sally to access your camera to video-call your opponent. If both players go live, this video may be streamed publicly to YouTube.",
+          "microphonePermission": "Allow Sudoku Sally to access your microphone to talk to your opponent. If both players go live, this audio may be streamed publicly to YouTube."
         }
       ]
     ]
