@@ -25,7 +25,7 @@ jobs:
         run: npm install --no-audit --no-fund && NODE_ENV=test npx jest --coverage --ci
       - name: Mobile unit tests
         working-directory: mobile
-        run: npm install --no-audit --no-fund --legacy-peer-deps && npx jest --ci
+        run: npm install --no-audit --no-fund --legacy-peer-deps && npx jest --coverage --ci
 
   build:
     needs: test          # ← build/deploy blocked unless the tests gate is green

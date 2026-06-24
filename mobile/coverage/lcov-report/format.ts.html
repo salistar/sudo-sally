@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -114,20 +114,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Shared time-formatting helpers.
@@ -146,21 +146,21 @@
 &nbsp;
 // MM:SS-style m:SS, zero-padded SECONDS (minutes NOT padded) from a number of SECONDS.
 // e.g. 65 -&gt; "1:05"
-export function <span class="fstat-no" title="function not covered" >formatClock(</span>totalSeconds: number): string {
-  const s = <span class="cstat-no" title="statement not covered" >Math.max(0, Math.floor(Number(totalSeconds) || 0));</span>
-  const m = <span class="cstat-no" title="statement not covered" >Math.floor(s / 60);</span>
-<span class="cstat-no" title="statement not covered" >  return `${m}:${String(s % 60).padStart(2, '0')}`;</span>
+export function formatClock(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
 &nbsp;
 // Same but from MILLISECONDS. e.g. 65000 -&gt; "1:05"
-export function <span class="fstat-no" title="function not covered" >formatClockMs(</span>ms: number): string {
-<span class="cstat-no" title="statement not covered" >  return formatClock(Math.floor((Number(ms) || 0) / 1000));</span>
+export function formatClockMs(ms: number): string {
+  return formatClock(Math.floor((Number(ms) || 0) / 1000));
 }
 &nbsp;
 // m:SS with an em-dash fallback for empty/zero, used by the widgets. 0/undefined -&gt; "—"
-export function <span class="fstat-no" title="function not covered" >formatDuration(</span>totalSeconds?: number | null): string {
-<span class="cstat-no" title="statement not covered" >  if (totalSeconds == null || totalSeconds &lt;= 0) <span class="cstat-no" title="statement not covered" >return '—';</span></span>
-<span class="cstat-no" title="statement not covered" >  return formatClock(totalSeconds);</span>
+export function formatDuration(totalSeconds?: number | null): string {
+  if (totalSeconds == null || totalSeconds &lt;= 0) return '—';
+  return formatClock(totalSeconds);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -169,7 +169,7 @@ export function <span class="fstat-no" title="function not covered" >formatDurat
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-24T09:02:04.422Z
+                at 2026-06-24T13:05:41.197Z
             </div>
         <script src="prettify.js"></script>
         <script>

@@ -217,7 +217,7 @@ FNH:22
 FNDA:9,recordMoves
 FNDA:43,generateSudokuPuzzle
 FNDA:43,(anonymous_2)
-FNDA:802,(anonymous_3)
+FNDA:769,(anonymous_3)
 FNDA:387,(anonymous_4)
 FNDA:3483,(anonymous_5)
 FNDA:387,(anonymous_6)
@@ -265,7 +265,7 @@ DA:40,144
 DA:41,144
 DA:44,8
 DA:50,43
-DA:62,802
+DA:62,769
 DA:63,43
 DA:64,43
 DA:65,387

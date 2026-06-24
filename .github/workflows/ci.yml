@@ -40,7 +40,7 @@ jobs:
           node-version: '20'
       - run: npm install --no-audit --no-fund --legacy-peer-deps
       - name: Run mobile unit tests
-        run: npx jest --ci
+        run: npx jest --coverage --ci
 
   web-build:
     name: Web (expo export compiles)

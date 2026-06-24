@@ -24,7 +24,7 @@ echo "==> [1/3] Backend tests + coverage threshold"
 ( cd "$ROOT/backend" && NODE_ENV=test npx jest --coverage --ci )
 
 echo "==> [2/3] Mobile unit tests"
-( cd "$ROOT/mobile" && npx jest --ci )
+( cd "$ROOT/mobile" && npx jest --coverage --ci )
 
 if [ "$FAST" = "--fast" ]; then
   echo "==> [3/3] Web compile  (SKIPPED via --fast)"
