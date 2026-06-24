@@ -97,6 +97,28 @@ describe('Audit fixes — economy/integrity', () => {
   });
 });
 
+describe('Audit fixes — ranking', () => {
+  test('RANK-1: weekly leaderboard aggregates REAL wins this week (was a dead stub)', async () => {
+    const Game = require('../src/models/Game');
+    const a = await reg('wk');
+    await Game.create({ user: a.id, level: 1, status: 'won', stars: 3, completedAt: new Date() });
+    const r = await request(app).get('/api/leaderboard/weekly');
+    expect(r.status).toBe(200);
+    const me = (r.body.leaderboard || []).find((e) => String(e.userId) === String(a.id));
+    expect(me).toBeTruthy();
+    expect(me.weeklyStars).toBeGreaterThanOrEqual(3);
+  });
+
+  test('RANK-9: guests are excluded from the public leaderboards', async () => {
+    const g = await request(app).post('/api/auth/guest').send({});
+    const gid = (g.body.user || {})._id || (g.body.user || {}).id;
+    await User.updateOne({ _id: gid }, { $set: { stars: 99999, 'stats.gamesWon': 999 } });
+    const r = await request(app).get('/api/leaderboard');
+    expect(r.status).toBe(200);
+    expect(r.body.leaderboard.some((e) => String(e.userId) === String(gid))).toBe(false);
+  });
+});
+
 describe('Audit fixes — live-broadcast privacy', () => {
   test('SEC-5: /spectate is 403 for a non-participant until BOTH players consent', async () => {
     const a = await reg('sa'); const b = await reg('sb'); const c = await reg('sc'); // c = outsider

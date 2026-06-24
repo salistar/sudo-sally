@@ -348,9 +348,9 @@ describe('Leaderboard coverage', () => {
     expect(r.status).toBe(500);
     jest.restoreAllMocks();
   });
-  test('GET /leaderboard/weekly → 500 when LeaderboardEntry.find throws', async () => {
-    const LeaderboardEntry = require('../src/models/Leaderboard');
-    jest.spyOn(LeaderboardEntry, 'find').mockImplementationOnce(() => { throw new Error('boom-wk'); });
+  test('GET /leaderboard/weekly → 500 when the aggregation throws', async () => {
+    const Game = require('../src/models/Game');
+    jest.spyOn(Game, 'aggregate').mockImplementationOnce(() => { throw new Error('boom-wk'); });
     const r = await request(app).get('/api/leaderboard/weekly');
     expect(r.status).toBe(500);
     jest.restoreAllMocks();
