@@ -9,9 +9,12 @@ module.exports = {
   // functional E2E suites, not unit tests; index.js is the server bootstrap —
   // all excluded from the unit-coverage denominator (testing them as units has
   // no signal). 100% line coverage of the whole app is NOT the target.
-  collectCoverageFrom: ['src/**/*.js', '!src/index.js', '!src/services/relayService.js', '!src/services/socketService.js'],
-  // CI gate (jest --coverage): a floor that catches regressions.
+  // socketService is now covered by socket.int.test.js (socket.io-client). Only
+  // relayService (ffmpeg→RTMP data path) + index.js (bootstrap) stay excluded —
+  // they're exercised by the live system + functional E2E, not unit tests.
+  collectCoverageFrom: ['src/**/*.js', '!src/index.js', '!src/services/relayService.js'],
+  // CI gate (jest --coverage): ≥95% lines enforced — build fails on regression.
   coverageThreshold: {
-    global: { lines: 55, statements: 55, functions: 45, branches: 30 },
+    global: { lines: 95, statements: 88, functions: 90, branches: 60 },
   },
 };

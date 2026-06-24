@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">29.41% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>5/17</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">29.41% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/17</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -115,36 +115,36 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * GET /api/turn-creds
  * Returns short-lived ICE servers config (STUN + TURN time-limited credentials)
@@ -160,29 +160,29 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 &nbsp;
-router.get('/turn-creds', <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {
-  const secret = <span class="cstat-no" title="statement not covered" >process.env.TURN_SHARED_SECRET;</span>
-  const realm  = <span class="cstat-no" title="statement not covered" >process.env.TURN_REALM  || 'turn.salistar.com';</span>
-  const host   = <span class="cstat-no" title="statement not covered" >process.env.TURN_HOST   || 'turn.salistar.com';</span>
+router.get('/turn-creds', (req, res) =&gt; {
+  const secret = process.env.TURN_SHARED_SECRET;
+  const realm  = process.env.TURN_REALM  || 'turn.salistar.com';
+  const host   = process.env.TURN_HOST   || 'turn.salistar.com';
   // STUN is always safe to publish
-  const iceServers = <span class="cstat-no" title="statement not covered" >[</span>
+  const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
   ];
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (secret) {</span>
-    const ttlSec = <span class="cstat-no" title="statement not covered" >6 * 3600;</span>                                  // 6h credentials
-    const expiry = <span class="cstat-no" title="statement not covered" >Math.floor(Date.now() / 1000) + ttlSec;</span>
-    const userId = <span class="cstat-no" title="statement not covered" >(req.headers['x-user-id'] || 'sudoku').toString().replace(/[^\w-]/g, '');</span>
-    const username = <span class="cstat-no" title="statement not covered" >`${expiry}:${userId}`;</span>
-    const password = <span class="cstat-no" title="statement not covered" >crypto.createHmac('sha1', secret).update(username).digest('base64');</span>
-<span class="cstat-no" title="statement not covered" >    iceServers.push(</span>
+  if (secret) {
+    const ttlSec = 6 * 3600;                                  // 6h credentials
+    const expiry = Math.floor(Date.now() / 1000) + ttlSec;
+    const userId = (req.headers['x-user-id'] || <span class="branch-1 cbranch-no" title="branch not covered" >'sudoku')</span>.toString().replace(/[^\w-]/g, '');
+    const username = `${expiry}:${userId}`;
+    const password = crypto.createHmac('sha1', secret).update(username).digest('base64');
+    iceServers.push(
       { urls: `turn:${host}:3478?transport=udp`, username, credential: password },
       { urls: `turn:${host}:3478?transport=tcp`, username, credential: password },
     );
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  res.json({ iceServers, ttlSec: 6 * 3600, realm });</span>
+  res.json({ iceServers, ttlSec: 6 * 3600, realm });
 });
 &nbsp;
 module.exports = router;
@@ -193,7 +193,7 @@ module.exports = router;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-24T09:13:44.277Z
+                at 2026-06-24T10:23:40.103Z
             </div>
         <script src="../prettify.js"></script>
         <script>
