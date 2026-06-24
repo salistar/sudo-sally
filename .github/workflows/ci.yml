@@ -1,0 +1,59 @@
+name: CI — tests before deploy
+
+# Runs on every push/PR. The deploy steps (backend → srv3, web → srv3,
+# mobile → APK/AAB) MUST only run after this passes. Locally, `npm run predeploy`
+# (scripts/predeploy.sh) runs the same gate before any manual deploy.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    name: Backend (jest + coverage gate)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+      - name: Run backend tests with coverage threshold
+        run: npx jest --coverage --ci
+        env:
+          NODE_ENV: test
+
+  mobile-tests:
+    name: Mobile (jest unit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Run mobile unit tests
+        run: npx jest --ci
+
+  web-build:
+    name: Web (expo export compiles)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, mobile-tests]
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Verify the web bundle compiles
+        run: npx expo export -p web
