@@ -113,6 +113,13 @@ router.get('/:challengeId/spectate', auth, async (req, res) => {
       .populate('challenged', 'username avatar')
       .populate('winner', 'username avatar');
     if (!c) return res.status(404).json({ success: false, error: 'Challenge not found' });
+    // Privacy gate: only a duel both players consented to broadcast may be
+    // watched by a non-participant. Participants can always view their own match.
+    const uid = String(req.user.id);
+    const isParticipant = uid === String(c.challenger?._id || c.challenger) || uid === String(c.challenged?._id || c.challenged);
+    if (!isParticipant && !c.broadcast?.consented) {
+      return res.status(403).json({ success: false, error: 'This duel is not a public broadcast' });
+    }
     res.json({
       success: true,
       spectate: {

@@ -233,7 +233,8 @@ describe('Challenge rooms', () => {
     sockA.disconnect(); sockB.disconnect(); sockC.disconnect();
   });
 
-  test('challenge:spectate lets any authed user join the room', async () => {
+  test('challenge:spectate is DENIED without consent, ALLOWED once both players consent', async () => {
+    const Challenge = require('../src/models/Challenge');
     const a = await reg('spec_a');
     const b = await reg('spec_b');
     const s = await reg('spec_s'); // spectator, not a participant
@@ -243,10 +244,17 @@ describe('Challenge rooms', () => {
     const sockS = await connect(s.token);
 
     sockA.emit('challenge:join', cid);
-    sockS.emit('challenge:spectate', cid); // spectator joins room (read-only)
-    await delay(300);
 
-    // A emits completed → both room members (incl. spectator) get player:completed
+    // 1) No consent yet → spectate is refused (privacy gate).
+    const denied = waitFor(sockS, 'spectate:denied');
+    sockS.emit('challenge:spectate', cid);
+    const d = await denied;
+    expect(d.reason).toBe('not_consented');
+
+    // 2) Both players consent → spectate works and relays player:completed.
+    await Challenge.updateOne({ _id: cid }, { $set: { 'broadcast.consented': true } });
+    sockS.emit('challenge:spectate', cid);
+    await delay(200);
     const specGot = waitFor(sockS, 'player:completed');
     sockA.emit('challenge:completed', { challengeId: cid, timeSpent: 50, errors: 1 });
     const p = await specGot;

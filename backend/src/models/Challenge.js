@@ -69,6 +69,19 @@ const challengeSchema = new mongoose.Schema({
     loserXP: { type: Number, default: 20 },
     loserCoins: { type: Number, default: 5 }
   },
+
+  // Live-broadcast CONSENT (privacy). A duel is only spectatable / streamable to
+  // YouTube once BOTH participants have explicitly opted in — set server-side by
+  // the in-game go-live handshake (live:request by the initiator, live:accept by
+  // the opponent). Reset on live:end. Without this, any authenticated user could
+  // watch or publicly broadcast a stranger's match (boards, names, camera, mic).
+  broadcast: {
+    challengerOptIn: { type: Boolean, default: false },
+    challengedOptIn: { type: Boolean, default: false },
+    consented: { type: Boolean, default: false },
+    privacy: { type: String, enum: ['unlisted', 'public'], default: 'unlisted' },
+    startedAt: { type: Date },
+  },
   
   // Timestamps
   createdAt: { type: Date, default: Date.now },

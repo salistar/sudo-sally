@@ -96,3 +96,25 @@ describe('Audit fixes — economy/integrity', () => {
     expect(rb.body.rank).toBe(2);   // a(5 wins) above b; c(1) below → b is #2
   });
 });
+
+describe('Audit fixes — live-broadcast privacy', () => {
+  test('SEC-5: /spectate is 403 for a non-participant until BOTH players consent', async () => {
+    const a = await reg('sa'); const b = await reg('sb'); const c = await reg('sc'); // c = outsider
+    const send = await request(app).post('/api/challenges/send').set(auth(a.token)).send({ targetUsername: b.username, difficulty: 'easy' });
+    const cid = send.body.challenge._id;
+    await request(app).post(`/api/challenges/${cid}/accept`).set(auth(b.token));
+
+    // Outsider, no consent → blocked (was a privacy leak — anyone could watch).
+    const denied = await request(app).get(`/api/challenges/${cid}/spectate`).set(auth(c.token));
+    expect(denied.status).toBe(403);
+
+    // A participant can always view their own match.
+    const own = await request(app).get(`/api/challenges/${cid}/spectate`).set(auth(a.token));
+    expect(own.status).toBe(200);
+
+    // Both consented (the go-live handshake sets this) → outsider may watch.
+    await Challenge.updateOne({ _id: cid }, { $set: { 'broadcast.consented': true } });
+    const allowed = await request(app).get(`/api/challenges/${cid}/spectate`).set(auth(c.token));
+    expect(allowed.status).toBe(200);
+  });
+});

@@ -15,6 +15,44 @@ const userSockets = new Map();    // odcUserId -> socketId
 // Exposed via notifyUser() so REST controllers can push events to a user.
 let _io = null;
 
+// ── Live-broadcast consent (privacy) ─────────────────────────────────────────
+// A duel is only spectatable / publicly streamable once BOTH participants have
+// opted in. The initiator opts in via live:request, the opponent via live:accept.
+async function recordBroadcastOptIn(challengeId, userId) {
+  try {
+    const c = await Challenge.findById(challengeId).select('challenger challenged broadcast');
+    if (!c) return false;
+    const isChallenger = c.challenger.toString() === String(userId);
+    const isChallenged = c.challenged.toString() === String(userId);
+    if (!isChallenger && !isChallenged) return false;  // only participants set consent
+    const set = { [isChallenger ? 'broadcast.challengerOptIn' : 'broadcast.challengedOptIn']: true };
+    const otherAlreadyIn = isChallenger ? c.broadcast?.challengedOptIn : c.broadcast?.challengerOptIn;
+    if (otherAlreadyIn) { set['broadcast.consented'] = true; set['broadcast.startedAt'] = new Date(); }
+    await Challenge.updateOne({ _id: challengeId }, { $set: set });
+    return true;
+  } catch (e) { console.error('broadcast opt-in failed:', e?.message); return false; }
+}
+async function clearBroadcastConsent(challengeId) {
+  try {
+    await Challenge.updateOne({ _id: challengeId }, { $set: {
+      'broadcast.consented': false, 'broadcast.challengerOptIn': false, 'broadcast.challengedOptIn': false,
+    } });
+  } catch (e) { console.error('broadcast consent clear failed:', e?.message); }
+}
+// Moderation parity for the socket notification path: don't relay if either
+// user has blocked the other (the REST sendChallenge already enforces this).
+async function isBlockedBetween(aId, bId) {
+  try {
+    const [a, b] = await Promise.all([
+      User.findById(aId).select('blockedUsers'),
+      User.findById(bId).select('blockedUsers'),
+    ]);
+    const aBlocks = (a?.blockedUsers || []).some((x) => String(x) === String(bId));
+    const bBlocks = (b?.blockedUsers || []).some((x) => String(x) === String(aId));
+    return aBlocks || bBlocks;
+  } catch { return false; }
+}
+
 function initializeSocket(io) {
   _io = io;
   
@@ -46,7 +84,12 @@ function initializeSocket(io) {
   io.on('connection', async (socket) => {
     const odcUserId = socket.user._id.toString();
     const username = socket.user.username;
-    
+    // Rooms this socket is an actual PARTICIPANT of (set by challenge:join after
+    // the challenger/challenged check). Distinct from socket.io rooms — a
+    // spectator joins the io room to WATCH but is NOT a participant, so it can
+    // never inject chat / WebRTC / live signaling (see inRoom()).
+    socket.data.participantRooms = new Set();
+
     console.log(`🟢 User connected: ${username} (${odcUserId})`);
     
     // Store connection
@@ -74,10 +117,11 @@ function initializeSocket(io) {
     socket.on('challenge:join', async (challengeId) => {
       try {
         const challenge = await Challenge.findById(challengeId);
-        if (challenge && 
-            (challenge.challenger.toString() === odcUserId || 
+        if (challenge &&
+            (challenge.challenger.toString() === odcUserId ||
              challenge.challenged.toString() === odcUserId)) {
           socket.join(`challenge:${challengeId}`);
+          socket.data.participantRooms.add(String(challengeId));   // mark as participant
           console.log(`📝 ${username} joined challenge room: ${challengeId}`);
         }
       } catch (error) {
@@ -88,21 +132,24 @@ function initializeSocket(io) {
     // Leave challenge room
     socket.on('challenge:leave', (challengeId) => {
       socket.leave(`challenge:${challengeId}`);
+      socket.data.participantRooms.delete(String(challengeId));
       console.log(`📤 ${username} left challenge room: ${challengeId}`);
     });
 
-    // Spectate a challenge room (READ-ONLY). Any authenticated user may join to
-    // WATCH. Because a spectator never SENDS progress, `socket.to(room)` relays
-    // BOTH players' 'opponent:progress' to it → the /spectate broadcast view can
-    // render both live boards. A spectator still can't inject chat / WebRTC /
-    // live signaling (those require inRoom() AND are participant-driven).
+    // Spectate a challenge room (READ-ONLY). Only allowed when BOTH players have
+    // consented to a public broadcast (privacy gate) — otherwise a stranger
+    // could watch any duel's live boards + identities. A spectator joins the io
+    // room to receive 'opponent:progress' but is NOT a participant, so it can
+    // never inject chat / WebRTC / live signaling (inRoom() checks participation).
     socket.on('challenge:spectate', async (challengeId) => {
       try {
         if (typeof challengeId !== 'string') return;
-        const challenge = await Challenge.findById(challengeId).select('_id');
-        if (challenge) {
+        const challenge = await Challenge.findById(challengeId).select('broadcast');
+        if (challenge && challenge.broadcast?.consented) {
           socket.join(`challenge:${challengeId}`);
           console.log(`👁️ ${username} spectating challenge room: ${challengeId}`);
+        } else {
+          socket.emit('spectate:denied', { challengeId, reason: 'not_consented' });
         }
       } catch (error) {
         console.error('Error spectating challenge:', error);
@@ -113,8 +160,10 @@ function initializeSocket(io) {
 
     // Send challenge notification
     socket.on('challenge:send', async ({ targetUserId, difficulty }) => {
+      if (!targetUserId || String(targetUserId) === odcUserId) return;   // no self-challenge
+      if (await isBlockedBetween(odcUserId, targetUserId)) return;        // moderation parity
       const targetSocketId = userSockets.get(targetUserId);
-      
+
       if (targetSocketId) {
         io.to(targetSocketId).emit('challenge:received', {
           odcChallengerId: odcUserId,
@@ -226,11 +275,12 @@ function initializeSocket(io) {
       });
     });
 
-    // Only sockets that actually joined a challenge room (challenge:join
-    // already enforces participation, lines ~74-86) may emit into it. Blocks
-    // a user from injecting chat / WebRTC signaling into a room they aren't in.
+    // Only sockets that joined as a PARTICIPANT (challenge:join enforced the
+    // challenger/challenged check) may emit into a room. A spectator is in the
+    // io room but NOT in participantRooms → it can watch but never inject chat /
+    // WebRTC / live signaling into a stranger's duel.
     const inRoom = (challengeId) =>
-      typeof challengeId === 'string' && socket.rooms.has(`challenge:${challengeId}`);
+      typeof challengeId === 'string' && socket.data.participantRooms.has(String(challengeId));
 
     // ============ CHAT (text + base64 image, scoped to a challenge room) ============
     socket.on('challenge:chat', ({ challengeId, text, img }) => {
@@ -249,16 +299,20 @@ function initializeSocket(io) {
     });
 
     // ============ WebRTC signaling (audio/video calls within a challenge) ============
+    // Bound the relayed payloads — a real SDP is < ~10 KB and an ICE candidate
+    // < ~1 KB. Rejecting oversized blobs blocks a memory-amplification flood.
+    const okSdp = (sdp) => typeof sdp === 'string' && sdp.length > 0 && sdp.length < 20000;
+    const okCandidate = (c) => { try { return JSON.stringify(c).length < 4000; } catch { return false; } };
     socket.on('webrtc:offer', ({ challengeId, sdp }) => {
-      if (!inRoom(challengeId)) return;
+      if (!inRoom(challengeId) || !okSdp(sdp)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:offer', { from: odcUserId, sdp });
     });
     socket.on('webrtc:answer', ({ challengeId, sdp }) => {
-      if (!inRoom(challengeId)) return;
+      if (!inRoom(challengeId) || !okSdp(sdp)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:answer', { from: odcUserId, sdp });
     });
     socket.on('webrtc:ice', ({ challengeId, candidate }) => {
-      if (!inRoom(challengeId)) return;
+      if (!inRoom(challengeId) || !okCandidate(candidate)) return;
       socket.to(`challenge:${challengeId}`).emit('webrtc:ice', { from: odcUserId, candidate });
     });
     socket.on('call:end', ({ challengeId }) => {
@@ -269,20 +323,29 @@ function initializeSocket(io) {
     // ============ LIVE-STREAM handshake ============
     // One player asks to go live on a platform (e.g. YouTube); the broadcast
     // only starts once the OPPONENT accepts. Pure relay within the room.
-    socket.on('live:request', ({ challengeId, platform }) => {
+    // The INITIATOR opts in by requesting (they will broadcast). Persist consent
+    // BEFORE relaying so the opponent's accept (which flips consented=true) and
+    // the relay's consent check never race ahead of the DB write.
+    socket.on('live:request', async ({ challengeId, platform }) => {
       if (!inRoom(challengeId)) return;
+      await recordBroadcastOptIn(challengeId, odcUserId);
       socket.to(`challenge:${challengeId}`).emit('live:request', { from: odcUserId, fromName: username, platform: platform || 'youtube' });
     });
-    socket.on('live:accept', ({ challengeId }) => {
+    // The OPPONENT opts in by accepting → both opted in → consented=true. Await
+    // the persist before relaying live:accept (which triggers the broadcaster to
+    // open the relay, which checks broadcast.consented).
+    socket.on('live:accept', async ({ challengeId }) => {
       if (!inRoom(challengeId)) return;
+      await recordBroadcastOptIn(challengeId, odcUserId);
       socket.to(`challenge:${challengeId}`).emit('live:accept', { from: odcUserId, fromName: username });
     });
     socket.on('live:decline', ({ challengeId }) => {
       if (!inRoom(challengeId)) return;
       socket.to(`challenge:${challengeId}`).emit('live:decline', { from: odcUserId, fromName: username });
     });
-    socket.on('live:end', ({ challengeId }) => {
+    socket.on('live:end', async ({ challengeId }) => {
       if (!inRoom(challengeId)) return;
+      await clearBroadcastConsent(challengeId);   // broadcast over → spectate/stream closes
       socket.to(`challenge:${challengeId}`).emit('live:end', { from: odcUserId });
     });
 

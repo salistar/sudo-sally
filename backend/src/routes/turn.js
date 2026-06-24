@@ -11,6 +11,7 @@
  */
 const express = require('express');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 router.get('/turn-creds', (req, res) => {
@@ -24,9 +25,21 @@ router.get('/turn-creds', (req, res) => {
   ];
 
   if (secret) {
-    const ttlSec = 6 * 3600;                                  // 6h credentials
+    const ttlSec = 3600;                                     // 1h credentials (was 6h)
     const expiry = Math.floor(Date.now() / 1000) + ttlSec;
-    const userId = (req.headers['x-user-id'] || 'sudoku').toString().replace(/[^\w-]/g, '');
+    // Derive the TURN username from the AUTHENTICATED user when a token is
+    // present (Authorization header or ?token=), NOT a client-supplied
+    // x-user-id header (which was spoofable). Fall back to a random, non-
+    // guessable id so the endpoint still works for the current unauthenticated
+    // client without letting the caller pick its own attribution string.
+    let userId = crypto.randomBytes(8).toString('hex');
+    try {
+      const raw = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.query.token;
+      if (raw) {
+        const decoded = jwt.verify(String(raw), process.env.JWT_SECRET || 'secret');
+        if (decoded?.id) userId = String(decoded.id).replace(/[^\w-]/g, '');
+      }
+    } catch { /* invalid/absent token → keep the random id */ }
     const username = `${expiry}:${userId}`;
     const password = crypto.createHmac('sha1', secret).update(username).digest('base64');
     iceServers.push(
@@ -35,7 +48,7 @@ router.get('/turn-creds', (req, res) => {
     );
   }
 
-  res.json({ iceServers, ttlSec: 6 * 3600, realm });
+  res.json({ iceServers, ttlSec: 3600, realm });
 });
 
 module.exports = router;

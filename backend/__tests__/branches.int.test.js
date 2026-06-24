@@ -567,16 +567,24 @@ describe('turn route', () => {
     if (prev !== undefined) process.env.TURN_SHARED_SECRET = prev;
   });
 
-  test('GET /api/turn-creds with a secret returns TURN creds (username + credential)', async () => {
+  test('GET /api/turn-creds derives the username from the AUTH TOKEN, not a spoofable header', async () => {
     const prev = process.env.TURN_SHARED_SECRET;
     process.env.TURN_SHARED_SECRET = 'test-turn-secret';
-    const r = await request(app).get('/api/turn-creds').set('x-user-id', 'player42');
-    expect(r.status).toBe(200);
-    const turn = r.body.iceServers.find(s => String(s.urls).startsWith('turn:'));
-    expect(turn).toBeTruthy();
-    expect(turn.username).toMatch(/:player42$/);
-    expect(turn.credential).toBeTruthy();
-    expect(r.body.ttlSec).toBe(6 * 3600);
+    const u = await reg('turnuser');
+
+    // A spoofed x-user-id must be ignored (was a credential-attribution spoof).
+    const spoof = await request(app).get('/api/turn-creds').set('x-user-id', 'player42');
+    expect(spoof.status).toBe(200);
+    const spoofTurn = spoof.body.iceServers.find(s => String(s.urls).startsWith('turn:'));
+    expect(spoofTurn.username).not.toMatch(/:player42$/);   // header no longer trusted
+
+    // A valid token → username is bound to the authenticated user id.
+    const authed = await request(app).get('/api/turn-creds').set('Authorization', `Bearer ${u.token}`);
+    const authedTurn = authed.body.iceServers.find(s => String(s.urls).startsWith('turn:'));
+    expect(authedTurn).toBeTruthy();
+    expect(authedTurn.username).toMatch(new RegExp(`:${u.id}$`));
+    expect(authedTurn.credential).toBeTruthy();
+    expect(authed.body.ttlSec).toBe(3600);                  // tightened from 6h to 1h
     if (prev === undefined) delete process.env.TURN_SHARED_SECRET;
     else process.env.TURN_SHARED_SECRET = prev;
   });
