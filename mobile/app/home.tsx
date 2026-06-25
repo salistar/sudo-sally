@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platf
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
+import { API_URL } from '../utils/api';
 import { storage } from '../utils/storage';
 import { socketService } from '../utils/socket';
 import { useLang } from '../utils/LanguageContext';
@@ -21,9 +22,6 @@ import BottomNav from '../components/BottomNav';
 // the real semver as we bumped through 3.11.x).
 const APP_VERSION = Constants.expoConfig?.version ?? '?';
 const VERSION_LABEL = Platform.OS === 'web' ? `v${APP_VERSION} · Web` : `v${APP_VERSION}`;
-
-// Production API (matches utils/api.ts / utils/socket.ts).
-const API_URL = 'https://api.sallysudo.com/api';
 
 const FILE_NAME = '📁 [Home.tsx]';
 

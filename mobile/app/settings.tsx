@@ -10,6 +10,7 @@ import BottomNav from '../components/BottomNav';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, setTheme, ThemeName } from '../utils/theme';
+import { API_URL } from '../utils/api';
 
 const FILE_NAME = '📁 [Settings.tsx]';
 
@@ -468,7 +469,7 @@ export default function SettingsScreen() {
                       const userStr = await AsyncStorage.getItem('sudoku_user');
                       const u = userStr ? JSON.parse(userStr) : null;
                       if (u?.id && token) {
-                        await fetch(`https://api.sallysudo.com/api/users/${u.id}`, {
+                        await fetch(`${API_URL}/users/${u.id}`, {
                           method: 'DELETE',
                           headers: { Authorization: `Bearer ${token}` },
                         });

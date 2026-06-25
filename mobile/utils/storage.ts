@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language } from './i18n';
+import { API_URL } from './api';
 
 // ============ TYPES ============
 export interface User {
@@ -367,7 +368,7 @@ export const storage = {
   async login(email: string, password: string): Promise<User | null> {
     // 1) Real backend login (any user registered via the prod API — idriss1, idriss2, ...)
     try {
-      const res = await fetch('https://api.sallysudo.com/api/auth/login', {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -429,7 +430,7 @@ export const storage = {
     const handle = 'Guest_' + Math.random().toString(36).substr(2, 9);
     const password = 'g_' + Math.random().toString(36).substr(2, 16);
     try {
-      const resp = await fetch('https://api.sallysudo.com/api/auth/register', {
+      const resp = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

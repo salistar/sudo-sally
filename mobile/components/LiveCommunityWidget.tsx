@@ -16,8 +16,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
 import { socketService } from '../utils/socket';
+import { API_URL } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
+const API = API_URL;
 const REFRESH_MS = 15_000;
 const FEED_CAP = 12;
 

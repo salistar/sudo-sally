@@ -15,8 +15,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
 const POLL_MS = 10_000;
 
 type Duel = {
@@ -40,7 +40,7 @@ async function fetchActive(myId: string): Promise<Duel[]> {
   try {
     const token = await AsyncStorage.getItem('sudoku_token');
     if (!token) return [];
-    const j = await fetch(`${API}/challenges/my`, { headers: { Authorization: `Bearer ${token}` } })
+    const j = await fetch(`${API_URL}/challenges/my`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .catch(() => null);
     const active: any[] = j?.active || [];

@@ -15,8 +15,9 @@ import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
+const API = API_URL;
 
 type Row = { rank: number; username: string; avatar: string; stars: number };
 

@@ -14,8 +14,9 @@ import { View, Text } from 'react-native';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
+const API = API_URL;
 const DAYS = 14;
 const W = 720;
 const H = 180;

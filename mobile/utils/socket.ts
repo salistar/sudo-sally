@@ -5,12 +5,13 @@
 
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SERVER_URL } from './api';
 // import Constants from 'expo-constants';   // re-enable only for the dev block below
 
 // Socket.io endpoint — Caddy on the VPS proxies WebSocket upgrades to sudoku-api.
 // The release APK is locked to production; the localhost path below is kept as
 // documentation for contributors and is unreachable in shipped builds.
-const SOCKET_URL = 'https://api.sallysudo.com';
+const SOCKET_URL = SERVER_URL;
 
 // ── Dev-only override (kept for reference, NEVER reached in release APK) ──
 // const devHost = Constants.expoConfig?.hostUri?.split(':')[0];

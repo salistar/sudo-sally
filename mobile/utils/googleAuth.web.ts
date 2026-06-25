@@ -15,6 +15,7 @@
  *     the returned app JWT exactly like the native flow.
  */
 import Constants from 'expo-constants';
+import { API_URL } from './api';
 
 export const GOOGLE_CLIENT_IDS = {
   web: '106972968307-o1m39edcftpo3r77q856o87o29b1ai4u.apps.googleusercontent.com',
@@ -75,7 +76,7 @@ function loadGsi(): Promise<void> {
 /** Same helper as the native build — exchange Google idToken → our JWT. */
 export async function exchangeGoogleIdToken(idToken: string): Promise<{ appToken?: string; user?: any; error?: string }> {
   try {
-    const res = await fetch('https://api.sallysudo.com/api/auth/google', {
+    const res = await fetch(`${API_URL}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),

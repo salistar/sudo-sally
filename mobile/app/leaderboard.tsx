@@ -10,9 +10,9 @@ import WeeklyChampionsBoard from '../components/WeeklyChampionsBoard';
 import HallOfFameWidget from '../components/HallOfFameWidget';
 import { SkeletonList } from '../components/Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../utils/api';
 
 const FILE_NAME = '📁 [Leaderboard.tsx]';
-const API_URL = 'https://api.sallysudo.com/api';
 
 interface LbEntry { rank: number; username: string; stars: number; avatar: string; userId?: string; gamesWon?: number; level?: number }
 

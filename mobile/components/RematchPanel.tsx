@@ -19,8 +19,9 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLang } from '../utils/LanguageContext';
+import { API_URL } from '../utils/api';
 
-const API = 'https://api.sallysudo.com/api';
+const API = `${API_URL}`;
 
 type Opp = {
   username: string;
