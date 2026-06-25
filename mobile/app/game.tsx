@@ -53,6 +53,10 @@ export default function Game() {
   const [selected, setSelected] = useState<{row: number; col: number} | null>(null);
   const [errors, setErrors] = useState(0);
   const [hints, setHints] = useState(3);
+  // Purchased shop power-ups (BUG: were bought + persisted but never usable in a
+  // game). { hint, freeze, check } counts, loaded on mount, decremented on use.
+  const [powerups, setPowerups] = useState<Record<string, number>>({});
+  const [frozenLeft, setFrozenLeft] = useState(0);   // seconds the timer is frozen (freeze power-up)
   const [time, setTime] = useState(0);
   const [paused, setPaused] = useState(false);
   const [notesMode, setNotesMode] = useState(false);
@@ -64,6 +68,42 @@ export default function Game() {
   // first render (always false). Reading a ref inside the interval fixes pause.
   const pausedRef = useRef(false);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
+  // Freeze power-up: the timer reads this ref so it can skip incrementing while
+  // frozen (same closure-over-stale-state reason as pausedRef).
+  const frozenRef = useRef(0);
+  useEffect(() => { frozenRef.current = frozenLeft; }, [frozenLeft]);
+  // Load purchased power-ups on mount.
+  useEffect(() => { storage.getInventory().then((inv) => setPowerups(inv.powerups || {})).catch(() => {}); }, []);
+  // Consume one purchased power-up (decrement + persist). Returns false if none owned.
+  const consumePowerup = async (id: string): Promise<boolean> => {
+    try {
+      const inv = await storage.getInventory();
+      if (!((inv.powerups?.[id] || 0) > 0)) return false;
+      inv.powerups[id] = inv.powerups[id] - 1;
+      await storage.setInventory(inv);
+      setPowerups({ ...inv.powerups });
+      return true;
+    } catch { return false; }
+  };
+  // Freeze the timer for 30s (purchased power-up).
+  const usePowerupFreeze = async () => {
+    if (paused || frozenLeft > 0) return;
+    if ((powerups.freeze || 0) <= 0) return;
+    if (await consumePowerup('freeze')) { setFrozenLeft(30); try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {} }
+  };
+  // Check power-up: errors are already shown live, so this CLEARS every wrong
+  // cell (lets you retry mistakes) — a meaningful, distinct action.
+  const usePowerupCheck = async () => {
+    if (paused) return;
+    if ((powerups.check || 0) <= 0) return;
+    const hasErrors = board.some((row, i) => row.some((c, j) => c !== null && c !== solution[i][j]));
+    if (!hasErrors) return;
+    if (await consumePowerup('check')) {
+      const newBoard = board.map((row, i) => row.map((c, j) => (c !== null && c !== solution[i][j]) ? null : c));
+      setBoard(newBoard);
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    }
+  };
 
   console.log(`${FILE_NAME} 📊 State initialized - errors: ${errors}, hints: ${hints}, time: ${time}, paused: ${paused}, notesMode: ${notesMode}`);
 
@@ -105,7 +145,9 @@ export default function Game() {
     
     console.log(`${FILE_NAME} ⏱️ useEffect() - Starting game timer...`);
     timerRef.current = setInterval(() => {
-      if (!pausedRef.current) setTime(t => t + 1);
+      if (pausedRef.current) return;
+      if (frozenRef.current > 0) { setFrozenLeft(f => Math.max(0, f - 1)); return; }  // freeze power-up
+      setTime(t => t + 1);
     }, 1000);
     
     return () => {
@@ -271,32 +313,29 @@ export default function Game() {
   };
 
   const handleHint = () => {
-    console.log(`${FILE_NAME} 💡 handleHint() - Hint requested, remaining: ${hints}`);
-    
-    if (hints <= 0) {
-      console.log(`${FILE_NAME} ⚠️ handleHint() - No hints remaining`);
+    console.log(`${FILE_NAME} 💡 handleHint() - Hint requested, free: ${hints}, owned: ${powerups.hint || 0}`);
+    if (paused) return;
+    // Free hints first; once they run out, fall back to a PURCHASED "hint"
+    // power-up (was bought + persisted but never usable in a game).
+    const usingFree = hints > 0;
+    const usingPowerup = !usingFree && (powerups.hint || 0) > 0;
+    if (!usingFree && !usingPowerup) {
+      console.log(`${FILE_NAME} ⚠️ handleHint() - No free hints and no hint power-up owned`);
       return;
     }
-    if (paused) {
-      console.log(`${FILE_NAME} ⚠️ handleHint() - Game is paused`);
-      return;
-    }
-    
+
     const hint = getHint(board, solution);
-    if (hint) {
-      console.log(`${FILE_NAME} ✅ handleHint() - Hint found: [${hint.row}][${hint.col}] = ${hint.value}`);
-      setHistory([...history, { board: board.map(r => [...r]), row: hint.row, col: hint.col }]);
-      const newBoard = board.map(r => [...r]);
-      newBoard[hint.row][hint.col] = hint.value;
-      setBoard(newBoard);
-      setHints(h => h - 1);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      if (isBoardComplete(newBoard, solution)) {
-        clearInterval(timerRef.current);
-        handleWin();
-      }
-    } else {
-      console.log(`${FILE_NAME} ⚠️ handleHint() - No hint available`);
+    if (!hint) { console.log(`${FILE_NAME} ⚠️ handleHint() - Board already full`); return; }
+    setHistory([...history, { board: board.map(r => [...r]), row: hint.row, col: hint.col }]);
+    const newBoard = board.map(r => [...r]);
+    newBoard[hint.row][hint.col] = hint.value;
+    setBoard(newBoard);
+    if (usingFree) setHints(h => h - 1);
+    else consumePowerup('hint');   // decrement + persist the purchased hint
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (isBoardComplete(newBoard, solution)) {
+      clearInterval(timerRef.current);
+      handleWin();
     }
   };
 
@@ -605,16 +644,32 @@ export default function Game() {
           <Text style={[styles.toolText, notesMode && styles.toolTextActive]}>{t('notes')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={[styles.tool, hints === 0 && styles.toolDisabled]} 
+        <TouchableOpacity
+          style={[styles.tool, (hints === 0 && (powerups.hint || 0) === 0) && styles.toolDisabled]}
           onPress={handleHint}
           activeOpacity={0.7}
         >
-          <View style={[styles.toolIconContainer, hints > 0 && styles.toolIconHint]}>
+          <View style={[styles.toolIconContainer, (hints > 0 || (powerups.hint || 0) > 0) && styles.toolIconHint]}>
             <Text style={styles.toolIcon}>💡</Text>
           </View>
-          <Text style={styles.toolText}>{t('hint')} ({hints})</Text>
+          <Text style={styles.toolText}>{t('hint')} ({hints + (powerups.hint || 0)})</Text>
         </TouchableOpacity>
+
+        {/* Purchased power-ups — were bought + persisted but never usable in a
+            game (BUG-fix). Freeze stops the timer 30s; Check clears wrong cells.
+            Only rendered when owned, so they don't clutter the toolbar. */}
+        {(powerups.freeze || 0) > 0 && (
+          <TouchableOpacity style={[styles.tool, frozenLeft > 0 && styles.toolActive]} onPress={usePowerupFreeze} activeOpacity={0.7}>
+            <View style={[styles.toolIconContainer, frozenLeft > 0 && styles.toolIconActive]}><Text style={styles.toolIcon}>❄️</Text></View>
+            <Text style={styles.toolText}>{frozenLeft > 0 ? `❄️ ${frozenLeft}s` : `Freeze (${powerups.freeze})`}</Text>
+          </TouchableOpacity>
+        )}
+        {(powerups.check || 0) > 0 && (
+          <TouchableOpacity style={styles.tool} onPress={usePowerupCheck} activeOpacity={0.7}>
+            <View style={styles.toolIconContainer}><Text style={styles.toolIcon}>✅</Text></View>
+            <Text style={styles.toolText}>Check ({powerups.check})</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={styles.tool}

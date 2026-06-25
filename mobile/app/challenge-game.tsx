@@ -268,6 +268,9 @@ export default function ChallengeGame() {
   // ── WebRTC call ──
   const [callActive, setCallActive] = useState(false);
   const [callKind, setCallKind] = useState<'audio' | 'video'>('audio');
+  // Play Store "Prominent Disclosure": holds the pending consent resolver while
+  // the A/V disclosure modal is shown (before the OS camera/mic prompt).
+  const [avDisclosure, setAvDisclosure] = useState<null | { resolve: (ok: boolean) => void; video: boolean }>(null);
   const [callError, setCallError] = useState<string | null>(null);
   const pcRef = useRef<any>(null);
   const localStreamRef = useRef<any>(null);
@@ -1302,6 +1305,14 @@ export default function ChallengeGame() {
 
   async function ensureLocalMedia(video: boolean) {
     if (localStreamRef.current) return localStreamRef.current;
+    // PROMINENT DISCLOSURE (Google Play): before the OS camera/mic prompt, show an
+    // in-app screen explaining the use AND that A/V may be broadcast publicly to
+    // YouTube. Shown once per session (remembered in AsyncStorage).
+    const consented = await (async () => {
+      try { if ((await AsyncStorage.getItem('sudoku_av_consent')) === '1') return true; } catch {}
+      return new Promise<boolean>((resolve) => setAvDisclosure({ resolve, video }));
+    })();
+    if (!consented) throw new Error('Camera/microphone access declined');
     const { mediaDevices } = getRTC();
     if (!mediaDevices?.getUserMedia) throw new Error('No mediaDevices available');
     // Native (react-native-webrtc) expects { video: { facingMode: 'user' } } for cam.
@@ -2054,145 +2065,29 @@ export default function ChallengeGame() {
         </View>
       </Modal>
 
-      {/* ============ CHAT / CALL / RECORD / SHARE / LIVE PANEL (legacy — kept hidden) ============ */}
-      <Modal visible={false} transparent animationType="slide" onRequestClose={() => setPanelOpen(false)}>
-        <View style={styles.panelOverlay}>
-          <View style={styles.panelCard}>
-            {/* tabs */}
-            <View style={styles.panelTabs}>
-              {(['chat','call','record','share','live'] as const).map(k => (
-                <TouchableOpacity key={k} style={[styles.panelTab, panelTab===k && styles.panelTabActive]} onPress={() => setPanelTab(k)}>
-                  <Text style={[styles.panelTabText, panelTab===k && styles.panelTabTextActive]}>
-                    {k === 'chat' ? '💬 Chat' : k === 'call' ? '📞 Call' : k === 'record' ? '🎙️ Record' : k === 'share' ? '↗️ Share' : '🔴 Go Live'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.panelClose} onPress={() => setPanelOpen(false)}>
-                <Text style={styles.panelCloseX}>✕</Text>
+      {/* PROMINENT DISCLOSURE — shown before the FIRST camera/mic access
+          (Google Play "Prominent Disclosure & Consent"). This block REPLACED the
+          old dead visible={false} CHAT/CALL/RECORD/SHARE/LIVE panel Modal. */}
+      <Modal visible={!!avDisclosure} transparent animationType="fade" onRequestClose={() => { avDisclosure?.resolve(false); setAvDisclosure(null); }}>
+        <View style={styles.ringOverlay}>
+          <View style={styles.ringCard}>
+            <Text style={styles.ringPulse}>{avDisclosure?.video ? '📹' : '🎤'}</Text>
+            <Text style={styles.ringTitle}>Camera &amp; microphone</Text>
+            <Text style={styles.ringSub}>
+              SallySudo will use your {avDisclosure?.video ? 'camera and microphone' : 'microphone'} for your 1v1 call with your opponent.{'\n\n'}
+              If you and your opponent both choose to go live, this{' '}
+              <Text style={{ fontWeight: '700' }}>audio/video may be streamed publicly to YouTube</Text>. You can stop it at any time.
+            </Text>
+            <View style={styles.ringBtns}>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#ef4444' }]} onPress={() => { avDisclosure?.resolve(false); setAvDisclosure(null); }}>
+                <Text style={styles.ringBtnIcon}>✖️</Text>
+                <Text style={styles.ringBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.ringBtn, { backgroundColor: '#22c55e' }]} onPress={async () => { try { await AsyncStorage.setItem('sudoku_av_consent', '1'); } catch {} avDisclosure?.resolve(true); setAvDisclosure(null); }}>
+                <Text style={styles.ringBtnIcon}>✔️</Text>
+                <Text style={styles.ringBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
-
-            {/* tab content */}
-            {panelTab === 'chat' && (
-              <View style={styles.tabContent}>
-                <ScrollView style={styles.chatList} contentContainerStyle={{ padding: 12, gap: 8 }}>
-                  {chatMessages.length === 0 && <Text style={styles.chatEmpty}>{t('chatNoMessages')} {opponent?.username || '…'}</Text>}
-                  {chatMessages.map(m => {
-                    const mine = m.from === (currentUser?.username || 'You');
-                    return (
-                      <View key={m.id} style={[styles.chatBubble, mine ? styles.chatMine : styles.chatTheirs]}>
-                        <Text style={styles.chatFrom}>{mine ? t('chatYou') : m.from}</Text>
-                        {!!m.text && <Text style={styles.chatText}>{m.text}</Text>}
-                        {!!m.img && Platform.OS === 'web' && (<Text style={[styles.chatText, { fontStyle:'italic', opacity:0.7 }]}>📷 image — open the web build to see it inline</Text>)}
-                      </View>
-                    );
-                  })}
-                </ScrollView>
-                <QuickTaunts onSend={sendChatQuick} />
-                <View style={styles.chatInputRow}>
-                  <TouchableOpacity style={styles.chatAttach} onPress={sendChatImage}><Text style={{ fontSize: 18 }}>📎</Text></TouchableOpacity>
-                  <TextInput value={chatInput} onChangeText={setChatInput} placeholder={t('chatPlaceholder')} placeholderTextColor="#475569" style={styles.chatInput} onSubmitEditing={sendChat} returnKeyType="send" />
-                  <TouchableOpacity style={styles.chatSend} onPress={sendChat}><Text style={{ color:'#000', fontWeight:'700' }}>{t('chatSend')}</Text></TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {panelTab === 'call' && (
-              <View style={[styles.tabContent, styles.tabPad]}>
-                {!callActive ? (
-                  <>
-                    <Text style={styles.tabHint}>Real WebRTC call with your opponent — peer-to-peer, signaled via the socket, STUN servers from Google. Allow the browser to use your microphone (and camera for video).</Text>
-                    <View style={styles.callRow}>
-                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#2dd4db' }]} onPress={() => startCall(false)}><Text style={styles.callIcon}>📞</Text><Text style={styles.callText}>Audio call</Text></TouchableOpacity>
-                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#3b82f6' }]} onPress={() => startCall(true)}><Text style={styles.callIcon}>📹</Text><Text style={styles.callText}>Video call</Text></TouchableOpacity>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <Text style={[styles.tabHint, { color: '#7c5cff' }]}>● {callKind === 'video' ? 'Video' : 'Audio'} call active{callError ? ` — ${callError}` : ''}</Text>
-                    {/* BUG-P2-3: refs removed — these elements live inside a
-                        visible={false} Modal but RN-Web still mounts them, so the
-                        ref={localVidRef}/{remoteVidRef} here used to STEAL the refs
-                        from the visible call bar (attachLocal/attachRemote),
-                        blanking the remote tile + the broadcast's remote cam. The
-                        visible bar is the single source of those refs now. */}
-                    {callKind === 'video' && Platform.OS === 'web' && (
-                      <View style={styles.videoRow}>
-                        {React.createElement('video', { autoPlay: true, playsInline: true, muted: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
-                        {React.createElement('video', { autoPlay: true, playsInline: true, style: { width: 220, height: 165, borderRadius: 12, background: '#000', objectFit: 'cover' } })}
-                      </View>
-                    )}
-                    <View style={styles.callRow}>
-                      <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={() => hangup(true)}><Text style={styles.callIcon}>📵</Text><Text style={styles.callText}>Hang up</Text></TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            )}
-
-            {panelTab === 'record' && (
-              <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Record the audio of your match (your microphone). The file downloads as <Text style={{ color:'#7c5cff' }}>.webm</Text>.</Text>
-                <View style={styles.callRow}>
-                  {!isRecording ? (
-                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#ef4444' }]} onPress={() => startRecording('audio')}><Text style={styles.callIcon}>🔴</Text><Text style={styles.callText}>Start</Text></TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#fbbf24' }]} onPress={stopRecording}><Text style={styles.callIcon}>⏹️</Text><Text style={styles.callText}>Stop</Text></TouchableOpacity>
-                  )}
-                  {recordedUrl && (
-                    <TouchableOpacity style={[styles.callBtn, { backgroundColor:'#7c5cff' }]} onPress={downloadRecording}><Text style={styles.callIcon}>⬇️</Text><Text style={styles.callText}>Download</Text></TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            )}
-
-            {panelTab === 'share' && (
-              <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Share your duel on social media. Real brand colors • each opens the platform's share/upload page.</Text>
-                <View style={styles.socialGrid}>
-                  <SocialBtn brand="facebook" onPress={() => openExt(SHARE_LINKS.facebook)} />
-                  <SocialBtn brand="instagram" onPress={() => openExt(SHARE_LINKS.instagram)} />
-                  <SocialBtn brand="tiktok" onPress={() => openExt(SHARE_LINKS.tiktok)} />
-                  <SocialBtn brand="youtube" onPress={() => openExt(SHARE_LINKS.youtube)} />
-                  <SocialBtn brand="linkedin" onPress={() => openExt(SHARE_LINKS.linkedin)} />
-                  <SocialBtn brand="twitter" onPress={() => openExt(SHARE_LINKS.twitter)} />
-                </View>
-              </View>
-            )}
-
-            {panelTab === 'live' && (
-              <View style={[styles.tabContent, styles.tabPad]}>
-                <Text style={styles.tabHint}>Go live on YouTube — your opponent must ACCEPT before the broadcast starts.</Text>
-
-                {liveStatus === 'live' ? (
-                  <>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 }}>
-                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444' }} />
-                      <Text style={{ color: '#fff', fontWeight: '700' }}>🔴 {liveStreamer ? `${liveStreamer} is LIVE` : 'LIVE'} on YouTube</Text>
-                    </View>
-                    <TouchableOpacity style={[styles.callBtn, { backgroundColor: '#ef4444' }]} onPress={endLive}>
-                      <Text style={styles.callText}>⏹️ End live</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <TouchableOpacity
-                    style={[styles.callBtn, { backgroundColor: liveStatus === 'requesting' ? '#64748b' : '#FF0000', marginBottom: 12 }]}
-                    disabled={liveStatus === 'requesting'}
-                    onPress={requestGoLive}>
-                    <Text style={styles.callText}>{liveStatus === 'requesting' ? '⏳ Waiting for opponent to accept…' : '🔴 Ask opponent → Go Live (YouTube)'}</Text>
-                  </TouchableOpacity>
-                )}
-
-                <Text style={[styles.tabHint, { marginTop: 10 }]}>Or open a platform's “create live” page directly:</Text>
-                <View style={styles.socialGrid}>
-                  <SocialBtn brand="youtube" label="YouTube Live" onPress={() => openExt(LIVE_LINKS.youtube)} />
-                  <SocialBtn brand="facebook" label="FB Live" onPress={() => openExt(LIVE_LINKS.facebook)} />
-                  <SocialBtn brand="tiktok" label="TikTok Live" onPress={() => openExt(LIVE_LINKS.tiktok)} />
-                  <SocialBtn brand="instagram" label="IG Live" onPress={() => openExt(LIVE_LINKS.instagram)} />
-                  <SocialBtn brand="linkedin" label="LinkedIn Live" onPress={() => openExt(LIVE_LINKS.linkedin)} />
-                </View>
-              </View>
-            )}
           </View>
         </View>
       </Modal>
