@@ -299,13 +299,17 @@ describe('WebRTC signaling', () => {
     sockB.emit('challenge:join', cid);
     await delay(300);
 
+    // Clients send the SDP as an RTCSessionDescription OBJECT ({ type, sdp }),
+    // NOT a bare string — the relay must accept and forward it verbatim.
+    const offerSdp = { type: 'offer', sdp: 'v=0\r\no=- 1 1 IN IP4 0.0.0.0\r\nm=video 9 UDP/TLS/RTP/SAVPF\r\n' };
     const offerP = waitFor(sockB, 'webrtc:offer');
-    sockA.emit('webrtc:offer', { challengeId: cid, sdp: 'OFFER_SDP' });
-    expect((await offerP).sdp).toBe('OFFER_SDP');
+    sockA.emit('webrtc:offer', { challengeId: cid, sdp: offerSdp });
+    expect((await offerP).sdp).toEqual(offerSdp);
 
+    const answerSdp = { type: 'answer', sdp: 'v=0\r\no=- 2 2 IN IP4 0.0.0.0\r\nm=audio 9 UDP/TLS/RTP/SAVPF\r\n' };
     const answerP = waitFor(sockA, 'webrtc:answer');
-    sockB.emit('webrtc:answer', { challengeId: cid, sdp: 'ANSWER_SDP' });
-    expect((await answerP).sdp).toBe('ANSWER_SDP');
+    sockB.emit('webrtc:answer', { challengeId: cid, sdp: answerSdp });
+    expect((await answerP).sdp).toEqual(answerSdp);
 
     const iceP = waitFor(sockB, 'webrtc:ice');
     sockA.emit('webrtc:ice', { challengeId: cid, candidate: 'CAND' });

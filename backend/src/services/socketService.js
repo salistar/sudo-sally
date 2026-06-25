@@ -302,7 +302,15 @@ function initializeSocket(io) {
     // ============ WebRTC signaling (audio/video calls within a challenge) ============
     // Bound the relayed payloads — a real SDP is < ~10 KB and an ICE candidate
     // < ~1 KB. Rejecting oversized blobs blocks a memory-amplification flood.
-    const okSdp = (sdp) => typeof sdp === 'string' && sdp.length > 0 && sdp.length < 20000;
+    // NOTE: clients send the SDP as an RTCSessionDescription OBJECT ({ type, sdp });
+    // validate the inner `.sdp` string's length (also tolerate a bare string).
+    // (The earlier `typeof sdp === 'string'` check silently dropped EVERY offer/
+    // answer because the payload is an object → calls never connected.)
+    const sdpLen = (sdp) =>
+      typeof sdp === 'string' ? sdp.length
+      : (sdp && typeof sdp === 'object' && typeof sdp.sdp === 'string') ? sdp.sdp.length
+      : -1;
+    const okSdp = (sdp) => { const n = sdpLen(sdp); return n > 0 && n < 20000; };
     const okCandidate = (c) => { try { return JSON.stringify(c).length < 4000; } catch { return false; } };
     socket.on('webrtc:offer', ({ challengeId, sdp }) => {
       if (!inRoom(challengeId) || !okSdp(sdp)) return;

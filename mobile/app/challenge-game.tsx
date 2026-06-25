@@ -1340,10 +1340,15 @@ export default function ChallengeGame() {
       setCallActive(true);
       setCallStatus('calling');
       setCallError(null);
+      // Acquire media FIRST. ensureLocalMedia shows the A/V disclosure and then
+      // the OS camera/mic prompt, which BACKGROUNDS the app on native — a peer
+      // connection created beforehand gets torn down while we're away, so the
+      // later createOffer() threw "Peer Connection is closed". Build the PC only
+      // once the stream is in hand.
+      const stream = await ensureLocalMedia(video);
       const pc = createPeer();
       if (!pc) return;
       pcRef.current = pc;
-      const stream = await ensureLocalMedia(video);
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
       const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
       await pc.setLocalDescription(offer);
@@ -1427,10 +1432,12 @@ export default function ChallengeGame() {
     try {
       setCallActive(true);
       setCallStatus('connecting');
+      // Acquire media FIRST (see startCall): the OS prompt backgrounds the app
+      // and would close a PC created beforehand. Build the PC after the stream.
+      const stream = await ensureLocalMedia(video);
       const pc = createPeer();
       if (!pc) return;
       pcRef.current = pc;
-      const stream = await ensureLocalMedia(video);
       stream.getTracks().forEach((t: any) => pc.addTrack(t, stream));
       await pc.setRemoteDescription(new RTCSessionDescription(sdp));
       for (const cand of pendingIceRef.current) {
