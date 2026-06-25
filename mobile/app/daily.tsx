@@ -4,6 +4,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWind
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDailyChallenge, DailyChallenge } from '../utils/daily';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../utils/api';
 import { useLang } from '../utils/LanguageContext';
 import BottomNav from '../components/BottomNav';
 import DailyDesktopLayout from '../components/DailyDesktopLayout';
@@ -51,20 +53,25 @@ export default function Daily() {
     try {
       setLoading(true);
       const dailyChallenge = getDailyChallenge();
-      
-      console.log(`${FILE_NAME} ✅ loadChallenge() - Challenge loaded:`, {
-        difficulty: dailyChallenge?.difficulty,
-        completed: dailyChallenge?.completed,
-        stars: dailyChallenge?.stars,
-      });
-      
+
+      // Real streak + today's-completed from the backend (was a hardcoded
+      // mockStreak=7 and a local completed flag that never updated).
+      try {
+        const token = await AsyncStorage.getItem('sudoku_token');
+        if (token) {
+          const res = await fetch(`${API_URL}/daily`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const data = await res.json();
+            setStreak(data.streak || 0);
+            if (data.completed) dailyChallenge.completed = true;
+            if (data.challenge?.difficulty) dailyChallenge.difficulty = data.challenge.difficulty;
+            console.log(`${FILE_NAME} 🔥 loadChallenge() - real streak: ${data.streak}, completed: ${data.completed}`);
+          }
+        }
+      } catch (e) { console.log(`${FILE_NAME} ⚠️ loadChallenge() - backend daily fetch failed`, e); }
+
       setChallenge(dailyChallenge);
-      
-      // TODO: Load actual streak from storage
-      const mockStreak = 7;
-      console.log(`${FILE_NAME} 🔥 loadChallenge() - Current streak: ${mockStreak} days`);
-      setStreak(mockStreak);
-      
+
     } catch (error) {
       console.error(`${FILE_NAME} ❌ loadChallenge() - Error:`, error);
     } finally {
@@ -111,8 +118,9 @@ export default function Daily() {
       console.log(`${FILE_NAME} ⚠️ startChallenge() - Haptics not available:`, error);
     }
     
-    console.log(`${FILE_NAME} 🚀 startChallenge() - Navigating to game screen with daily=true`);
-    router.push('/game?level=0&daily=true');
+    const diff = challenge?.difficulty || 'medium';
+    console.log(`${FILE_NAME} 🚀 startChallenge() - Navigating to game with daily=true, diff=${diff}`);
+    router.push(`/game?level=0&daily=true&diff=${diff}`);
   };
 
   const getDifficultyStars = (difficulty: string | undefined): number => {

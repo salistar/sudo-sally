@@ -458,10 +458,12 @@ describe('routes — daily catch blocks', () => {
     expect(r.status).toBe(500);
   });
   test('POST /daily/complete → 500 when handler findById throws (line 78-79)', async () => {
+    const { generateSudoku } = require('../src/utils/sudoku');
     const a = await reg('dly_comp_err');
     throwOnNthFindById(2, new Error('db'));   // #1 = auth, #2 = handler
+    // Must pass the board gate (added before findById) to reach the throwing call.
     const r = await request(app).post('/api/daily/complete').set(auth(a.token))
-      .send({ timeSpent: 30, errors: 0, stars: 3 });
+      .send({ board: generateSudoku('easy').solution, timeSpent: 30, errors: 0, stars: 3 });
     expect(r.status).toBe(500);
   });
 });

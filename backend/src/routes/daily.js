@@ -3,6 +3,7 @@ const router = express.Router();
 const DailyChallenge = require('../models/DailyChallenge');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { generateSudoku, isCompleteValidSudoku } = require('../utils/sudoku');
 
 // Get today's challenge
 router.get('/', auth, async (req, res) => {
@@ -10,14 +11,15 @@ router.get('/', auth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     let challenge = await DailyChallenge.findOne({ date: today });
     
-    // Generate if not exists
+    // Generate a REAL puzzle (was a stub: empty grid + all-1s solution).
     if (!challenge) {
-      // In production, this would generate a real puzzle
+      const difficulty = ['medium', 'hard', 'expert'][new Date().getDay() % 3];
+      const { puzzle, solution } = generateSudoku(difficulty);
       challenge = await DailyChallenge.create({
         date: today,
-        puzzle: JSON.stringify(generatePuzzle()),
-        solution: JSON.stringify(generateSolution()),
-        difficulty: ['medium', 'hard', 'expert'][new Date().getDay() % 3]
+        puzzle: JSON.stringify(puzzle),
+        solution: JSON.stringify(solution),
+        difficulty,
       });
     }
     
@@ -31,18 +33,15 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Helper functions (simplified)
-function generatePuzzle() {
-  return Array(9).fill(null).map(() => Array(9).fill(null));
-}
-function generateSolution() {
-  return Array(9).fill(null).map(() => Array(9).fill(1));
-}
-
 // Complete daily challenge
 router.post('/complete', auth, async (req, res) => {
   try {
-    const { timeSpent, errors, stars } = req.body;
+    const { timeSpent, errors, stars, board } = req.body;
+    // Anti-farm: a completion MUST carry a complete, valid solved grid. Without
+    // this, POST {} farmed XP/coins once per calendar day with no puzzle solved.
+    if (!isCompleteValidSudoku(board)) {
+      return res.status(400).json({ error: 'A completed, valid Sudoku board is required' });
+    }
     const today = new Date().toISOString().split('T')[0];
     
     const user = await User.findById(req.user.id);

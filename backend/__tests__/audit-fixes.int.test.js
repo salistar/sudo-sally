@@ -97,6 +97,30 @@ describe('Audit fixes — economy/integrity', () => {
   });
 });
 
+describe('Daily — real puzzle + anti-farm (BUG-P0-2)', () => {
+  const { generateSudoku } = require('../src/utils/sudoku');
+  test('GET /daily returns a REAL puzzle (clues present, not the empty stub)', async () => {
+    const a = await reg('dq');
+    const r = await request(app).get('/api/daily').set(auth(a.token));
+    expect(r.status).toBe(200);
+    const puzzle = JSON.parse(r.body.challenge.puzzle);
+    const clues = puzzle.flat().filter((n) => n && n > 0).length;
+    expect(clues).toBeGreaterThan(20);   // the stub returned an all-null grid (0 clues)
+  });
+
+  test('POST /daily/complete REJECTS an empty body (anti-farm), ACCEPTS a valid solved board', async () => {
+    const a = await reg('dc');
+    // Was an exploit: POST {} credited 50+ XP once per calendar day with no puzzle solved.
+    const farm = await request(app).post('/api/daily/complete').set(auth(a.token)).send({});
+    expect(farm.status).toBe(400);
+    // A genuine completion (a valid solved grid) is accepted and advances the streak.
+    const { solution } = generateSudoku('easy');
+    const ok = await request(app).post('/api/daily/complete').set(auth(a.token)).send({ board: solution, timeSpent: 120, errors: 0, stars: 3 });
+    expect(ok.status).toBe(200);
+    expect(ok.body.streak).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe('Functional — multiplayer win/lose form asymmetry (WINFORM-1)', () => {
   test('the first valid-board completer WINS; the opponent LOSES (asymmetric outcomes)', async () => {
     const a = await reg('wfa'); const b = await reg('wfb');

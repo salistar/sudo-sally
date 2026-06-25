@@ -491,20 +491,23 @@ describe('daily routes', () => {
   });
 
   test('POST /complete → 200 + streak + rewards, then repeat → 400', async () => {
+    const { generateSudoku } = require('../src/utils/sudoku');
+    const board = generateSudoku('easy').solution;   // a valid solved grid (anti-farm)
     const a = await reg('dly_done');
     const r = await request(app).post('/api/daily/complete').set(auth(a.token))
-      .send({ timeSpent: 120, errors: 1, stars: 2 });
+      .send({ board, timeSpent: 120, errors: 1, stars: 2 });
     expect(r.status).toBe(200);
     expect(r.body.streak).toBe(1);
     expect(r.body.rewards.xp).toBeGreaterThan(0);
     const again = await request(app).post('/api/daily/complete').set(auth(a.token))
-      .send({ timeSpent: 60, errors: 0, stars: 3 });
-    expect(again.status).toBe(400);
+      .send({ board, timeSpent: 60, errors: 0, stars: 3 });
+    expect(again.status).toBe(400);   // already completed today
   });
 
   test('GET / after completing reflects completed:true', async () => {
+    const { generateSudoku } = require('../src/utils/sudoku');
     const a = await reg('dly_state');
-    await request(app).post('/api/daily/complete').set(auth(a.token)).send({ timeSpent: 30, errors: 0, stars: 3 });
+    await request(app).post('/api/daily/complete').set(auth(a.token)).send({ board: generateSudoku('easy').solution, timeSpent: 30, errors: 0, stars: 3 });
     const r = await request(app).get('/api/daily').set(auth(a.token));
     expect(r.status).toBe(200);
     expect(r.body.completed).toBe(true);

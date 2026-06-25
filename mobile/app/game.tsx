@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } from '../utils/sudoku';
 import { storage, formatTime, calculateStars, calculateXP, type Achievement } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../utils/api';
 import { useLang } from '../utils/LanguageContext';
 import { useBoardKeyboard } from '../utils/useBoardKeyboard';
 import * as Haptics from 'expo-haptics';
@@ -17,10 +19,15 @@ const NUM_GAP = 6;
 export default function Game() {
   console.log(`${FILE_NAME} 🚀 Component mounting...`);
   
-  const { level } = useLocalSearchParams<{ level: string }>();
+  const { level, daily, diff } = useLocalSearchParams<{ level: string; daily?: string; diff?: string }>();
   const router = useRouter();
   const { t, lang } = useLang() as any;
   const levelNum = parseInt(level || '1');
+  // Daily mode: play a puzzle of the DAY'S difficulty (was a generic level-0
+  // beginner board) and credit the backend streak on win.
+  const isDaily = daily === 'true';
+  const DAILY_LEVEL: Record<string, number> = { medium: 15, hard: 20, expert: 25 };
+  const genLevel = isDaily ? (DAILY_LEVEL[diff || 'medium'] || 15) : levelNum;
 
   // v3.9.0 — responsive sizing. The previous Dimensions.get('window') at module
   // scope froze the cell size at JS-load time. On desktop web that produced a
@@ -84,11 +91,11 @@ export default function Game() {
   useEffect(() => {
     console.log(`${FILE_NAME} 🔧 useEffect() - Initializing game for level ${levelNum}...`);
     
-    const difficulty = getDifficulty(levelNum);
-    console.log(`${FILE_NAME} 🎯 useEffect() - Difficulty: ${difficulty}`);
-    
+    const difficulty = getDifficulty(genLevel);
+    console.log(`${FILE_NAME} 🎯 useEffect() - Difficulty: ${difficulty}${isDaily ? ' (daily)' : ''}`);
+
     console.log(`${FILE_NAME} 🧩 useEffect() - Generating sudoku puzzle...`);
-    const puzzle = generateSudoku(levelNum);
+    const puzzle = generateSudoku(genLevel);
     console.log(`${FILE_NAME} ✅ useEffect() - Puzzle generated successfully`);
     
     setBoard(puzzle.puzzle);
@@ -105,7 +112,7 @@ export default function Game() {
       console.log(`${FILE_NAME} 🧹 useEffect() cleanup - Clearing timer`);
       clearInterval(timerRef.current);
     };
-  }, [levelNum, getDifficulty]);
+  }, [genLevel, getDifficulty]);
 
   const handleCell = (row: number, col: number) => {
     console.log(`${FILE_NAME} 👆 handleCell() - Cell tapped at [${row}][${col}]`);
@@ -189,13 +196,30 @@ export default function Game() {
 
   const handleWin = async () => {
     console.log(`${FILE_NAME} 🏆 handleWin() - Processing victory...`);
-    
-    const difficulty = getDifficulty(levelNum);
+
+    const difficulty = getDifficulty(genLevel);
     console.log(`${FILE_NAME} 📊 handleWin() - Difficulty: ${difficulty}, Time: ${time}s, Errors: ${errors}`);
-    
+
     const stars = calculateStars(time, difficulty, errors);
     const xp = calculateXP(stars, difficulty);
     console.log(`${FILE_NAME} ⭐ handleWin() - Stars earned: ${stars}, XP earned: ${xp}`);
+
+    // Daily challenge: credit the BACKEND streak + XP with the solved grid. The
+    // server validates the board (anti-farm) and advances the daily streak.
+    // Best-effort — never block the local victory flow on the network.
+    if (isDaily) {
+      try {
+        const token = await AsyncStorage.getItem('sudoku_token');
+        if (token) {
+          await fetch(`${API_URL}/daily/complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ board, timeSpent: time, errors, stars }),
+          });
+          console.log(`${FILE_NAME} 📅 handleWin() - daily completion posted to backend`);
+        }
+      } catch (e) { console.log(`${FILE_NAME} ⚠️ handleWin() - daily post failed`, e); }
+    }
     
     console.log(`${FILE_NAME} 💾 handleWin() - Saving level progress...`);
     await storage.updateLevel(levelNum, { completed: true, stars, bestTime: time, hintsUsed: 3 - hints });
