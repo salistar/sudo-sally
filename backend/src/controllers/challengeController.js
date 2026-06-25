@@ -28,22 +28,70 @@ function recordMoves(challenge, progressKey, newBoardStr) {
     try { puzzleGrid = JSON.parse(challenge.puzzle); } catch (_) {}
     try { solGrid = JSON.parse(challenge.solution); } catch (_) {}
     const startedAt = challenge.startedAt ? new Date(challenge.startedAt).getTime() : Date.now();
-    const t = Math.max(0, Date.now() - startedAt);
+    const now = Math.max(0, Date.now() - startedAt);
+    // Collect every changed non-given cell first, THEN spread their timestamps
+    // across (lastMoveT, now]. Before, a batch (several cells changed since the
+    // last save — common on fast play / debounced sync) all got the SAME t, so
+    // the replay scrubber showed them at one instant instead of animating
+    // through them.
+    const changed = [];
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
-        const cell = row * 9 + col;
         const given = puzzleGrid ? (Number(puzzleGrid[row]?.[col]) || 0) : 0;
         if (given !== 0) continue;                           // skip given cells
         const newVal = Number(newGrid[row]?.[col]) || 0;
         const prevVal = prevGrid ? (Number(prevGrid[row]?.[col]) || 0) : 0;
         if (newVal === prevVal) continue;                   // no change here
         const solVal = solGrid ? (Number(solGrid[row]?.[col]) || 0) : 0;
-        moves.push({ cell, value: newVal, t, err: newVal !== 0 && newVal !== solVal });
-        if (moves.length >= 500) { prog.moves = moves; return; }
+        changed.push({ cell: row * 9 + col, value: newVal, err: newVal !== 0 && newVal !== solVal });
+      }
+    }
+    const lastT = moves.length ? moves[moves.length - 1].t : 0;
+    const span = Math.max(changed.length, now - lastT);
+    changed.forEach((m, i) => {
+      if (moves.length >= 500) return;
+      m.t = changed.length === 1 ? now : Math.round(lastT + ((i + 1) / changed.length) * span);
+      moves.push(m);
+    });
+    prog.moves = moves;
+  } catch (_) { /* never block the save on move-recording failure */ }
+}
+
+// Guarantee the move log, when replayed on top of the puzzle, REACHES the final
+// board. Fast play can race the per-keystroke progress saves (out-of-order PUTs
+// overwrite the stored board with a stale one), leaving the log short a few
+// cells — so the replay board never completed. Called at settle: append a move
+// for any non-given cell that's filled in the final board but missing/wrong in
+// the move-derived board.
+function reconcileMoves(challenge, progressKey, finalBoardStr) {
+  try {
+    const prog = challenge[progressKey];
+    if (!prog || !finalBoardStr) return;
+    const moves = prog.moves || [];
+    const finalGrid = typeof finalBoardStr === 'string' ? JSON.parse(finalBoardStr) : finalBoardStr;
+    if (!Array.isArray(finalGrid)) return;
+    let puzzleGrid = null, solGrid = null;
+    try { puzzleGrid = JSON.parse(challenge.puzzle); } catch (_) {}
+    try { solGrid = JSON.parse(challenge.solution); } catch (_) {}
+    // Reconstruct the board the current move log produces.
+    const derived = (puzzleGrid || Array.from({ length: 9 }, () => Array(9).fill(0)))
+      .map((row) => row.map((v) => Number(v) || 0));
+    for (const m of moves) { const r = Math.floor(m.cell / 9), c = m.cell % 9; if (r < 9 && c < 9) derived[r][c] = Number(m.value) || 0; }
+    const startedAt = challenge.startedAt ? new Date(challenge.startedAt).getTime() : Date.now();
+    const t = Math.max(0, Date.now() - startedAt);
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const given = puzzleGrid ? (Number(puzzleGrid[row]?.[col]) || 0) : 0;
+        if (given !== 0) continue;
+        const fv = Number(finalGrid[row]?.[col]) || 0;
+        if (fv && derived[row][col] !== fv && moves.length < 500) {
+          const solVal = solGrid ? (Number(solGrid[row]?.[col]) || 0) : 0;
+          moves.push({ cell: row * 9 + col, value: fv, t, err: fv !== solVal });
+        }
       }
     }
     prog.moves = moves;
-  } catch (_) { /* never block the save on move-recording failure */ }
+  } catch (_) { /* best-effort */ }
 }
 
 // Generate Sudoku puzzle
@@ -439,6 +487,7 @@ exports.completeChallenge = async (req, res) => {
     const opponentKey = isChallenger ? 'challengedProgress' : 'challengerProgress';
 
     recordMoves(challenge, progressKey, board);   // capture the final placements
+    reconcileMoves(challenge, progressKey, board); // guarantee the replay reaches the final board
 
     // Clamp counters (anti-tamper — negative time/errors would win the tiebreak).
     const safeTime = Math.max(0, Math.floor(Number(timeSpent) || 0));
@@ -708,5 +757,5 @@ async function updateUserStats(challenge) {
 }
 // Test-only export hatch: expose pure helpers for unit testing (no public surface change).
 if (process.env.NODE_ENV === 'test') {
-  module.exports._test = { generateSudokuPuzzle, recordMoves, determineWinner };
+  module.exports._test = { generateSudokuPuzzle, recordMoves, reconcileMoves, determineWinner };
 }

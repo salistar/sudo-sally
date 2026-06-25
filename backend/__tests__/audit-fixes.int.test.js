@@ -121,6 +121,33 @@ describe('Daily — real puzzle + anti-farm (BUG-P0-2)', () => {
   });
 });
 
+describe('Replay — move log reconstructs the final board (reconcile)', () => {
+  test('a duel replay reaches the COMPLETE solved board even when the board was submitted in one batch', async () => {
+    const a = await reg('rpa'); const b = await reg('rpb');
+    const send = await request(app).post('/api/challenges/send').set(auth(a.token)).send({ targetUsername: b.username, difficulty: 'easy' });
+    const cid = send.body.challenge._id;
+    await request(app).post(`/api/challenges/${cid}/accept`).set(auth(b.token));
+    await request(app).post(`/api/challenges/${cid}/start`).set(auth(b.token));
+    const ch = await Challenge.findById(cid);
+    const sol = JSON.parse(ch.solution);
+
+    // b submits the whole solved board in ONE /complete (no incremental progress)
+    // — the worst case that used to leave the replay board incomplete.
+    await request(app).post(`/api/challenges/${cid}/complete`).set(auth(b.token)).send({ board: ch.solution, timeSpent: 60, errors: 0 });
+
+    const rep = await request(app).get(`/api/challenges/${cid}/replay`).set(auth(b.token));
+    expect(rep.status).toBe(200);
+    const moves = rep.body.replay.challengedMoves;   // b is the challenged
+    expect(moves.length).toBeGreaterThan(0);
+    // distinct timestamps (no all-at-one-instant batch)
+    expect(new Set(moves.map((m) => m.t)).size).toBeGreaterThan(1);
+    // reconstruct b's board from the move log and assert it equals the solution
+    const grid = JSON.parse(rep.body.replay.puzzle).map((r) => r.map((v) => Number(v) || 0));
+    for (const m of moves) grid[Math.floor(m.cell / 9)][m.cell % 9] = m.value;
+    expect(grid).toEqual(sol);
+  });
+});
+
 describe('Functional — multiplayer win/lose form asymmetry (WINFORM-1)', () => {
   test('the first valid-board completer WINS; the opponent LOSES (asymmetric outcomes)', async () => {
     const a = await reg('wfa'); const b = await reg('wfb');
