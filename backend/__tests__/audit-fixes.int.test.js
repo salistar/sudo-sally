@@ -97,6 +97,32 @@ describe('Audit fixes — economy/integrity', () => {
   });
 });
 
+describe('Functional — multiplayer win/lose form asymmetry (WINFORM-1)', () => {
+  test('the first valid-board completer WINS; the opponent LOSES (asymmetric outcomes)', async () => {
+    const a = await reg('wfa'); const b = await reg('wfb');
+    const send = await request(app).post('/api/challenges/send').set(auth(a.token)).send({ targetUsername: b.username, difficulty: 'easy' });
+    const cid = send.body.challenge._id;
+    await request(app).post(`/api/challenges/${cid}/accept`).set(auth(b.token));
+    await request(app).post(`/api/challenges/${cid}/start`).set(auth(b.token));
+    const ch = await Challenge.findById(cid);
+
+    // B submits the correct solution first → B is the speed-duel winner.
+    const done = await request(app).post(`/api/challenges/${cid}/complete`).set(auth(b.token)).send({ board: ch.solution, timeSpent: 40, errors: 0 });
+    expect(done.status).toBe(200);
+
+    const settled = await Challenge.findById(cid);
+    expect(settled.status).toBe('completed');
+    expect(String(settled.winner)).toBe(String(b.id));   // winner = B (the completer)
+    expect(String(settled.loser)).toBe(String(a.id));    // loser  = A
+    expect(settled.isDraw).toBe(false);
+
+    // The asymmetry the win/defeat forms are driven by:
+    const ua = await User.findById(a.id); const ub = await User.findById(b.id);
+    expect(ub.stats.challengesWon).toBe(1);   // B → VICTORY form
+    expect(ua.stats.challengesLost).toBe(1);  // A → DEFEAT form
+  });
+});
+
 describe('Audit fixes — ranking', () => {
   test('RANK-1: weekly leaderboard aggregates REAL wins this week (was a dead stub)', async () => {
     const Game = require('../src/models/Game');
