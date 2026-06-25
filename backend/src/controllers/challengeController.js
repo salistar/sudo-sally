@@ -475,6 +475,24 @@ exports.completeChallenge = async (req, res) => {
       { path: 'winner', select: 'username avatar' }
     ]);
 
+    // Notify BOTH players of the settled result SERVER-SIDE so the opponent's
+    // duel screen shows the win/lose result reliably — even if the completing
+    // client never emits the socket 'challenge:finished' relay (a slow / headless
+    // / crashed client previously left the opponent stuck on "playing").
+    try {
+      if (settled.status === 'completed') {
+        const payload = {
+          challengeId: String(settled._id),
+          winner: settled.winner ? String(settled.winner._id) : null,
+          loser: settled.loser ? String(settled.loser) : null,
+          isDraw: !!settled.isDraw,
+          finishedAt: settled.completedAt || new Date(),
+        };
+        notifyUser(String(settled.challenger?._id || settled.challenger), 'challenge:result', payload);
+        notifyUser(String(settled.challenged?._id || settled.challenged), 'challenge:result', payload);
+      }
+    } catch (_) { /* best-effort opponent notification */ }
+
     // Global activity feed: sanitized "match finished" broadcast. No board/solution.
     try {
       const { broadcast } = require('../services/socketService');
