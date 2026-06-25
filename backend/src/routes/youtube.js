@@ -22,7 +22,7 @@ const auth = require('../middleware/auth');
 const User = require('../models/User');
 const yt = require('../services/youtubeService');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const { JWT_SECRET } = require('../config/jwt');
 // Where to send the browser after the OAuth dance finishes.
 const WEB_RETURN = process.env.YT_RETURN_URL || 'https://app.sallysudo.com/challenges';
 

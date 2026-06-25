@@ -12,6 +12,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/jwt');
 const router = express.Router();
 
 router.get('/turn-creds', (req, res) => {
@@ -36,7 +37,7 @@ router.get('/turn-creds', (req, res) => {
     try {
       const raw = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.query.token;
       if (raw) {
-        const decoded = jwt.verify(String(raw), process.env.JWT_SECRET || 'secret');
+        const decoded = jwt.verify(String(raw), JWT_SECRET);
         if (decoded?.id) userId = String(decoded.id).replace(/[^\w-]/g, '');
       }
     } catch { /* invalid/absent token → keep the random id */ }

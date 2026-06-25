@@ -6,6 +6,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Challenge = require('../models/Challenge');
+const { JWT_SECRET } = require('../config/jwt');
 
 // Store connected users
 const connectedUsers = new Map(); // socketId -> { odcUserId, username }
@@ -65,7 +66,7 @@ function initializeSocket(io) {
         return next(new Error('Authentication required'));
       }
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+      const decoded = jwt.verify(token, JWT_SECRET);
       const user = await User.findById(decoded.id).select('username avatar level stars');
       
       if (!user) {

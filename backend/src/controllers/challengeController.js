@@ -1,6 +1,7 @@
 const Challenge = require('../models/Challenge');
 const User = require('../models/User');
 const { notifyUser } = require('../services/socketService');
+const escapeRegex = require('../utils/escapeRegex');
 
 // v3.11.16 — Reconstruct the per-move log for the replay viewer by diffing the
 // newly-submitted board against the last stored one. The client only ever sends
@@ -117,7 +118,7 @@ exports.sendChallenge = async (req, res) => {
     let targetUser;
     if (targetUsername) {
       targetUser = await User.findOne({
-        username: { $regex: '^' + targetUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', $options: 'i' },
+        username: { $regex: '^' + escapeRegex(targetUsername) + '$', $options: 'i' },
       });
       if (!targetUser) return res.status(404).json({ error: 'User not found' });
       if (String(targetUser._id) === String(req.user.id)) {

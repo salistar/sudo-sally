@@ -8,6 +8,7 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { JWT_SECRET } = require('../config/jwt');
 
 /**
  * Middleware d'authentification obligatoire
@@ -26,7 +27,7 @@ module.exports = async (req, res, next) => {
     }
     
     // Vérifier et décoder le token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded = jwt.verify(token, JWT_SECRET);
     
     // Récupérer l'utilisateur depuis la base de données
     const user = await User.findById(decoded.id);

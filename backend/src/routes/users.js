@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const escapeRegex = require('../utils/escapeRegex');
 
 // ─── SEARCH users by username (prefix match) — public to authed players ──
 // Lets the mobile lobby find anyone, not just users currently in a socket.
@@ -11,7 +12,7 @@ router.get('/search', auth, async (req, res) => {
     const q = (req.query.q || '').toString().trim();
     if (!q || q.length < 2) return res.json({ success: true, users: [] });
     // Escape regex metachars so users can't break the query with weird input
-    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safe = escapeRegex(q);
     const users = await User.find({
       _id: { $ne: req.user.id },                       // not myself
       username: { $regex: '^' + safe, $options: 'i' }, // prefix match, case-insensitive
@@ -70,7 +71,7 @@ router.get('/by-username/:username', async (req, res) => {
   try {
     const raw = (req.params.username || '').toString().trim();
     if (!raw) return res.status(400).json({ error: 'Missing username' });
-    const safe = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safe = escapeRegex(raw);
     const user = await User.findOne({
       username: { $regex: '^' + safe + '$', $options: 'i' },
     }).select('username avatar level stars createdAt isOnline lastActive stats');

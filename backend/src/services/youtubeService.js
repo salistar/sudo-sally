@@ -26,6 +26,7 @@ const YT_API = 'https://www.googleapis.com/youtube/v3';
 
 // Scope needed to create + manage live broadcasts on the user's channel.
 const SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl'];
+const { JWT_SECRET } = require('../config/jwt');
 
 function cfg() {
   return {
@@ -43,10 +44,19 @@ function isConfigured() {
 // ── Refresh-token encryption (AES-256-GCM) ──────────────────────────────────
 // Key: 32 bytes. From TOKEN_ENC_KEY (64-hex) if present, else derived from
 // JWT_SECRET so the feature still works in dev without extra config.
+let _warnedNoEncKey = false;
 function encKey() {
   const raw = process.env.TOKEN_ENC_KEY;
   if (raw && /^[0-9a-fA-F]{64}$/.test(raw)) return Buffer.from(raw, 'hex');
-  return crypto.scryptSync(process.env.JWT_SECRET || 'secret', 'yt-token-enc', 32);
+  // Fallback (kept so the existing encrypted refresh token still decrypts):
+  // derive from JWT_SECRET. In production, warn ONCE that a dedicated key is
+  // safer — but never throw, so rotating to a real TOKEN_ENC_KEY stays a
+  // deliberate op (it would require re-connecting YouTube) rather than a crash.
+  if (process.env.NODE_ENV === 'production' && !_warnedNoEncKey) {
+    _warnedNoEncKey = true;
+    console.warn('[youtube] TOKEN_ENC_KEY not set — deriving token-encryption key from JWT_SECRET. Set a dedicated 64-hex TOKEN_ENC_KEY so rotating JWT_SECRET cannot orphan stored refresh tokens.');
+  }
+  return crypto.scryptSync(JWT_SECRET, 'yt-token-enc', 32);
 }
 
 function encrypt(plain) {

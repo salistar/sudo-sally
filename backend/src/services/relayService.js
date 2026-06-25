@@ -30,7 +30,7 @@ const User = require('../models/User');
 const Challenge = require('../models/Challenge');
 const yt = require('./youtubeService');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const { JWT_SECRET } = require('../config/jwt');
 const MAX_SESSION_MS = 4 * 60 * 60 * 1000; // hard safety cap: 4h per stream
 const MAX_SESSIONS_PER_USER = 2;           // anti resource-exhaustion (ffmpeg fork-bomb)
 const activeSessions = new Map();          // userId -> live ffmpeg session count
