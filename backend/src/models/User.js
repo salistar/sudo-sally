@@ -16,6 +16,13 @@ const userSchema = new mongoose.Schema({
   picture: { type: String },          // Google profile picture URL (optional)
   emailVerified: { type: Boolean, default: false },
 
+  // ============ PASSWORD RESET ============
+  // Set by POST /auth/forgot-password. We store the SHA-256 HASH of the reset
+  // token (never the raw token) + a short expiry; select:false so it never
+  // leaks via a default query. Cleared on a successful reset.
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpires: { type: Date, select: false },
+
   // ============ YOUTUBE LIVE (per-user OAuth, control-plane) ============
   // Set when the user connects their YouTube channel. refreshToken is stored
   // ENCRYPTED (AES-256-GCM, see services/youtubeService.js) — never plaintext,
@@ -131,8 +138,10 @@ userSchema.methods.addXP = function(amount) {
 };
 
 // ============ INDEXES ============
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// NB: `email`, `username` and `googleId` already get a unique index from their
+// field-level `unique: true` — re-declaring them here created DUPLICATE indexes
+// (Mongoose "Duplicate schema index" warning). Only the non-unique query indexes
+// below are declared explicitly.
 userSchema.index({ stars: -1 });
 userSchema.index({ isOnline: 1, lastActive: -1 });
 userSchema.index({ 'stats.challengesWon': -1 });

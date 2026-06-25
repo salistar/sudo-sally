@@ -119,6 +119,45 @@ describe('Audit fixes — ranking', () => {
   });
 });
 
+describe('Auth — change / forgot / reset password', () => {
+  test('change-password: rejects wrong current, accepts correct, new password logs in', async () => {
+    const a = await reg('chpw');
+    const email = `${a.username}@a.co`;
+    // wrong current → 401
+    const wrong = await request(app).post('/api/auth/change-password').set(auth(a.token)).send({ currentPassword: 'nope', newPassword: 'brandnew1' });
+    expect(wrong.status).toBe(401);
+    // correct current → 200
+    const ok = await request(app).post('/api/auth/change-password').set(auth(a.token)).send({ currentPassword: 'pass1234', newPassword: 'brandnew1' });
+    expect(ok.status).toBe(200);
+    // old password no longer works, new one does
+    const oldLogin = await request(app).post('/api/auth/login').send({ email, password: 'pass1234' });
+    expect(oldLogin.status).toBe(401);
+    const newLogin = await request(app).post('/api/auth/login').send({ email, password: 'brandnew1' });
+    expect(newLogin.status).toBe(200);
+  });
+
+  test('forgot-password + reset-password: full token flow, then login with the new password', async () => {
+    const a = await reg('fgpw');
+    const email = `${a.username}@a.co`;
+    // anti-enumeration: unknown email still returns 200 (and no token)
+    const unknown = await request(app).post('/api/auth/forgot-password').send({ email: 'nobody@nowhere.test' });
+    expect(unknown.status).toBe(200);
+    expect(unknown.body.devToken).toBeUndefined();
+    // known email → 200 + a dev token (non-production)
+    const fp = await request(app).post('/api/auth/forgot-password').send({ email });
+    expect(fp.status).toBe(200);
+    expect(typeof fp.body.devToken).toBe('string');
+    // bad token → 400
+    const bad = await request(app).post('/api/auth/reset-password').send({ token: 'deadbeef', newPassword: 'resetpass1' });
+    expect(bad.status).toBe(400);
+    // valid token → 200, and the new password logs in
+    const rp = await request(app).post('/api/auth/reset-password').send({ token: fp.body.devToken, newPassword: 'resetpass1' });
+    expect(rp.status).toBe(200);
+    const login = await request(app).post('/api/auth/login').send({ email, password: 'resetpass1' });
+    expect(login.status).toBe(200);
+  });
+});
+
 describe('Audit fixes — live-broadcast privacy', () => {
   test('SEC-5: /spectate is 403 for a non-participant until BOTH players consent', async () => {
     const a = await reg('sa'); const b = await reg('sb'); const c = await reg('sc'); // c = outsider

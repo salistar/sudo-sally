@@ -233,6 +233,77 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
+// Forgot password — issue a reset token. Anti-enumeration: ALWAYS respond 200
+// with a generic message, whether or not the email exists, so an attacker can't
+// probe which emails are registered.
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    let devToken;
+    if (user) {
+      const raw = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = crypto.createHash('sha256').update(raw).digest('hex');
+      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
+      await user.save();
+      // TODO(ops): email https://app.sallysudo.com/reset?token=<raw> via SMTP.
+      // No mail provider is wired yet, so outside production we return the token
+      // (so the flow is fully usable/testable); in production it must be emailed.
+      if (process.env.NODE_ENV !== 'production') devToken = raw;
+      else console.log(`[auth] password reset requested for ${user.email}`);
+    }
+    res.json({
+      success: true,
+      message: 'If that email is registered, a reset link has been sent.',
+      ...(devToken ? { devToken } : {}),
+    });
+  } catch (e) {
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : e.message });
+  }
+};
+
+// Reset password using the token issued by forgot-password.
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required' });
+    if (String(newPassword).length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const hashed = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashed,
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+resetPasswordToken +resetPasswordExpires');
+    if (!user) return res.status(400).json({ error: 'Invalid or expired reset token' });
+    user.password = newPassword;            // pre-save hook hashes it
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    const tk = generateToken(user._id);
+    res.json({ success: true, message: 'Password has been reset', token: tk });
+  } catch (e) {
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : e.message });
+  }
+};
+
+// Change password (authenticated) — requires the CURRENT password.
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password required' });
+    if (String(newPassword).length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const ok = await user.comparePassword(currentPassword);
+    if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+    user.password = newPassword;            // pre-save hook hashes it
+    await user.save();
+    res.json({ success: true, message: 'Password changed' });
+  } catch (e) {
+    res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Internal server error' : e.message });
+  }
+};
+
 // Guest login
 exports.guestLogin = async (req, res) => {
   try {
