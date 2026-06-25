@@ -408,6 +408,26 @@ describe('auth flows (login / guest / logout)', () => {
   });
 });
 
+describe('shop inventory (BUG-P1-3)', () => {
+  test('defaults to the two free themes, no powerups', async () => {
+    const inv = await storage.getInventory();
+    expect(inv.ownedThemes).toEqual(['default', 'ocean']);
+    expect(inv.powerups).toEqual({});
+  });
+  test('a purchased theme + powerup quantity persists across reads', async () => {
+    await storage.setInventory({ ownedThemes: ['default', 'ocean', 'sunset'], powerups: { hint: 4 } });
+    const inv = await storage.getInventory();
+    expect(inv.ownedThemes).toContain('sunset');   // was lost on reload before the fix
+    expect(inv.powerups.hint).toBe(4);
+  });
+  test('resetAll clears the inventory', async () => {
+    await storage.setInventory({ ownedThemes: ['default', 'ocean', 'sunset'], powerups: { hint: 9 } });
+    await storage.resetAll();
+    const inv = await storage.getInventory();
+    expect(inv.ownedThemes).toEqual(['default', 'ocean']);   // back to defaults
+  });
+});
+
 describe('resetAll', () => {
   test('removes all known keys', async () => {
     await storage.setUser(mkUser());

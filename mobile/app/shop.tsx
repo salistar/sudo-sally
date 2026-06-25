@@ -43,6 +43,10 @@ export default function Shop() {
         const user = await storage.getUser();
         console.log(`${FILE_NAME} ✅ User data received:`, user ? `coins: ${user.coins}` : 'No user found');
         setCoins(user?.coins || 0);
+        // Restore persisted inventory (BUG-P1-3 — was reset every load).
+        const inv = await storage.getInventory();
+        if (inv.ownedThemes?.length) setOwnedThemes(inv.ownedThemes);
+        setPowerups(POWERUPS.map(p => ({ ...p, quantity: inv.powerups?.[p.id] ?? p.quantity })));
         setIsLoading(false);
         
         // Fade in animation
@@ -96,6 +100,11 @@ export default function Shop() {
         setCoins(user.coins);
         const newOwnedThemes = [...ownedThemes, theme.id];
         setOwnedThemes(newOwnedThemes);
+        // Persist the purchase so it survives a reload (BUG-P1-3).
+        await storage.setInventory({
+          ownedThemes: newOwnedThemes,
+          powerups: Object.fromEntries(powerups.map(p => [p.id, p.quantity])),
+        });
         console.log(`${FILE_NAME} 🎉 Theme purchased! New owned themes:`, newOwnedThemes);
       }
       
@@ -136,11 +145,16 @@ export default function Shop() {
         setCoins(user.coins);
       }
       
-      const updatedPowerups = powerups.map(p => 
+      const updatedPowerups = powerups.map(p =>
         p.id === powerup.id ? { ...p, quantity: p.quantity + 1 } : p
       );
       setPowerups(updatedPowerups);
-      
+      // Persist the purchase so the quantity survives a reload (BUG-P1-3).
+      await storage.setInventory({
+        ownedThemes,
+        powerups: Object.fromEntries(updatedPowerups.map(p => [p.id, p.quantity])),
+      });
+
       const newQuantity = updatedPowerups.find(p => p.id === powerup.id)?.quantity;
       console.log(`${FILE_NAME} 🎉 Powerup purchased! New quantity: ${newQuantity}`);
       

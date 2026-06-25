@@ -344,6 +344,20 @@ export const storage = {
     return newly;
   },
 
+  // Shop inventory — owned themes + powerup quantities. Persisted so purchases
+  // (which deduct coins) actually STICK across reloads. Before this, buying a
+  // theme/powerup deducted coins but the item vanished on the next screen load
+  // (BUG-P1-3 — paid for nothing).
+  async getInventory(): Promise<{ ownedThemes: string[]; powerups: Record<string, number> }> {
+    const data = await AsyncStorage.getItem('sudoku_inventory');
+    if (data) { try { return JSON.parse(data); } catch (_) {} }
+    return { ownedThemes: ['default', 'ocean'], powerups: {} };
+  },
+
+  async setInventory(inv: { ownedThemes: string[]; powerups: Record<string, number> }): Promise<void> {
+    await AsyncStorage.setItem('sudoku_inventory', JSON.stringify(inv));
+  },
+
   // Auth
   async isLoggedIn(): Promise<boolean> {
     const token = await AsyncStorage.getItem(KEYS.AUTH_TOKEN);
@@ -472,7 +486,7 @@ export const storage = {
 
   // Reset all data
   async resetAll(): Promise<void> {
-    await AsyncStorage.multiRemove([KEYS.USER, KEYS.LEVELS, KEYS.STATS, KEYS.SETTINGS, KEYS.ACHIEVEMENTS, KEYS.AUTH_TOKEN]);
+    await AsyncStorage.multiRemove([KEYS.USER, KEYS.LEVELS, KEYS.STATS, KEYS.SETTINGS, KEYS.ACHIEVEMENTS, KEYS.AUTH_TOKEN, 'sudoku_inventory']);
   },
 };
 
