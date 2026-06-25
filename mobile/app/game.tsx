@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { generateSudoku, isValidPlacement, isBoardComplete, getHint, Board } from '../utils/sudoku';
 import { storage, formatTime, calculateStars, calculateXP, type Achievement } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,6 +37,7 @@ export default function Game() {
   // resize, so the board adapts to the actual content area.
   const { width: winW, height: winH } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && winW >= 1024;
+  const insets = useSafeAreaInsets();   // clear the phone nav bar at the bottom (edge-to-edge)
   // Effective inner area inside WebShell (sidebar 260 + paddings ~96 px).
   // Capped to keep the board from dominating a 4K monitor.
   const BOARD_W = isDesktopWeb
@@ -467,7 +469,7 @@ export default function Game() {
       colors={['#0a0a1a', '#1a1a3a', '#0f0f2a']}
       style={[styles.container, isDesktopWeb && { paddingTop: 0, paddingHorizontal: 0 }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 48 + insets.bottom }]} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>

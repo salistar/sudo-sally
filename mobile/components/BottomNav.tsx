@@ -18,6 +18,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type NavKey = 'home' | 'play' | 'lobby' | 'profile' | 'settings';
 
@@ -35,11 +36,14 @@ export default function BottomNav({ active }: { active?: NavKey }) {
   // links, so the floating bottom bar would just clutter the bottom of the
   // viewport. Hide it on web viewports ≥ 1024 px.
   const { width } = useWindowDimensions();
+  // Add the OS navigation-bar height so the in-app tab bar is NOT hidden behind
+  // the phone's 3-button / gesture nav (edge-to-edge on Android 15 / Samsung).
+  const insets = useSafeAreaInsets();
   if (Platform.OS === 'web' && width >= 1024) return null;
   return (
     <LinearGradient
       colors={['rgba(10,10,26,0)', 'rgba(10,10,26,0.95)', '#0a0a1a']}
-      style={styles.wrap}
+      style={[styles.wrap, { paddingBottom: (Platform.OS === 'ios' ? 20 : 8) + insets.bottom }]}
     >
       <View style={styles.bar}>
         {ITEMS.map((it) => {

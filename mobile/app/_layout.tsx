@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from '../utils/context';
 import { LanguageProvider } from '../utils/LanguageContext';
 import WebShell from '../components/WebShell';
@@ -16,6 +17,7 @@ export default function RootLayout() {
   if (!ready) return <View style={styles.loading}><ActivityIndicator size="large" color="#7c5cff" /></View>;
 
   return (
+    <SafeAreaProvider>
     <AppProvider>
       <LanguageProvider>
       <WebShell>
@@ -57,6 +59,7 @@ export default function RootLayout() {
       <StatusBar style="light" />
       </LanguageProvider>
     </AppProvider>
+    </SafeAreaProvider>
   );
 }
 

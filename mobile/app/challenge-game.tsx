@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { socketService } from '../utils/socket';
 import { API_URL, RELAY_WSS } from '../utils/api';
 import { LIVE_PURPLE, rrect, drawOwl, fmt, drawSudokuBoard, drawCamTile } from '../utils/liveCompositor';
@@ -238,6 +239,7 @@ const tauntStyles = StyleSheet.create({
 export default function ChallengeGame() {
   const { id, stream } = useLocalSearchParams<{ id: string; stream?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();   // clear the phone nav bar at the bottom (edge-to-edge)
   const { t } = useLang();
   const challengeId = id as string;
   // STREAM MODE (?stream=1): a broadcast-friendly view that shows BOTH boards
@@ -1832,7 +1834,7 @@ export default function ChallengeGame() {
       </View>
 
       <View style={styles.bodyRow}>
-      <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollFlex} contentContainerStyle={[styles.scroll, { paddingBottom: 20 + insets.bottom }]}>
         {/* VS Banner */}
         <View style={styles.vs}>
           <View style={styles.player}>
